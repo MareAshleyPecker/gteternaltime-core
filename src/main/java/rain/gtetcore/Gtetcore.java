@@ -16,6 +16,6 @@ public class Gtetcore {
 	private static final Logger LOGGER = LogUtils.getLogger ();
 
 	public Gtetcore () {
-		DistExecutor.unsafeRunForDist(() -> ClientProxy::new, () -> () -> new CommonProxy ());
+		DistExecutor.unsafeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
 	}
 }
