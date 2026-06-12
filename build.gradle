@@ -1,0 +1,68 @@
+// ================================================================
+//  buildscript 和 plugins 块必须在主 build.gradle 中，无法拆分
+// ================================================================
+
+buildscript {
+    repositories {
+        // These repositories are only for Gradle plugins, put any other repositories in the repository block further below
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+    }
+}
+
+plugins {
+    id 'eclipse'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '[6.0.16,6.2)'
+    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+}
+
+// ================================================================
+//  以下模块已拆分至 scripts/ 目录
+// ================================================================
+
+apply from: 'scripts/project.gradle'        // group, version, base, java, sourceSets
+apply from: 'scripts/minecraft.gradle'      // minecraft 映射与运行配置
+apply from: 'scripts/mixin.gradle'          // Mixin 插件与配置
+apply from: 'scripts/repositories.gradle'   // 依赖仓库
+apply from: 'scripts/dependencies.gradle'   // 项目依赖
+      // processResources, jar, JavaCompile
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
+                             forge_version       : forge_version, forge_version_range: forge_version_range,
+                             loader_version_range: loader_version_range,
+                             mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+                             mod_authors         : mod_authors, mod_description: mod_description,]
+
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+// 将属性写入 manifest 以在运行时读取的示例。
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes(["Specification-Title"     : mod_id,
+                    "Specification-Vendor"    : mod_authors,
+                    "Specification-Version"   : "1",
+                    "Implementation-Title"    : project.name,
+                    "Implementation-Version"  : project.jar.archiveVersion,
+                    "Implementation-Vendor"   : mod_authors,
+                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")])
+    }
+
+    // 这是重新混淆 jar 文件的推荐方法
+    finalizedBy 'reobfJar'
+}
+
+// Java 编译使用 UTF-8 编码
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+

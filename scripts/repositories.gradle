@@ -1,0 +1,25 @@
+// ============================================================
+// 依赖仓库配置
+// ForgeGradle 会自动添加 Forge maven 和 Maven Central
+// ============================================================
+
+repositories {
+    mavenLocal()
+    flatDir {
+        dir "libs"
+    }
+    mavenCentral()
+
+    maven {
+        name = 'GTCEu Maven'
+        url = 'https://maven.gtceu.com'
+        content {
+            includeGroup 'com.gregtechceu.gtceu'
+        }
+    }
+
+    repositories {
+        maven { url = "https://maven.firstdark.dev/snapshots" }
+    }
+
+}

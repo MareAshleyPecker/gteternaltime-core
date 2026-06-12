@@ -1,0 +1,17 @@
+// ============================================================
+// 项目基本信息：group、version、archivesName、Java 版本
+// ============================================================
+
+group = mod_group_id
+version = mod_version
+
+base {
+    archivesName = mod_id
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+
+// 包含 data generator 生成的资源
+sourceSets.main.resources { srcDir 'src/generated/resources' }

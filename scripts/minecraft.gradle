@@ -1,0 +1,54 @@
+// ============================================================
+// Minecraft / ForgeGradle 配置：mappings、运行配置
+// ============================================================
+
+minecraft {
+
+    mappings channel: mapping_channel, version: mapping_version
+
+    copyIdeResources = true
+
+    runs {
+        // 以下配置应用到所有 run config
+        configureEach {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            // 推荐的控制台日志级别
+            // 可选级别参考：https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            // 逗号分隔的要加载 gametests 的命名空间列表。空 = 全部命名空间。
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+        }
+
+        // 此 run config 启动 GameTestServer 并运行所有注册的 gametests，然后退出。
+        // 默认情况下，如果没有 gametests 提供，服务器会崩溃。
+        // gametest 系统在其他 run config 中也可以通过 /test 命令启用。
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', mod_id
+        }
+
+        data {
+            // 覆盖 configureEach 中设置的 workingDirectory 示例
+            workingDirectory project.file('run-data')
+
+            // 指定 data generation 的 modid、资源输出位置、以及现有资源查找位置
+            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+        }
+    }
+}

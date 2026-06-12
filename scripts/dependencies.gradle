@@ -1,0 +1,26 @@
+// ============================================================
+// 项目依赖
+// ============================================================
+
+dependencies {
+
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+
+    //gtceu
+    implementation fg.deobf("com.gregtechceu.gtceu:gtceu-${mc_version}:${gtm_version}")
+    implementation fg.deobf("curse.maven:ldlib-626676:7809449")//ldlib-1.20.1-1.0.50-forge
+    implementation fg.deobf("curse.maven:gtmthings-1104310:7712957")//gtmthings-1.20.1-1.6.0-forge
+
+    //ftb
+    implementation fg.deobf("curse.maven:ftb-library-forge-404465:8226927")
+    implementation fg.deobf("curse.maven:ftb-quests-forge-289412:8078538")
+    implementation fg.deobf("curse.maven:ftb-essentials-410811:7609948")
+    implementation fg.deobf("curse.maven:ftb-ultimine-forge-386134:7880472")
+
+
+
+
+
+}
