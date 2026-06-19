@@ -13,5 +13,6 @@ public class ClientProxy extends CommonProxy {
 		super();
 		@SuppressWarnings ("Deprecated")
 		IEventBus eventBus =FMLJavaModLoadingContext.get ().getModEventBus ();
+
 	}
 }
