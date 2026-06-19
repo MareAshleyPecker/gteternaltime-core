@@ -21,8 +21,4 @@ repositories {
     maven { url = "https://maven.firstdark.dev/snapshots" }
 
 
-    maven { // Registrate
-        url = "https://maven.gegy.dev/releases"
-    }
-
 }
