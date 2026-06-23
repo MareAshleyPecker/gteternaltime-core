@@ -1,13 +1,6 @@
-/* ============================================================
-   Mixin 配置：应用 MixinGradle 插件、refmap、mixin config
-   ============================================================ */
-
-
-
-apply plugin: 'org.spongepowered.mixin'
-
 mixin {
-    add sourceSets.main, "${mod_id}.refmap.json"
-
-    config "${mod_id}.mixins.json"
+    add sourceSets.main, 'gtetcore.mixins.refmap.json'
+    config 'gtetcore.mixins.json'
+    debug.verbose = true
+    debug.export = false
 }

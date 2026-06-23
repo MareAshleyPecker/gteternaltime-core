@@ -19,6 +19,9 @@ minecraft {
             // 可选级别参考：https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             property 'forge.logging.console.level', 'debug'
 
+            // 限制游戏堆内存，避免 OOM（与 Gradle/Kotlin 守护进程争抢内存）
+            jvmArgs '-Xmx4G', '-Xms1G', '-XX:ReservedCodeCacheSize=256m'
+
             mods {
                 "${mod_id}" {
                     source sourceSets.main

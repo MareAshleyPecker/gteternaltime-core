@@ -19,3 +19,12 @@ hs_err_pid*
 
 # Common working directory
 run
+
+# Kotlin IDE
+.kotlin/
+
+# Runtime data
+run-data/
+
+# Generated resources (committed intentionally)
+# src/generated/
