@@ -15,7 +15,9 @@ class Gtetcore {
     companion object {
         const val MODID = "gtetcore"
         const val NAME = "GTETCORE"
-        private val LOGGER: Logger = LogUtils.getLogger()
+
+        @JvmField
+        val LOGGER: Logger = LogUtils.getLogger()
 
         @JvmStatic
         fun id(name: String): ResourceLocation {
@@ -24,7 +26,9 @@ class Gtetcore {
     }
 
     init {
-        DistExecutor.unsafeRunForDist({ Supplier { ClientProxy() } }, { Supplier { CommonProxy() } })
+        DistExecutor.unsafeRunForDist(
+            { Supplier { ClientProxy() } },
+            { Supplier { CommonProxy() } })
     }
 
 }

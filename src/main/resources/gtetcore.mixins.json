@@ -5,7 +5,7 @@
     "refmap": "gtetcore.mixins.refmap.json",
     "minVersion": "0.8",
     "mixins": [
-        "MixinGTBlocks"
+        "MixinFixGTBlocksNpe"
     ],
     "client": [
 

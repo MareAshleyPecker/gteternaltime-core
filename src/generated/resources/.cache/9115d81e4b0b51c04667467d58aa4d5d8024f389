@@ -1,8 +1,3 @@
-// 1.20.1	2026-06-23T23:43:19.1418046	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
-5825da228e64c25e1885c6a9849888f9efdcbfa6 assets/gtetcore/blockstates/machine_coil_cupronickel.json
-fa3ed1840b17a853e846aef1c8067e48c1ee714d assets/gtetcore/lang/en_ud.json
-dbffdc6b3f40b6d13a50ea0baa5a16a0f2827d30 assets/gtetcore/lang/en_us.json
-17049390afc60148c482e99b7c7beae5ccf73ac0 assets/gtetcore/models/block/machine_coil_cupronickel.json
-d3df689dd81b7a1960559fca6c3d4870dc478728 assets/gtetcore/models/item/machine_coil_cupronickel.json
-450c12d493af11f8c9f6a0a6e239861ef2b05d9b data/gtceu/tags/blocks/mineable/pickaxe_or_wrench.json
-68915be8eef5465c841fcc9bf7517eda88acb8fd data/gtetcore/loot_tables/blocks/machine_coil_cupronickel.json
+// 1.20.1	2026-06-24T20:43:23.1034203	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+a7e56f1d76a493966fa15dcf3ded2f36c2f2ae1b assets/gtetcore/lang/en_ud.json
+cbed1af598854786f37aa42a2400d640a7ea7aa8 assets/gtetcore/lang/en_us.json

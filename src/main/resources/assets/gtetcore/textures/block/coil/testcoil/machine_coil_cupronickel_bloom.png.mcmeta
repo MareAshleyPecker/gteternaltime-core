@@ -1,0 +1,9 @@
+{
+    "ldlib": {
+        "connection": "gtetcore:block/coil/testcoil/machine_coil_cupronickel_bloom_ctm",
+        "emissive": true
+    },
+    "shimmer": {
+        "bloom": true
+    }
+}

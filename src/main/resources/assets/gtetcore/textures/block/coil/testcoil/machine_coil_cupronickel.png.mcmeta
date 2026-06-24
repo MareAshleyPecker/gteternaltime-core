@@ -1,0 +1,5 @@
+{
+  "ldlib": {
+    "connection": "gtetcore:block/coil/testcoil/machine_coil_cupronickel_ctm"
+  }
+}

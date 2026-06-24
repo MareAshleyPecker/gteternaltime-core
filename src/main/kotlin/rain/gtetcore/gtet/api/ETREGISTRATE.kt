@@ -28,10 +28,10 @@ import java.util.function.Supplier
 object ETREGISTRATE {
 
     @JvmStatic
-    val ETREGISTRATE: GTRegistrate = GTRegistrate.create(Gtetcore.MODID)
+    val etreg: GTRegistrate = GTRegistrate.create(Gtetcore.MODID)
 
     // ============================================================
-    //  Casing blocks
+    //  外壳方块
     // ============================================================
 
     @JvmStatic
@@ -53,7 +53,7 @@ object ETREGISTRATE {
         properties: NonNullSupplier<out Block>,
         type: Supplier<Supplier<RenderType>>
     ): BlockEntry<Block> {
-        return ETREGISTRATE.block(name, blockSupplier)
+        return etreg.block(name, blockSupplier)
             .initialProperties(properties)
             .properties { p -> p.isValidSpawn { _, _, _, _ -> false } }
             .addLayer(type)
@@ -66,7 +66,7 @@ object ETREGISTRATE {
 
     @JvmStatic
     fun createSidedCasingBlock(name: String, texture: ResourceLocation): BlockEntry<Block> {
-        return ETREGISTRATE.block(name) { Block(it) }
+        return etreg.block(name) { Block(it) }
             .initialProperties { Blocks.IRON_BLOCK }
             .properties { p -> p.isValidSpawn { _, _, _, _ -> false } }
             .blockstate(GTModels.createSidedCasingModel(texture))
@@ -78,7 +78,7 @@ object ETREGISTRATE {
 
     @JvmStatic
     fun createBrickCasingBlock(name: String, texture: ResourceLocation): BlockEntry<Block> {
-        return ETREGISTRATE.block(name) { Block(it) }
+        return etreg.block(name) { Block(it) }
             .initialProperties { Blocks.IRON_BLOCK }
             .properties { p -> p.isValidSpawn { _, _, _, _ -> false } }
             .exBlockstate(GTModels.cubeAllModel(texture))
@@ -94,7 +94,7 @@ object ETREGISTRATE {
         texture: ResourceLocation,
         type: Supplier<Supplier<RenderType>>
     ): BlockEntry<GlassBlock> {
-        return ETREGISTRATE.block(name) { p: BlockBehaviour.Properties -> GlassBlock(p) }
+        return etreg.block(name) { p: BlockBehaviour.Properties -> GlassBlock(p) }
             .initialProperties { Blocks.GLASS }
             .properties { p -> p.isValidSpawn { _, _, _, _ -> false } }
             .addLayer(type)
@@ -106,13 +106,13 @@ object ETREGISTRATE {
     }
 
     // ============================================================
-    //  Machine casing (by tier)
+    //  机器外壳（按等级）
     // ============================================================
 
     @JvmStatic
     fun createMachineCasingBlock(tier: Int): BlockEntry<Block> {
         val tierName = GTValues.VN[tier].lowercase(Locale.ROOT)
-        val entry = ETREGISTRATE
+        val entry = etreg
             .block("${tierName}_machine_casing") { Block(it) }
             .lang("%s Machine Casing".format(GTValues.VN[tier]))
             .initialProperties { Blocks.IRON_BLOCK }
@@ -123,19 +123,19 @@ object ETREGISTRATE {
             .build()
             .register()
         if (!GTCEuAPI.isHighTier() && tier > GTValues.UHV) {
-            ETREGISTRATE.setCreativeTab(entry, null)
+            etreg.setCreativeTab(entry, null)
         }
         return entry
     }
 
     // ============================================================
-    //  Hermetic casing
+    //  密封外壳
     // ============================================================
 
     @JvmStatic
     fun createHermeticCasing(tier: Int): BlockEntry<Block> {
         val tierName = GTValues.VN[tier].lowercase(Locale.ROOT)
-        val entry = ETREGISTRATE
+        val entry = etreg
             .block("${tierName}_hermetic_casing") { Block(it) }
             .lang("Hermetic Casing %s".format(GTValues.LVT[tier]))
             .initialProperties { Blocks.IRON_BLOCK }
@@ -147,18 +147,18 @@ object ETREGISTRATE {
             .build()
             .register()
         if (!GTCEuAPI.isHighTier() && tier > GTValues.UHV) {
-            ETREGISTRATE.setCreativeTab(entry, null)
+            etreg.setCreativeTab(entry, null)
         }
         return entry
     }
 
     // ============================================================
-    //  Steam casing
+    //  蒸汽外壳
     // ============================================================
 
     @JvmStatic
     fun createSteamCasing(name: String, material: String): BlockEntry<Block> {
-        return ETREGISTRATE.block(name) { Block(it) }
+        return etreg.block(name) { Block(it) }
             .initialProperties { Blocks.IRON_BLOCK }
             .blockstate(GTModels.createSteamCasingModel(material))
             .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
@@ -168,13 +168,14 @@ object ETREGISTRATE {
     }
 
     // ============================================================
-    //  Coil block
+    //  线圈方块
     // ============================================================
 
     @JvmStatic
     fun createCoilBlock(coilType: ICoilType): BlockEntry<CoilBlock> {
-        val coilBlock = ETREGISTRATE
-            .block("${coilType.name}_coil_block") { p -> CoilBlock(p, coilType) }
+        val blockName = coilType.getName() + "_coil_block"
+        val coilBlock = etreg
+            .block(blockName) { p -> CoilBlock(p, coilType) }
             .initialProperties { Blocks.IRON_BLOCK }
             .properties { p -> p.isValidSpawn { _, _, _, _ -> false } }
             .addLayer { Supplier { RenderType.cutoutMipped() } }
@@ -188,12 +189,12 @@ object ETREGISTRATE {
     }
 
     // ============================================================
-    //  Battery block
+    //  电池方块
     // ============================================================
 
     @JvmStatic
     fun createBatteryBlock(batteryData: IBatteryData): BlockEntry<BatteryBlock> {
-        val batteryBlock = ETREGISTRATE
+        val batteryBlock = etreg
             .block("${batteryData.batteryName}_battery") { p -> BatteryBlock(p, batteryData) }
             .initialProperties { Blocks.IRON_BLOCK }
             .properties { p -> p.isValidSpawn { _, _, _, _ -> false } }
@@ -207,12 +208,12 @@ object ETREGISTRATE {
     }
 
     // ============================================================
-    //  Fusion casing
+    //  聚变外壳
     // ============================================================
 
     @JvmStatic
     fun createFusionCasing(casingType: IFusionCasingType): BlockEntry<FusionCasingBlock> {
-        val casingBlock = ETREGISTRATE
+        val casingBlock = etreg
             .block(casingType.serializedName) { p -> FusionCasingBlock(p, casingType) }
             .initialProperties { Blocks.IRON_BLOCK }
             .properties { p -> p.strength(5.0f, 10.0f).sound(SoundType.METAL) }
@@ -227,12 +228,12 @@ object ETREGISTRATE {
     }
 
     // ============================================================
-    //  Cleanroom filter
+    //  洁净室过滤器
     // ============================================================
 
     @JvmStatic
     fun createCleanroomFilter(filterType: IFilterType): BlockEntry<Block> {
-        val filterBlock = ETREGISTRATE.block(filterType.serializedName) { Block(it) }
+        val filterBlock = etreg.block(filterType.serializedName) { Block(it) }
             .initialProperties { Blocks.IRON_BLOCK }
             .properties { p -> p.strength(2.0f, 8.0f).sound(SoundType.METAL).isValidSpawn { _, _, _, _ -> false } }
             .blockstate(GTModels.createCleanroomFilterModel(filterType))
@@ -245,12 +246,12 @@ object ETREGISTRATE {
     }
 
     // ============================================================
-    //  Active casing
+    //  活跃外壳
     // ============================================================
 
     @JvmStatic
     fun createActiveCasing(name: String, baseModelPath: String): BlockEntry<ActiveBlock> {
-        return ETREGISTRATE.block(name) { p: BlockBehaviour.Properties -> ActiveBlock(p) }
+        return etreg.block(name) { p: BlockBehaviour.Properties -> ActiveBlock(p) }
             .initialProperties { Blocks.IRON_BLOCK }
             .addLayer { Supplier { RenderType.cutoutMipped() } }
             .blockstate(GTModels.createActiveModel(Gtetcore.id(baseModelPath)))
@@ -262,12 +263,12 @@ object ETREGISTRATE {
     }
 
     // ============================================================
-    //  Firebox casing
+    //  燃烧室外壳
     // ============================================================
 
     @JvmStatic
     fun createFireboxCasing(type: BoilerFireboxType): BlockEntry<ActiveBlock> {
-        val block = ETREGISTRATE
+        val block = etreg
             .block("${type.name()}_casing") { p: BlockBehaviour.Properties -> ActiveBlock(p) }
             .initialProperties { Blocks.IRON_BLOCK }
             .properties { p -> p.isValidSpawn { _, _, _, _ -> false } }

@@ -20,6 +20,7 @@ plugins {
     id 'org.spongepowered.mixin' version '0.7.+'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
     id 'org.jetbrains.kotlin.jvm' version '2.2.0'
+    id 'io.freefair.lombok' version '8.6'
 }
 
 // ================================================================

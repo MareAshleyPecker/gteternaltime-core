@@ -9,7 +9,7 @@ import rain.gtetcore.gtet.common.CommonProxy
 @OnlyIn(Dist.CLIENT)
 open class ClientProxy : CommonProxy() {
     init {
-        @SuppressWarnings("Deprecated")
+        @SuppressWarnings("deprecated")
         val eventBus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
     }
 }
