@@ -11,22 +11,30 @@ import java.util.function.Supplier
 
 /**
  * @author rain fox
+ *
  * */
 @Mod(Gtetcore.MODID)
 class Gtetcore {
 
     companion object {
         const val MODID = "gtetcore"
-        const val NAME = "GTETCORE"
+        const val NAME = "GregTech Eternal Time"
 
         val LOGGER: Logger = LogUtils.getLogger()
 
+        /**
+         * 资源名或者材质路径
+         *
+         * 在resources的assets.gtetcore.textures
+         * */
+        @JvmStatic
         fun id(name: String): ResourceLocation {
             return ResourceLocation.tryBuild(MODID, name)!!
         }
     }
-
-    init { DistExecutor.unsafeRunForDist(
+    //总注册
+    init {
+        DistExecutor.unsafeRunForDist(
         { Supplier { ClientProxy() } },
         { Supplier { CommonProxy() } })
     }

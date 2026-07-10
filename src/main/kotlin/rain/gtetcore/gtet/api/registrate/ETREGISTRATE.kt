@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.api
+package rain.gtetcore.gtet.api.registrate
 
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import rain.gtetcore.gtet.Gtetcore
