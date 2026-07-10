@@ -9,7 +9,7 @@ import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines
 import com.tterrag.registrate.util.entry.RegistryEntry
 import net.minecraft.world.item.CreativeModeTab
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.api.ETREGISTRATE.ETRegistrate
+import rain.gtetcore.gtet.api.registrate.ETREGISTRATE.ETRegistrate
 
 object GTETCreativeModeTabs {
 
