@@ -9,50 +9,44 @@ import com.gregtechceu.gtceu.common.data.machines.GTMultiMachines
 import com.tterrag.registrate.util.entry.RegistryEntry
 import net.minecraft.world.item.CreativeModeTab
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.api.ETREGISTRATE.etreg
+import rain.gtetcore.gtet.api.ETREGISTRATE.ETRegistrate
 
 object GTETCreativeModeTabs {
 
-    @JvmField
-    val MACHINE: RegistryEntry<CreativeModeTab> = etreg
+    val MACHINE: RegistryEntry<CreativeModeTab> = ETRegistrate
         .defaultCreativeTab("machine") { builder ->
             builder
-                .displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator("machine", etreg))
+                .displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator("machine", ETRegistrate))
                 .icon { GTMachines.ELECTROLYZER[GTValues.LV].asStack() }
-                .title(etreg.addLang("itemGroup", Gtetcore.id("machine"), "GTET Machines"))
+                .title(ETRegistrate.addLang("itemGroup", Gtetcore.id("machine"), "GTET Machines"))
                 .build()
         }.register()
 
-    @JvmField
-    val ITEM: RegistryEntry<CreativeModeTab> = etreg
+    val ITEM: RegistryEntry<CreativeModeTab> = ETRegistrate
         .defaultCreativeTab("item") { builder ->
             builder
-                .displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator("item", etreg))
+                .displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator("item", ETRegistrate))
                 .icon { GTItems.BATTERY_HULL_LV.asStack() }
-                .title(etreg.addLang("itemGroup", Gtetcore.id("item"), "GTET Items"))
+                .title(ETRegistrate.addLang("itemGroup", Gtetcore.id("item"), "GTET Items"))
                 .build()
         }.register()
 
-    @JvmField
-    val BLOCK: RegistryEntry<CreativeModeTab> = etreg
+    val BLOCK: RegistryEntry<CreativeModeTab> = ETRegistrate
         .defaultCreativeTab("block") { builder ->
             builder
-                .displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator("block", etreg))
+                .displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator("block", ETRegistrate))
                 .icon { GTBlocks.COIL_NAQUADAH.asStack() }
-                .title(etreg.addLang("itemGroup", Gtetcore.id("block"), "GTET Blocks"))
+                .title(ETRegistrate.addLang("itemGroup", Gtetcore.id("block"), "GTET Blocks"))
                 .build()
         }.register()
 
-    @JvmField
-    val MULTIBLOCK: RegistryEntry<CreativeModeTab> = etreg
+    val MULTIBLOCK: RegistryEntry<CreativeModeTab> = ETRegistrate
         .defaultCreativeTab("multiblock") { builder ->
-            builder
-                .displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator("multiblock", etreg))
+            builder.displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator("multiblock", ETRegistrate))
                 .icon { GTMultiMachines.LARGE_BOILER_BRONZE.asStack() }
-                .title(etreg.addLang("itemGroup", Gtetcore.id("multiblock"), "GTET Multiblocks"))
+                .title(ETRegistrate.addLang("itemGroup", Gtetcore.id("multiblock"), "GTET Multiblocks"))
                 .build()
         }.register()
 
-    @JvmStatic
     fun init() {}
 }

@@ -9,6 +9,9 @@ import rain.gtetcore.gtet.client.ClientProxy
 import rain.gtetcore.gtet.common.CommonProxy
 import java.util.function.Supplier
 
+/**
+ * @author rain fox
+ * */
 @Mod(Gtetcore.MODID)
 class Gtetcore {
 
@@ -16,19 +19,16 @@ class Gtetcore {
         const val MODID = "gtetcore"
         const val NAME = "GTETCORE"
 
-        @JvmField
         val LOGGER: Logger = LogUtils.getLogger()
 
-        @JvmStatic
         fun id(name: String): ResourceLocation {
             return ResourceLocation.tryBuild(MODID, name)!!
         }
     }
 
-    init {
-        DistExecutor.unsafeRunForDist(
-            { Supplier { ClientProxy() } },
-            { Supplier { CommonProxy() } })
+    init { DistExecutor.unsafeRunForDist(
+        { Supplier { ClientProxy() } },
+        { Supplier { CommonProxy() } })
     }
 
 }

@@ -9,7 +9,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.api.ETREGISTRATE
-import rain.gtetcore.gtet.common.config.ETConfig
+import rain.gtetcore.gtet.api.ETREGISTRATE.ETRegistrate
 import rain.gtetcore.gtet.common.data.block.ETBlock
 import rain.gtetcore.gtet.common.material.ETElementMaterials
 import rain.gtetcore.gtet.data.GTETDatagen
@@ -20,13 +20,7 @@ open class CommonProxy {
         @SuppressWarnings("deprecated")
         val eventBus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
         eventBus.register(this)
-
-        Gtetcore.LOGGER.info("===== GTET Init Start =====")
         kotlinInit()
-        Gtetcore.LOGGER.info("===== GTET Init Done  =====")
-
-        @SuppressWarnings("deprecated")
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ETConfig.spec)
     }
 
     @SubscribeEvent
@@ -39,7 +33,7 @@ open class CommonProxy {
     }
 
     private fun kotlinInit() {
-        ETREGISTRATE.etreg.registerRegistrate()
+        ETRegistrate.registerRegistrate()
         GTETCreativeModeTabs.init()
         ETElementMaterials.register()
         ETBlock.init()
