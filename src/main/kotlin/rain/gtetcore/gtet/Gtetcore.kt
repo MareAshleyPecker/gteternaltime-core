@@ -5,14 +5,15 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraftforge.fml.DistExecutor
 import net.minecraftforge.fml.common.Mod
 import org.slf4j.Logger
-import rain.gtetcore.gtet.client.ClientProxy
-import rain.gtetcore.gtet.common.CommonProxy
+import rain.gtetcore.gtet.init.ClientProxy
+import rain.gtetcore.gtet.init.CommonProxy
 import java.util.function.Supplier
 
 /**
- * @author rain fox
+ * GTET Core 主模组类。
  *
- * */
+ * @author rain fox
+ */
 @Mod(Gtetcore.MODID)
 class Gtetcore {
 
@@ -23,20 +24,21 @@ class Gtetcore {
         val LOGGER: Logger = LogUtils.getLogger()
 
         /**
-         * 资源名或者材质路径
+         * 根据名称构建 [ResourceLocation]。
          *
-         * 在resources的assets.gtetcore.textures
-         * */
+         * 用于 `assets/gtetcore/textures/` 下的材质路径，
+         * 或 `assets/gtetcore/` 下的任意资源。
+         */
         @JvmStatic
         fun id(name: String): ResourceLocation {
             return ResourceLocation.tryBuild(MODID, name)!!
         }
     }
-    //总注册
+
     init {
         DistExecutor.unsafeRunForDist(
-        { Supplier { ClientProxy() } },
-        { Supplier { CommonProxy() } })
+            { Supplier { ClientProxy() } },
+            { Supplier { CommonProxy() } }
+        )
     }
-
 }

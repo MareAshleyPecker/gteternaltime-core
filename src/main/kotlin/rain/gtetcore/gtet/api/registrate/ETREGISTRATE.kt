@@ -1,11 +1,5 @@
 package rain.gtetcore.gtet.api.registrate
 
-import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
-import rain.gtetcore.gtet.Gtetcore
+import com.tterrag.registrate.AbstractRegistrate
 
-object ETREGISTRATE {
-
-    @JvmStatic
-    val ETRegistrate: GTRegistrate = GTRegistrate.create(Gtetcore.MODID)
-
-}
+class ETREGISTRATE(modid: String) : AbstractRegistrate<ETREGISTRATE>(modid)

@@ -4,10 +4,10 @@ import com.gregtechceu.gtceu.api.data.chemical.material.Material
 import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags.*
 import com.gregtechceu.gtceu.common.data.GTMaterials
 import com.gregtechceu.gtceu.common.data.materials.ElementMaterials
+import rain.gtetcore.GTET.common.data.ETMaterial.MaterialNAME
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.common.CommonProxy
 import rain.gtetcore.gtet.common.material.ETElementMaterials.sample
-import rain.gtetcore.gtet.common.material.ETMaterial.MaterialNAME
+import rain.gtetcore.gtet.init.CommonProxy
 
 /**
  * 所有标志位均定义在 [com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags] 中，可通过 `MaterialFlags.FLAG_NAME` 调用。
@@ -91,13 +91,13 @@ import rain.gtetcore.gtet.common.material.ETMaterial.MaterialNAME
  */
 object ETElementMaterials {
 
-    fun sample() {//这个是示例
+    /** 示例材料注册方法。参考 [ElementMaterials] 了解完整注册方式。 */
+    fun sample() {
         MaterialNAME = Material.Builder(Gtetcore.id("materialname"))
-            .color(/*any 16EX sum*/0xFFB6C1)
+            .color(0xFFB6C1)
             .ingot().fluid().dust().ore()
             .appendFlags(
                 GTMaterials.EXT2_METAL,
-                GENERATE_DENSE,
                 GENERATE_DENSE,
                 GENERATE_PLATE,
                 GENERATE_BOLT_SCREW,
@@ -110,12 +110,10 @@ object ETElementMaterials {
     }
 
     /**
-     * 初始化在register里，到总线[CommonProxy.kotlinInit]里注册
-     *
-     * 注册请参考 [ElementMaterials]
+     * 在 [CommonProxy] 的事件总线中调用，注册所有自定义材料。
      *
      * @sample sample
-     * */
+     */
     fun register() {
         sample()
     }

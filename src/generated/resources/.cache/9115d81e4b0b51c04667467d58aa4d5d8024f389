@@ -1,3 +1,8 @@
-// 1.20.1	2026-06-24T20:43:23.1034203	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
-a7e56f1d76a493966fa15dcf3ded2f36c2f2ae1b assets/gtetcore/lang/en_ud.json
-cbed1af598854786f37aa42a2400d640a7ea7aa8 assets/gtetcore/lang/en_us.json
+// 1.20.1	2026-07-11T18:11:50.2682745	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+d34c1d47232b77499b80b7de95a2ffcd6f0f02cb assets/gtetcore/blockstates/name_coil_block.json
+ac8f5b2a62b99604f5629e0d848e7015629f4475 assets/gtetcore/lang/en_ud.json
+c99604af43373a717341000cfa93e4375958cecc assets/gtetcore/lang/en_us.json
+ddc420c21556153569bb22b6c3827212af9b9b86 assets/gtetcore/models/block/name_coil_block.json
+f6e741fe3a61cdf685dc65ca5bb92e0a39fdb7de assets/gtetcore/models/item/name_coil_block.json
+d92452d66342179a2592bee9542fb458e7dd2522 data/gtceu/tags/blocks/mineable/pickaxe_or_wrench.json
+9d50b45a4c0b81b1e0105498b7362eb700057afc data/gtetcore/loot_tables/blocks/name_coil_block.json
