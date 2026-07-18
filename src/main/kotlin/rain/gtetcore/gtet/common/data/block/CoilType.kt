@@ -13,11 +13,11 @@ enum class CoilType(
     private val coilTemperature: Int,
     private val level: Int,
     private val energyDiscount: Int,
-    private val material: Material,
+    private val materialSupplier: Supplier<Material>,
     private val texture: ResourceLocation
 ) : StringRepresentable, ICoilType {
 
-    NAME("name", 114514, 1, 1, ETMaterial.MaterialNAME,
+    NAME("name", 114514, 1, 1, Supplier { ETMaterial.MaterialNAME },
         id("block/coil/testcoil/machine_coil_cupronickel")),
 
     ;
@@ -27,7 +27,7 @@ enum class CoilType(
     override fun getLevel(): Int = level
     override fun getEnergyDiscount(): Int = energyDiscount
     override fun getTexture(): ResourceLocation = texture
-    override fun getMaterial(): Material = material
+    override fun getMaterial(): Material = materialSupplier.get()
     override fun getTier(): Int = ordinal
     override fun toString(): String = serializedName
     override fun getSerializedName(): String = serializedName

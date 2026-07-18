@@ -1,12 +1,9 @@
 package rain.gtetcore.gtet.common.material
 
 import com.gregtechceu.gtceu.api.data.chemical.material.Material
-import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags.*
-import com.gregtechceu.gtceu.common.data.GTMaterials
 import com.gregtechceu.gtceu.common.data.materials.ElementMaterials
 import rain.gtetcore.GTET.common.data.ETMaterial.MaterialNAME
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.common.material.ETElementMaterials.sample
 import rain.gtetcore.gtet.init.CommonProxy
 
 /**
@@ -26,7 +23,7 @@ import rain.gtetcore.gtet.init.CommonProxy
  * | `PHOSPHORESCENT` | Material is phosphorescent | 材料具有磷光性 |
  * | `FIRE_RESISTANT` | Material is fire resistant | 材料耐火 |
  *
- * ## 粉/尘类 (DUST) — 需要 PropertyKey.DUST
+ * ## 粉/尘类 (DUST) — 需要 PropertyKey.DUST的key标签
  * | 调用名 | 英文说明 | 中文说明 |
  * |---|---:|---|
  * | `GENERATE_PLATE` | Generate plate recipes | 生成板的合成/加工配方 |
@@ -55,14 +52,14 @@ import rain.gtetcore.gtet.init.CommonProxy
  * | `DISABLE_ALLOY_BLAST` | Disable alloy blast recipes | 禁用合金高炉配方生成 (需要 BLAST + FLUID) |
  * | `DISABLE_ALLOY_PROPERTY` | Disable alloy property entirely | 完全禁用合金属性 (依赖 DISABLE_ALLOY_BLAST) |
  *
- * ## 流体类 (FLUID) — 需要 PropertyKey.FLUID
+ * ## 流体类 (FLUID) — 需要 PropertyKey.FLUID的key标签
  * | 调用名 | 英文说明 | 中文说明 |
  * |---|---:|---|
  * | `SOLDER_MATERIAL` | Material usable as solder | 可用作焊料 |
  * | `SOLDER_MATERIAL_BAD` | Low-quality solder material | 低品质焊料 |
  * | `SOLDER_MATERIAL_GOOD` | High-quality solder material | 高品质焊料 |
  *
- * ## 锭类 (INGOT) — 需要 PropertyKey.INGOT
+ * ## 锭类 (INGOT) — 需要 PropertyKey.INGOT的key标签
  * | 调用名 | 英文说明 | 中文说明 |
  * |---|---:|---|
  * | `GENERATE_FOIL` | Generate foil recipes | 生成箔配方 (依赖 GENERATE_PLATE) |
@@ -75,13 +72,13 @@ import rain.gtetcore.gtet.init.CommonProxy
  * | `GENERATE_ROUND` | Generate round recipes | 生成圆配方 |
  * | `IS_MAGNETIC` | Material is a magnetized form | 标记为磁性材料（某材料的磁化形态） |
  *
- * ## 宝石类 (GEM) — 需要 PropertyKey.GEM
+ * ## 宝石类 (GEM) — 需要 PropertyKey.GEM的key标签
  * | 调用名 | 英文说明 | 中文说明 |
  * |---|---:|---|
  * | `CRYSTALLIZABLE` | Material can be crystallized | 材料可结晶 |
  * | `GENERATE_LENS` | Generate lens recipes | 生成透镜配方 (依赖 GENERATE_PLATE) |
  *
- * ## 矿石类 (ORE) — 需要 PropertyKey.GEM + PropertyKey.ORE
+ * ## 矿石类 (ORE) — 需要 PropertyKey.GEM + PropertyKey.ORE的key标签
  * | 调用名 | 英文说明 | 中文说明 |
  * |---|---:|---|
  * | `HIGH_SIFTER_OUTPUT` | High sifter output for this ore | 矿石在筛分机中高倍产出 |
@@ -96,25 +93,14 @@ object ETElementMaterials {
         MaterialNAME = Material.Builder(Gtetcore.id("materialname"))
             .color(0xFFB6C1)
             .ingot().fluid().dust().ore()
-            .appendFlags(
-                GTMaterials.EXT2_METAL,
-                GENERATE_DENSE,
-                GENERATE_PLATE,
-                GENERATE_BOLT_SCREW,
-                GENERATE_FRAME,
-                GENERATE_GEAR,
-                GENERATE_LONG_ROD,
-            )
             .element(ETElements.MaterialNAME)
             .buildAndRegister()
     }
 
     /**
      * 在 [CommonProxy] 的事件总线中调用，注册所有自定义材料。
-     *
-     * @sample sample
      */
     fun register() {
-        sample()
+        // 在此处注册你的自定义材料，参考 sample()
     }
 }

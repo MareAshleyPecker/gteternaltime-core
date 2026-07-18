@@ -5,7 +5,6 @@ import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent
 import com.gregtechceu.gtceu.api.data.chemical.material.registry.MaterialRegistry
 import com.gregtechceu.gtceu.api.machine.MachineDefinition
-import com.gregtechceu.gtceu.api.recipe.condition.RecipeConditionType
 import net.minecraft.resources.ResourceLocation
 import net.minecraftforge.eventbus.api.IEventBus
 import net.minecraftforge.eventbus.api.SubscribeEvent
@@ -26,14 +25,10 @@ open class CommonProxy {
     private lateinit var materialRegistry: MaterialRegistry
 
     init {
+        @SuppressWarnings("all")
         val bus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
         bus.register(this)
         kotlinInit()
-        bus.addGenericListener(RecipeConditionType::class.java) {
-            _: GTCEuAPI.RegisterEvent<ResourceLocation?, MachineDefinition?> ->
-            ALLMmchine.init()
-            ALLSmahine.init()
-        }
     }
 
     protected fun kotlinInit() {
@@ -54,6 +49,12 @@ open class CommonProxy {
     @SubscribeEvent
     fun registerMaterials(event: MaterialEvent?) {
         ETMaterial.init()
+    }
+
+    @SubscribeEvent
+    fun registerMachines(event: GTCEuAPI.RegisterEvent<ResourceLocation, MachineDefinition>) {
+        ALLMmchine.init()
+        ALLSmahine.init()
     }
 }
 

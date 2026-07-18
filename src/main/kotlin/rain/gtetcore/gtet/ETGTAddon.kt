@@ -9,7 +9,8 @@ import rain.gtetcore.gtet.common.data.item.ETItems
 import rain.gtetcore.gtet.common.material.ETElements
 
 @GTAddon
-object ETGTAddon : IGTAddon {
+@SuppressWarnings("all")
+open class ETGTAddon : IGTAddon {
 
     override fun getRegistrate(): GTRegistrate {
         return OnlyETreg.ETRegistrate
