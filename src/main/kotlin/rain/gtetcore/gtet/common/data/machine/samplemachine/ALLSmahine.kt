@@ -4,7 +4,7 @@ import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 
 /**
- * 单方块机器注册入口。
+ * 单方块机器
  * 所有单方块机器在此初始化并注册到 [GTETCreativeModeTabs.MACHINE] 选项卡。
  */
 object ALLSmahine {

@@ -4,7 +4,7 @@ import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 
 /**
- * 多方块机器注册入口。
+ * 多方块机器
  * 所有多方块机器在此初始化并注册到 [GTETCreativeModeTabs.MULTIBLOCK] 选项卡。
  */
 object ALLMmchine {

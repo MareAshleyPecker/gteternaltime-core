@@ -25,7 +25,7 @@ object ETBlock {
     }
 
     /** 在 [rain.gtetcore.gtet.init.CommonProxy.kotlinInit] 中调用。 */
-    @Suppress("unused")
+    @SuppressWarnings("all")
     fun init() {
         val coilRtMalloy = createCoilBlock(CoilType.NAME)
     }
@@ -34,8 +34,7 @@ object ETBlock {
      * 创建一个线圈方块并注册到 GTCEu 的 [GTCEuAPI.HEATING_COILS] 映射中。
      */
     fun createCoilBlock(coilType: ICoilType): BlockEntry<CoilBlock?> {
-        val coilBlock = ETRegistrate
-            .block("%s_coil_block".format(coilType.name)) { props -> CoilBlock(props, coilType) }
+        val coilBlock = ETRegistrate.block("%s_coil_block".format(coilType.name)) { props -> CoilBlock(props, coilType) }
             .initialProperties(NonNullSupplier { Blocks.IRON_BLOCK })
             .properties { props -> props.isValidSpawn { _, _, _, _ -> false } }
             .addLayer { Supplier { RenderType.cutoutMipped() } }
