@@ -2,13 +2,34 @@ package rain.gtetcore.gtet.init
 
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
-
+import net.minecraftforge.client.event.RegisterClientCommandsEvent
+import net.minecraftforge.common.MinecraftForge
+import net.minecraftforge.eventbus.api.IEventBus
+import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
+import rain.gtetcore.gtet.client.GTETClientCommands
+import rain.gtetcore.gtet.client.StructureOverlayRenderer
 
 /**
- * 客户端专用代理 —— 仅在物理客户端加载。
- * 所有仅客户端需要初始化的逻辑放在此处。
- */
+ * 客户端 Forge 总线监听器（独立类，避免和 mod 总线混用）。 */
+
+
+/** 客户端专用代理。 */
 @OnlyIn(Dist.CLIENT)
 open class ClientProxy : CommonProxy() {
-    init { rain.gtetcore.GTET.client.StructureOverlayRenderer.register() }
+    init {
+        @Suppress("DEPRECATION") val bus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
+        bus.register(this)
+        MinecraftForge.EVENT_BUS.register(ClientForgeEvents)
+        StructureOverlayRenderer.register()
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    object ClientForgeEvents {
+        @SubscribeEvent
+        fun onClientCommands(event: RegisterClientCommandsEvent) {
+            GTETClientCommands.register(event.dispatcher)
+        }
+    }
+
 }

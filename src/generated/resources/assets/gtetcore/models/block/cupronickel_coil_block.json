@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "gtetcore:block/coil/testcoil/machine_coil_cupronickel"
+  }
+}

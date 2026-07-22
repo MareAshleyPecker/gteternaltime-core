@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 // ================================================================
 //  buildscript 和 plugins 块必须在主 build.gradle 中，无法拆分
 // ================================================================
@@ -51,7 +53,40 @@ tasks.named('processResources', ProcessResources).configure {
     }
 }
 
-// 将属性写入 manifest 以在运行时读取的示例。
+// ================================================================
+//  JarJar 内嵌 —— 仅打包阶段运行，提取修改过的 GTM class 嵌入 JAR
+// ================================================================
+
+def modifiedGtmClasses = [
+    'com/gregtechceu/gtceu/api/machine/multiblock/MultiblockControllerMachine',
+    'com/gregtechceu/gtceu/api/machine/feature/multiblock/IMultiController',
+    'com/gregtechceu/gtceu/api/pattern/MultiblockState',
+    'com/gregtechceu/gtceu/api/pattern/MultiblockWorldSavedData',
+    'com/gregtechceu/gtceu/api/pattern/BlockPattern',
+    'com/gregtechceu/gtceu/api/pattern/util/RelativeDirection',
+    'com/gregtechceu/gtceu/common/machine/multiblock/electric/CentralMonitorMachine',
+]
+
+def patchJarName = "gtceu-optimized-${gtm_version}.jar"
+def mavenLocalDir = "${System.properties['user.home']}/.m2/repository/com/gregtechceu/gtceu/gtceu-${mc_version}/${gtm_version}"
+def gtmJarFile = file("${mavenLocalDir}/gtceu-${mc_version}-${gtm_version}.jar")
+def patchDir = layout.buildDirectory.dir("jarjarPatch")
+
+// 从 mavenLocal 的 GTM jar 提取修改过的 class 并打包
+tasks.register('createGtmPatchJar', Jar) {
+    archiveFileName = patchJarName
+    destinationDirectory = patchDir.get()
+    from(zipTree(gtmJarFile)) {
+        modifiedGtmClasses.each { base ->
+            include "${base}.class"
+            include "${base}\$*.class"  // 内部类
+        }
+    }
+    // 只在该任务实际运行时才要求源 jar 存在
+    onlyIf { gtmJarFile.exists() }
+}
+
+// 将 patch jar 嵌入主 jar 的 META-INF/jarjar/
 tasks.named('jar', Jar).configure {
     manifest {
         attributes(["Specification-Title"     : mod_id,
@@ -60,12 +95,21 @@ tasks.named('jar', Jar).configure {
                     "Implementation-Title"    : project.name,
                     "Implementation-Version"  : project.jar.archiveVersion,
                     "Implementation-Vendor"   : mod_authors,
-                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")])
+                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                    "ContainedDeps"           : patchJarName])
     }
 
-    // 这是重新混淆 jar 文件的推荐方法
+    // 在打包时引入 patch jar 到 jarjar 目录
+    from(patchDir.get()) {
+        include "${patchJarName}"
+        into 'META-INF/jarjar'
+    }
+
     finalizedBy 'reobfJar'
 }
+
+// 打包前先生成 patch jar
+tasks.named('jar').configure { dependsOn('createGtmPatchJar') }
 
 // Java 编译使用 UTF-8 编码
 tasks.withType(JavaCompile).configureEach {
@@ -73,9 +117,16 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // Kotlin 编译目标 JVM 17（与 Java toolchain 一致）
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+tasks.withType(KotlinCompile).configureEach {
     kotlinOptions {
         jvmTarget = '17'
     }
+}
+
+// ═══ 便捷任务：data gen → client ═══
+tasks.register('runDataAndClient') {
+    group = 'forge'
+    dependsOn 'runData'
+    finalizedBy 'runClient'
 }
 

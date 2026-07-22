@@ -1,15 +1,15 @@
 {
     "required": true,
-    "package": "rain.gtetcore.GTET.mixin",
+    "package": "rain.gtetcore.gtet.mixin",
     "compatibilityLevel": "JAVA_17",
     "refmap": "gtetcore.mixins.refmap.json",
     "minVersion": "0.8",
     "mixins": [
-      "MixinFixGTBlocksNpe",
-      "MixinGTFluids",
-      "MixinGTMaterialBlocks",
-      "MixinGTMaterialItems",
-      "MixinGTMaterialOreBlocks"
+      "GTM.MixinFixGTBlocksNpe",
+      "GTM.MixinGTFluids",
+      "GTM.MixinGTMaterialBlocks",
+      "GTM.MixinGTMaterialItems",
+      "GTM.MixinGTMaterialOreBlocks"
     ],
     "client": [
 

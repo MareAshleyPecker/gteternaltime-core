@@ -19,32 +19,13 @@ import rain.gtetcore.gtet.common.GTETCreativeModeTabs.ITEM
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs.MACHINE
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs.MULTIBLOCK
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs.ORE
-import rain.gtetcore.gtet.util.lang.TabLangUtil
+import rain.gtetcore.gtet.util.lang.LangUtil
 
-/**
- * GTET 创造模式选项卡定义。
- *
- * 提供 6 个选项卡，分别容纳不同类型的注册内容：
- * - [MACHINE] — 单方块机器
- * - [ITEM] — 物品（材料部件等）
- * - [BLOCK] — 方块（线圈等）
- * - [MULTIBLOCK] — 多方块机器控制器
- * - [FLUID] — 流体容器（桶装流体等）
- * - [ORE] — 矿石方块
- *
- * 所有选项卡通过 [ETRegistrate] 统一注册，中英双语名自动生成。
- *
- * ## 给附属
- * ```kotlin
- * // Kotlin
- * GTETCreativeModeTabs.registerTab(myRegistrate, myModId, "my_tab", { iconStack }, "My Tab", "我的选项卡")
- * ```
- */
 object GTETCreativeModeTabs {
 
     @JvmStatic
     fun registerTab(registrate: GTRegistrate, modId: String, name: String, icon: () -> ItemStack, titleDefault: String, titleCN: String = titleDefault): RegistryEntry<CreativeModeTab> {
-        TabLangUtil.TAB_LANG[name] = titleCN
+        LangUtil.TAB_LANG[name] = titleCN
         return registrate.defaultCreativeTab(name) { builder ->
             builder.displayItems(GTCreativeModeTabs.RegistrateDisplayItemsGenerator(name, registrate))
                 .icon(icon).title(registrate.addLang("itemGroup", ResourceLocation.fromNamespaceAndPath(modId, name), titleDefault)).build()

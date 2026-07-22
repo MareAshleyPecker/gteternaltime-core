@@ -2,7 +2,7 @@ package rain.gtetcore.gtet.common.material
 
 import com.gregtechceu.gtceu.api.data.chemical.material.Material
 import com.gregtechceu.gtceu.common.data.materials.ElementMaterials
-import rain.gtetcore.GTET.common.data.ETMaterial.MaterialNAME
+import rain.gtetcore.gtet.common.data.ETMaterial.MaterialNAME
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.init.CommonProxy
 import rain.gtetcore.gtet.util.lang.cn

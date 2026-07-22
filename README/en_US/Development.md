@@ -80,7 +80,7 @@ Of course, there are still some basic requirements.
 3. Know how to add Gradle dependencies (Gradle scripts are split under the `scripts` folder)
 4. Be able to organize your thoughts and write code
    - Languages: Kotlin / Java
-   - Java is used for writing Mixins (just ask AI to write them if you can't) ([e.g.](../../src/main/java/rain/gtetcore/GTET/mixin/MixinFixGTBlocksNpe.java))
+   - Java is used for writing Mixins (just ask AI to write them if you can't) ([e.g.](../../src/main/java/rain/gtetcore/gtet/mixin/MixinFixGTBlocksNpe.java))
 5. Add comments to key parts — if there are too many, ask AI to add a reference table above the class
 6. <s>Watch your token usage when developing with AI</s>
 

@@ -57,4 +57,8 @@ object ETBlock {
         GTCEuAPI.HEATING_COILS[coilType] = coilBlock as Supplier<CoilBlock>
         return coilBlock
     }
+
+    init {
+        ETRegistrate.creativeModeTab(GTETCreativeModeTabs.BLOCK)
+    }
 }

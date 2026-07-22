@@ -12,4 +12,14 @@ class ElseBuilder<T>(private val condition: Boolean, private val trueValue: T) {
     infix fun or(falseValue: T): T = if (condition) trueValue else falseValue
 }
 
+/**
+ * ```kotlin
+ *  T then Ture or False
+ * ```
+ * is
+ * ```java
+ * T : Ture ? False
+ * ```
+ *
+ * */
 infix fun <T> Boolean.then(trueValue: T): ElseBuilder<T> = ElseBuilder(this, trueValue)

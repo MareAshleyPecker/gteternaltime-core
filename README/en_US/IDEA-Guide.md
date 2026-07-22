@@ -44,9 +44,8 @@ IDEA has built-in Git support — no command line needed for common operations.
 **Before committing:**
 1. **Always pull the latest code before committing your files** (`Ctrl + T`) to avoid overwriting others' work
 2. Push directly to the `main` branch
-   1. Make sure to pull the latest code, commit your files, and resolve any code issues before pushing
-3. If you're unsure whether your code is correct, create a `test` branch first (or push to it if it already exists)
-4. The main author is Chinese — if you're non-Chinese and your code contains English comments, please use AI to translate them into Chinese before committing (except for contributor names and similar identifiers)
+   1. Please make sure to pull the latest code before submitting your files, fix any related code issues (ensure everything is clean), then commit.
+3. The main author is Chinese — if you're non-Chinese and your code contains English comments, please use AI to translate them into Chinese before committing (except for contributor names and similar identifiers)
 
 ### Launching the Minecraft Client
 

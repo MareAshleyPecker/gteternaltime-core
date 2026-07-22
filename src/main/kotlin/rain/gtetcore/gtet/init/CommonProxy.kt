@@ -30,7 +30,7 @@ open class CommonProxy {
     private lateinit var materialRegistry: MaterialRegistry
 
     init {
-        @Suppress("deprecated") val bus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
+        @Suppress("DEPRECATION") val bus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
         bus.register(this)
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this)
         kotlinInit()

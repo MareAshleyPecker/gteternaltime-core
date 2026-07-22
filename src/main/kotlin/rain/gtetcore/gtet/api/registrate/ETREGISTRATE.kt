@@ -3,6 +3,7 @@ package rain.gtetcore.gtet.api.registrate
 import com.gregtechceu.gtceu.api.data.chemical.material.Material
 import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix
+import com.gregtechceu.gtceu.api.item.ComponentItem
 import com.gregtechceu.gtceu.api.item.TagPrefixItem
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.common.data.GTItems
@@ -13,11 +14,11 @@ import com.tterrag.registrate.providers.ProviderType
 import com.tterrag.registrate.util.entry.ItemEntry
 import com.tterrag.registrate.util.nullness.NonNullBiConsumer
 import com.tterrag.registrate.util.nullness.NonNullFunction
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.Item
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.state.BlockBehaviour
-import rain.gtetcore.gtet.util.lang.BlockLangUtil
-import rain.gtetcore.gtet.util.lang.ItemLangUtil
+import rain.gtetcore.gtet.util.lang.LangUtil
 import rain.gtetcore.gtet.util.math.then
 import java.util.function.Supplier
 
@@ -39,7 +40,7 @@ class ETREGISTRATE(modid: String) : GTRegistrate(modid) {
     /**
      * 注册物品并自动生成双语翻译。
      *
-     * 中文名存入 [ItemLangUtil.ITEM_LANG] 供 LangHandler 消费，
+     * 中文名存入 [LangUtil.ITEM_LANG] 供 LangHandler 消费，
      * 英文名通过 [FormattingUtil.toEnglishName] 从 ID 自动推断。
      *
      * ```kotlin
@@ -53,7 +54,7 @@ class ETREGISTRATE(modid: String) : GTRegistrate(modid) {
         cnName: String,
         factory: NonNullFunction<Item.Properties, T>
     ): ItemBuilder<T, GTRegistrate> {
-        ItemLangUtil.ITEM_LANG[name] = cnName
+        LangUtil.ITEM_LANG[name] = cnName
         return super.item(name, factory)
             .lang(FormattingUtil.toEnglishName(name))
     }
@@ -67,9 +68,30 @@ class ETREGISTRATE(modid: String) : GTRegistrate(modid) {
         cnName: String,
         factory: NonNullFunction<Item.Properties, T>
     ): ItemBuilder<T, GTRegistrate> {
-        ItemLangUtil.ITEM_LANG[name] = cnName
+        LangUtil.ITEM_LANG[name] = cnName
         return super.item(name, factory).lang(enName)
     }
+
+    // ======================== 工具辅助注册 ========================
+
+    /**
+     * 批量注册工具物品：键名、(en显示名, cn显示名)。
+     *
+     * ```kotlin
+     * ETRegistrate.toolsHelper(
+     *     "tools_1" to ("Tool One" to "工具一"),
+     *     "tools_2" to ("Tool Two" to "工具二"),
+     * )
+     * ```
+     */
+    fun toolsHelper(vararg entries: Pair<String, Pair<String, String>>): List<ItemEntry<ComponentItem>> =
+        entries.map { (key, langs) ->
+            val (en, cn) = langs
+            itemAndLang(key, en, cn, ComponentItem::create)
+                .properties { p -> p.stacksTo(1) }
+                .model { ctx, prov -> prov.generated(ctx, ResourceLocation.withDefaultNamespace("item/stick")) }
+                .register()
+        }
 
     // ======================== 方块双语注册 ========================
 
@@ -81,7 +103,7 @@ class ETREGISTRATE(modid: String) : GTRegistrate(modid) {
         cnName: String,
         factory: NonNullFunction<BlockBehaviour.Properties, T>
     ): BlockBuilder<T, GTRegistrate> {
-        BlockLangUtil.BLOCK_LANG[name] = cnName
+        LangUtil.BLOCK_LANG[name] = cnName
         return super.block(name, factory)
             .lang(FormattingUtil.toEnglishName(name))
     }
