@@ -15,36 +15,38 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import org.lwjgl.opengl.GL11;
 
 import rain.gtetcore.GTET.common.StructureWriteBehavior;
 
 /**
- * 客户端渲染器：手持结构工具时绘制选区半透明立方体（线框 + 填充面）。
+ * 客户端渲染器：手持结构工具时绘制选区半透明立方体。
+ * 用 @SubscribeEvent + 强引用防止被 GC。
  */
 @OnlyIn(Dist.CLIENT)
 public final class StructureOverlayRenderer {
 
-    private static final float R = 0.2F, G = 0.9F, B = 0.2F;
-    private static final float WIRE_A = 0.9F, FACE_A = 0.15F;
+    // 持有自身引用防止 GC
+    private static final StructureOverlayRenderer INSTANCE = new StructureOverlayRenderer();
 
     public static void register() {
-        MinecraftForge.EVENT_BUS.addListener(StructureOverlayRenderer::onRenderLevelStage);
+        MinecraftForge.EVENT_BUS.register(INSTANCE);
     }
 
-    private static void onRenderLevelStage(RenderLevelStageEvent event) {
+    @SubscribeEvent
+    public void onRender(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) return;
 
         var player = Minecraft.getInstance().player;
         if (player == null) return;
 
-        // 检查主副手
-        var main = player.getMainHandItem();
-        var off  = player.getOffhandItem();
-        var stack = StructureWriteBehavior.isItemStructureWriter(main) ? main
-                  : StructureWriteBehavior.isItemStructureWriter(off)  ? off  : null;
-        if (stack == null) return;
+        var stack = player.getMainHandItem();
+        if (!StructureWriteBehavior.isItemStructureWriter(stack)) {
+            stack = player.getOffhandItem();
+            if (!StructureWriteBehavior.isItemStructureWriter(stack)) return;
+        }
 
         BlockPos[] pos = StructureWriteBehavior.getPos(stack);
         if (pos == null) return;
@@ -73,12 +75,12 @@ public final class StructureOverlayRenderer {
         RenderSystem.lineWidth(2.0F);
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         builder.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR);
-        LevelRenderer.renderLineBox(poseStack, builder, aabb, R, G, B, WIRE_A);
+        LevelRenderer.renderLineBox(poseStack, builder, aabb, 0.2F, 0.9F, 0.2F, 0.9F);
         tessellator.end();
 
-        // 填充面
+        // 半透明面
         builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        addQuads(builder, aabb);
+        fillFaces(builder, aabb);
         tessellator.end();
 
         RenderSystem.lineWidth(1.0F);
@@ -88,27 +90,27 @@ public final class StructureOverlayRenderer {
         poseStack.popPose();
     }
 
-    private static void addQuads(BufferBuilder b, AABB box) {
+    private static void fillFaces(BufferBuilder b, AABB box) {
         double x1 = box.minX, y1 = box.minY, z1 = box.minZ;
         double x2 = box.maxX, y2 = box.maxY, z2 = box.maxZ;
-        float r = R, g = G, bl = B, a = FACE_A;
-        // 6 faces
-        quad(b, x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, r, g, bl, a); // bottom
-        quad(b, x1, y2, z2, x2, y2, z2, x2, y2, z1, x1, y2, z1, r, g, bl, a); // top
-        quad(b, x1, y1, z1, x2, y1, z1, x2, y2, z1, x1, y2, z1, r, g, bl, a); // north
-        quad(b, x2, y1, z2, x1, y1, z2, x1, y2, z2, x2, y2, z2, r, g, bl, a); // south
-        quad(b, x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1, r, g, bl, a); // west
-        quad(b, x2, y2, z1, x2, y2, z2, x2, y1, z2, x2, y1, z1, r, g, bl, a); // east
+        float r = 0.2F, g = 0.9F, bl = 0.2F, a = 0.15F;
+
+        quad(b, x2, y1, z1, x1, y1, z1, x1, y1, z2, x2, y1, z2, r, g, bl, a);
+        quad(b, x1, y2, z2, x2, y2, z2, x2, y2, z1, x1, y2, z1, r, g, bl, a);
+        quad(b, x1, y1, z1, x2, y1, z1, x2, y2, z1, x1, y2, z1, r, g, bl, a);
+        quad(b, x2, y1, z2, x1, y1, z2, x1, y2, z2, x2, y2, z2, r, g, bl, a);
+        quad(b, x1, y1, z2, x1, y1, z1, x1, y2, z1, x1, y2, z2, r, g, bl, a);
+        quad(b, x2, y2, z1, x2, y2, z2, x2, y1, z2, x2, y1, z1, r, g, bl, a);
     }
 
-    private static void quad(BufferBuilder b, double vx1, double vy1, double vz1,
-                             double vx2, double vy2, double vz2,
-                             double vx3, double vy3, double vz3,
-                             double vx4, double vy4, double vz4,
+    private static void quad(BufferBuilder b, double x1, double y1, double z1,
+                             double x2, double y2, double z2,
+                             double x3, double y3, double z3,
+                             double x4, double y4, double z4,
                              float r, float g, float bl, float a) {
-        b.vertex(vx1, vy1, vz1).color(r, g, bl, a).endVertex();
-        b.vertex(vx2, vy2, vz2).color(r, g, bl, a).endVertex();
-        b.vertex(vx3, vy3, vz3).color(r, g, bl, a).endVertex();
-        b.vertex(vx4, vy4, vz4).color(r, g, bl, a).endVertex();
+        b.vertex(x1, y1, z1).color(r, g, bl, a).endVertex();
+        b.vertex(x2, y2, z2).color(r, g, bl, a).endVertex();
+        b.vertex(x3, y3, z3).color(r, g, bl, a).endVertex();
+        b.vertex(x4, y4, z4).color(r, g, bl, a).endVertex();
     }
 }

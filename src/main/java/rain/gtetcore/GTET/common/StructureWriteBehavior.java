@@ -177,12 +177,14 @@ public class StructureWriteBehavior implements IItemUIFactory {
     @SuppressWarnings("all")
     public static boolean isItemStructureWriter(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        // 优先直接用引用比对
-        if (STRUCTURE_TOOLS_ITEM != null && stack.getItem() == STRUCTURE_TOOLS_ITEM) return true;
-        // 回退：检查 components 列表（兼容旧版或异常场景）
-        if (stack.getItem() instanceof ComponentItem item) {
-            return item.getComponents().contains(INSTANCE);
-        }
+        var item = stack.getItem();
+        // 引用比对（最快）
+        if (STRUCTURE_TOOLS_ITEM != null && item == STRUCTURE_TOOLS_ITEM) return true;
+        // registry 名比对（最可靠）
+        var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);
+        if (key != null && "gtetcore".equals(key.getNamespace()) && "structure_tools".equals(key.getPath())) return true;
+        // components 回退
+        if (item instanceof ComponentItem ci) return ci.getComponents().contains(INSTANCE);
         return false;
     }
 
