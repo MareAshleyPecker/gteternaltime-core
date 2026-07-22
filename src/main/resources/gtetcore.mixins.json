@@ -5,7 +5,11 @@
     "refmap": "gtetcore.mixins.refmap.json",
     "minVersion": "0.8",
     "mixins": [
-        "MixinFixGTBlocksNpe"
+      "MixinFixGTBlocksNpe",
+      "MixinGTFluids",
+      "MixinGTMaterialBlocks",
+      "MixinGTMaterialItems",
+      "MixinGTMaterialOreBlocks"
     ],
     "client": [
 

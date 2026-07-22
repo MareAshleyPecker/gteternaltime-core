@@ -1,9 +1,12 @@
 package rain.gtetcore.gtet.api.registrate
 
-import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import rain.gtetcore.gtet.Gtetcore.Companion.MODID
 
+/**
+ * 全局 [ETREGISTRATE] 单例持有者。
+ * @see ETREGISTRATE GTET 增强版注册器
+ */
 object OnlyETreg {
-    @JvmStatic
-    val ETRegistrate : GTRegistrate = GTRegistrate.create(MODID)
+    /** 模组唯一的 ETREGISTRATE 实例。 */
+    val ETRegistrate: ETREGISTRATE = ETREGISTRATE(MODID)
 }

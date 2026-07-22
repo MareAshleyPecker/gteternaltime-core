@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.common.data.materials.ElementMaterials
 import rain.gtetcore.GTET.common.data.ETMaterial.MaterialNAME
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.init.CommonProxy
+import rain.gtetcore.gtet.util.lang.cn
 
 /**
  * 所有标志位均定义在 [com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags] 中，可通过 `MaterialFlags.FLAG_NAME` 调用。
@@ -92,6 +93,7 @@ object ETElementMaterials {
     fun sample() {
         MaterialNAME = Material.Builder(Gtetcore.id("materialname"))
             .color(0xFFB6C1)
+            .cn("示例材料")
             .ingot().fluid().dust().ore()
             .element(ETElements.MaterialNAME)
             .buildAndRegister()
@@ -101,6 +103,6 @@ object ETElementMaterials {
      * 在 [CommonProxy] 的事件总线中调用，注册所有自定义材料。
      */
     fun register() {
-        // 在此处注册你的自定义材料，参考 sample()
+        sample()
     }
 }

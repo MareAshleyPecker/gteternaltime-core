@@ -5,6 +5,8 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraftforge.fml.DistExecutor
 import net.minecraftforge.fml.common.Mod
 import org.slf4j.Logger
+import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
+import rain.gtetcore.gtet.data.GTETDatagen
 import rain.gtetcore.gtet.init.ClientProxy
 import rain.gtetcore.gtet.init.CommonProxy
 import java.util.function.Supplier
@@ -21,6 +23,7 @@ class Gtetcore {
         const val MODID = "gtetcore"
         const val NAME = "GregTech Eternal Time"
 
+        @JvmField
         val LOGGER: Logger = LogUtils.getLogger()
 
         /**
@@ -36,6 +39,11 @@ class Gtetcore {
     }
 
     init {
+        // 在 mod 构造阶段挂载 LangHandler 到 Registrate LANG provider（en_us）
+        // 必须先 registerRegistrate 注册事件监听器（含 GatherDataEvent），再 addDataGenerator
+        // 参照 GTCEu CommonProxy.init()：registerRegistrate() → initPost()
+        ETRegistrate.registerRegistrate()
+        GTETDatagen.initRegistrate()
         DistExecutor.unsafeRunForDist(
             { Supplier { ClientProxy() } },
             { Supplier { CommonProxy() } }

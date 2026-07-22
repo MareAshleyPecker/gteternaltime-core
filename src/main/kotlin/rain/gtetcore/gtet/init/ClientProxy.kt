@@ -2,8 +2,7 @@ package rain.gtetcore.gtet.init
 
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
-import net.minecraftforge.eventbus.api.IEventBus
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
+
 
 /**
  * 客户端专用代理 —— 仅在物理客户端加载。
@@ -11,9 +10,5 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
  */
 @OnlyIn(Dist.CLIENT)
 open class ClientProxy : CommonProxy() {
-
-    init {
-        @Suppress("DEPRECATION")
-        val bus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
-    }
+    init { rain.gtetcore.GTET.client.StructureOverlayRenderer.register() }
 }
