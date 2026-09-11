@@ -224,62 +224,84 @@ public class StructureWriteBehavior implements IItemUIFactory {
         tag.putString("dir", dir.getName());
     }
 
+    /** 选区对外接口：返回 {最小角, 最大角}。渲染/导出/GUI 都只吃这一对，"起点/终点"只在本类内部存在。 */
     public static BlockPos[] getPos(ItemStack stack) {
         CompoundTag root = stack.getTag();
         if (root == null || !root.contains("structure_writer", 10)) return null;
-        CompoundTag tag = root.getCompound("structure_writer");
-        if (!tag.contains("minX")) return null;
+        BlockPos[] corners = readCorners(root.getCompound("structure_writer"));
+        if (corners == null) return null;
+
+        BlockPos a = corners[0], b = corners[1];
         return new BlockPos[] {
-                new BlockPos(tag.getInt("minX"), tag.getInt("minY"), tag.getInt("minZ")),
-                new BlockPos(tag.getInt("maxX"), tag.getInt("maxY"), tag.getInt("maxZ"))
+                new BlockPos(Math.min(a.getX(), b.getX()), Math.min(a.getY(), b.getY()), Math.min(a.getZ(), b.getZ())),
+                new BlockPos(Math.max(a.getX(), b.getX()), Math.max(a.getY(), b.getY()), Math.max(a.getZ(), b.getZ()))
         };
     }
 
     /**
-     * 把点击位置并入选区 —— <b>既能扩大，也能缩小</b>。
-     *
-     * <p>选区始终由一对对角（min 角 / max 角）确定。右键时比较点击点到这两个角的距离，
-     * 把<b>更近的那个角挪到点击处</b>，再按两个角重新取包围盒：
-     *
-     * <ul>
-     *   <li>还没有选区：两个角都落在点击处（零体积），第二下自然拉出矩形；</li>
-     *   <li>点在选区外面：近角被拉出去 → 选区变大（就是以前那种"加"）；</li>
-     *   <li>点在选区里面 / 贴着某条边：近角被收回来 → 选区变小（以前只有"加"、没法"减"）；</li>
-     *   <li>想推倒重来：Shift+右键方块（或 Shift+右键空气）清空选区。</li>
-     * </ul>
-     *
-     * <p>NBT 结构没变（还是 min/max 六个整数），旧选区照旧读得出来。
+     * 读出一对<b>有序</b>角：{起点, 终点}；没有选区返回 null。
+     * ⚠️ 旧存档只有 min/max，丢了"谁是起点"，所以兼容取 min 角当起点、max 角当终点（只读，不再写回）。
+     */
+    private static BlockPos[] readCorners(CompoundTag tag) {
+        if (tag.contains("startX") && tag.contains("endX")) {
+            return new BlockPos[] {
+                    new BlockPos(tag.getInt("startX"), tag.getInt("startY"), tag.getInt("startZ")),
+                    new BlockPos(tag.getInt("endX"), tag.getInt("endY"), tag.getInt("endZ"))
+            };
+        }
+        // 旧格式坐标，只读兼容
+        if (tag.contains("minX")) {
+            return new BlockPos[] {
+                    new BlockPos(tag.getInt("minX"), tag.getInt("minY"), tag.getInt("minZ")),
+                    new BlockPos(tag.getInt("maxX"), tag.getInt("maxY"), tag.getInt("maxZ"))
+            };
+        }
+        return null;
+    }
+
+    /**
+     * 把点击位置并入选区：<b>起点定死，只动对角终点</b>（往外点变大、往内点变小）。
+     * 第一下建立起点（终点 = 起点，零体积），第二下起形成/调整矩形；
+     * 旧格式选区读出来是起点=min、终点=max，所以旧存档的第一次右键也直接按新语义走。
      */
     public static void addPos(ItemStack stack, BlockPos pos) {
         CompoundTag tag = stack.getOrCreateTagElement("structure_writer");
 
-        // 还没有选区：两个角都放在这里
-        if (!tag.contains("minX")) {
+        BlockPos[] corners = readCorners(tag);
+        // 还没有选区：起点与终点都落在点击处
+        if (corners == null) {
             writeCorners(tag, pos, pos);
             return;
         }
-
-        BlockPos min = new BlockPos(tag.getInt("minX"), tag.getInt("minY"), tag.getInt("minZ"));
-        BlockPos max = new BlockPos(tag.getInt("maxX"), tag.getInt("maxY"), tag.getInt("maxZ"));
-
-        // 距离一样时（例如刚点完第一下，两个角重合）动 min 角，
-        // 这样"第一下 → 第二下"正好形成两个对角，和直觉一致
-        boolean moveMin = pos.distSqr(min) <= pos.distSqr(max);
-        writeCorners(tag, moveMin ? pos : min, moveMin ? max : pos);
+        // 起点不动，只把终点挪到点击处
+        writeCorners(tag, corners[0], pos);
     }
 
-    /** 用两个角（先后顺序无所谓）写出选区的 min / max 六个整数。 */
-    private static void writeCorners(CompoundTag tag, BlockPos a, BlockPos b) {
-        tag.putInt("minX", Math.min(a.getX(), b.getX()));
-        tag.putInt("maxX", Math.max(a.getX(), b.getX()));
-        tag.putInt("minY", Math.min(a.getY(), b.getY()));
-        tag.putInt("maxY", Math.max(a.getY(), b.getY()));
-        tag.putInt("minZ", Math.min(a.getZ(), b.getZ()));
-        tag.putInt("maxZ", Math.max(a.getZ(), b.getZ()));
+    /** 写入起点/终点两个角：只写新键并清掉旧键，避免新旧两套坐标同时存在产生歧义。 */
+    private static void writeCorners(CompoundTag tag, BlockPos start, BlockPos end) {
+        tag.putInt("startX", start.getX());
+        tag.putInt("startY", start.getY());
+        tag.putInt("startZ", start.getZ());
+        tag.putInt("endX", end.getX());
+        tag.putInt("endY", end.getY());
+        tag.putInt("endZ", end.getZ());
+
+        clearLegacyCorners(tag);
     }
 
     public static void removePos(ItemStack stack) {
         CompoundTag tag = stack.getOrCreateTagElement("structure_writer");
+        tag.remove("startX");
+        tag.remove("startY");
+        tag.remove("startZ");
+        tag.remove("endX");
+        tag.remove("endY");
+        tag.remove("endZ");
+        clearLegacyCorners(tag);
+    }
+
+    /** 清掉旧格式（min/max）遗留的六个键，保证新旧两套坐标不会同时存在。 */
+    private static void clearLegacyCorners(CompoundTag tag) {
         tag.remove("minX");
         tag.remove("maxX");
         tag.remove("minY");

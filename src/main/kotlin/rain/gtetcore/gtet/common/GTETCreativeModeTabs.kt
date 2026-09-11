@@ -32,12 +32,12 @@ object GTETCreativeModeTabs {
         }.register()
     }
 
-    @JvmField val MACHINE: RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "machine", { GTMachines.ELECTROLYZER[GTValues.LV].asStack() }, "GTET Machines", "GTET 机器")
-    @JvmField val ITEM: RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "item", { GTItems.BATTERY_HULL_LV.asStack() }, "GTET Items", "GTET 物品")
-    @JvmField val BLOCK: RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "block", { GTBlocks.COIL_NAQUADAH.asStack() }, "GTET Blocks", "GTET 方块")
-    @JvmField val MULTIBLOCK: RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "multiblock", { GTMultiMachines.LARGE_BOILER_BRONZE.asStack() }, "GTET Multiblocks", "GTET 多方块")
-    @JvmField val FLUID: RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "fluid", { net.minecraft.world.item.Items.WATER_BUCKET.defaultInstance }, "GTET Fluids", "GTET 流体")
-    @JvmField val ORE: RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "ore", { net.minecraft.world.item.Items.DIAMOND_ORE.defaultInstance }, "GTET Ores", "GTET 矿石")
+    @JvmField val MACHINE:      RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "machine"    , { GTMachines.ELECTROLYZER[GTValues.LV].asStack() }                , "GTET Machines"   , "GTET 机器")
+    @JvmField val ITEM:         RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "item"       , { GTItems.BATTERY_HULL_LV.asStack() }                             , "GTET Items"      , "GTET 物品")
+    @JvmField val BLOCK:        RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "block"      , { GTBlocks.COIL_NAQUADAH.asStack() }                              , "GTET Blocks"     , "GTET 方块")
+    @JvmField val MULTIBLOCK:   RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "multiblock" , { GTMultiMachines.LARGE_BOILER_BRONZE.asStack() }                 , "GTET Multiblocks", "GTET 多方块")
+    @JvmField val FLUID:        RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "fluid"      , { net.minecraft.world.item.Items.WATER_BUCKET.defaultInstance }   , "GTET Fluids"     , "GTET 流体")
+    @JvmField val ORE:          RegistryEntry<CreativeModeTab> = registerTab(ETRegistrate, Gtetcore.MODID, "ore"        , { net.minecraft.world.item.Items.DIAMOND_ORE.defaultInstance }    , "GTET Ores"       , "GTET 矿石")
 
     fun init() {}
 }

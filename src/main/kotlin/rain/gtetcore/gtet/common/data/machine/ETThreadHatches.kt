@@ -85,7 +85,7 @@ object ETThreadHatches {
      * 「线程数」始终是「并行数」量级往上的东西（UV 是 4 线程 vs 4 并行，同量级但语义不同）。
      */
     val VARIANTS: List<ThreadHatchVariant> = listOf(
-        ThreadHatchVariant("thread_hatch_uv", GTValues.UV),
+        ThreadHatchVariant("thread_hatch_uv" , GTValues.UV),
         ThreadHatchVariant("thread_hatch_uhv", GTValues.UHV),
         ThreadHatchVariant("thread_hatch_uev", GTValues.UEV),
         ThreadHatchVariant("thread_hatch_uiv", GTValues.UIV),

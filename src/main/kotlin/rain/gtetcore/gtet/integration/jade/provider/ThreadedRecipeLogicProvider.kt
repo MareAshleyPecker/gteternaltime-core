@@ -3,6 +3,7 @@ package rain.gtetcore.gtet.integration.jade.provider
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine
 import com.gregtechceu.gtceu.utils.FormattingUtil
+import net.minecraft.ChatFormatting
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
 import net.minecraft.nbt.Tag
@@ -16,42 +17,38 @@ import snownee.jade.api.IBlockComponentProvider
 import snownee.jade.api.IServerDataProvider
 import snownee.jade.api.ITooltip
 import snownee.jade.api.config.IPluginConfig
+import snownee.jade.api.ui.BoxStyle
 
 /**
  * GTET 自己的 Jade provider：把**多线程配方逻辑**的整机线程状态摆到提示里。
  *
- * 显示三件事（都能在同一台机器上同时看到，不再像 GTM 那样只报一条配方的数字）：
- * 1. `线程 256（在用 3）` —— 线程数上限与**正在跑几条**，这一行就是「线程真的开了」的直接证据；
- * 2. `同时处理 N 次配方运行` —— 整机口径，= Σ 各线程 `getTotalRuns()`
- *    （`parallels × subtickParallels × batchParallels`，见 [ThreadedRecipeLogic.runningTotalRuns]）；
- * 3. 逐线程明细（最多 [SAMPLE_LIMIT] 条）：`线程 #0：<配方 id>（45%）`。
+ * 显示：`线程 256（在用 5）` + 整机「同时处理 N 次配方运行」+ 逐**配方组**一行
+ * （绿色进度条 + 该组所有线程加起来的产出物与数量）。组的定义与合并规则见 [ThreadedRecipeStatus]。
  *
  * ## 为什么必须自己写一个 provider
- * GTM 的 `com.gregtechceu.gtceu.integration.jade.provider.ParallelProvider` 读的是
- * `recipeLogic.getLastRecipe()`，口径是**单个配方对象**的运行次数；而线程数（同时跑几种不同配方）
- * 是**机器级**的量，两者相乘才是整机吞吐 —— GTM 那个提示结构上装不下线程数，
- * 所以实机上装了 256 线程仓也只显示「3200 个配方」。本 provider 补的就是这一层。
+ * GTM 的 `ParallelProvider` / `RecipeOutputProvider` 读的都是 `recipeLogic.getLastRecipe()` —— **单个配方对象**，
+ * 而线程数是**机器级**的量（线程条数 ≥ 配方种数：同一种配方可以占多条线程），GTM 那个提示结构上装不下。
  *
- * ## 服务端/客户端分工（Jade 的标准写法，照 GTM 的 provider 抄形状）
- * - [appendServerData] 在**服务端**跑：此时能读到真的线程表（它不是 `@DescSynced`，
- *   客户端拿到的是空表），把数字与最多 [SAMPLE_LIMIT] 条明细写进 NBT；
- * - [appendTooltip] 在**客户端**跑：只读 NBT 拼文本，所以这里**不碰**任何服务端对象。
+ * ## 服务端/客户端分工（Jade 的标准写法）
+ * [appendServerData] 在**服务端**跑（此时才读得到真的线程表，它不是 `@DescSynced`），把数字与最多
+ * [GROUP_LIMIT] 条组行写进 NBT；[appendTooltip] 在**客户端**跑，只读 NBT 拼文本，不碰服务端对象。
+ * 两边共用 [ThreadedRecipeStatus] 的语言键与产物文本构造。
  *
- * 两边的语言键都取自 [ThreadedRecipeStatus]（UI 与 Jade 共用同一批键，改文案只改一处）。
- * 另外，**本 provider 自己还额外需要一条 Jade 的配置键**（`config.jade.plugin_gtetcore.threaded_recipe_logic`，
- * Jade 在 dev 环境缺它会直接断言崩溃）—— 登记在 [rain.gtetcore.gtet.integration.jade.GTETJadeLang] 里。
+ * ## ⚠️ 与 GTM 自带「单配方进度条」的关系
+ * 装了线程仓（线程上限 > 1）的机器上，GTM 的 `WorkableBlockProvider` 那条「4 / 5 s」进度条已经被
+ * `MixinWorkableProgressBar` 取消（它反映的是基类那几个单配方字段，多线程下没有意义），
+ * 由本 provider 的逐组绿色进度条接管；没装线程仓的机器照旧显示 GTM 那条。
  *
  * ## 没有线程仓的机器不显示
- * `线程上限 ≤ 1` 直接返回：那种机器（所有 GTM 原版机器 + 没装线程仓的 GTET 多方块）
- * 根本没有线程概念，多一行只会是噪音。
+ * 线程上限 ≤ 1 直接返回（连 NBT 都不写）：那种机器（GTM 原版机器 + 没装线程仓的 GTET 多方块）
+ * 没有线程概念，多几行只是噪音。
  *
  * ## 思路来源
- * - 【借鉴形状】GTM 7.5.3 的 `ParallelProvider` / `RecipeLogicProvider`（都在
- *   `com.gregtechceu.gtceu.integration.jade.provider`，随 GTM 源码分发）：借「`IBlockComponentProvider` +
- *   `IServerDataProvider<BlockAccessor>` 双接口一个类」与「服务端写 NBT、客户端读 NBT」这套分工；
- *   它们只处理单个配方的数字，线程口径是本 provider 自己定的。
- * - 【自研】NBT 键名与「上限 / 在用 / 合计 / 明细」这四个字段的取舍，以及明细条数的上限
- *   （见 [SAMPLE_LIMIT] 的说明）。
+ * - 【借鉴形状】GTM 7.5.3 的 `ParallelProvider` / `RecipeLogicProvider` / `WorkableBlockProvider`：
+ *   借「`IBlockComponentProvider` + `IServerDataProvider` 双接口一个类」、「服务端写 NBT、客户端读 NBT」、
+ *   以及 `IElementHelper#progress(...)` 画进度条的用法。
+ * - 【自研】NBT 键名与「上限 / 在用 / 合计 / 逐组明细 + 每组产物」这套字段取舍，以及
+ *   [ThreadedRecipeStatus.OutputSnapshot] 那种「只传物品翻译键、名字交给客户端解析」的做法。
  *
  * @author rain fox
  */
@@ -63,16 +60,32 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         // 没装线程仓的机器不参与显示（理由见类 KDoc），连 NBT 都不写，客户端据此直接跳过
         if (limit <= 1) return
 
-        data.putInt(TAG_LIMIT, limit)
+        data.putInt(NBT_LIMIT, limit)
         data.putInt(TAG_RUNNING, logic.runningThreadCount)
         data.putLong(TAG_TOTAL_RUNS, logic.runningTotalRuns)
 
+        val page = ThreadedRecipeStatus.groupSnapshots(logic, GROUP_LIMIT)
+        data.putInt(TAG_GROUPS, page.totalGroups)
+
         val list = ListTag()
-        for ((slot, rec) in logic.runningThreadSlots.take(SAMPLE_LIMIT)) {
+        for (group in page.groups) {
             val entry = CompoundTag()
-            entry.putInt(TAG_SLOT, slot)
-            entry.putString(TAG_RECIPE, rec.recipe.id?.toString() ?: "?")
-            entry.putInt(TAG_PERCENT, rec.percent)
+            entry.putInt(TAG_SLOT, group.slot)
+            entry.putInt(TAG_GROUP_THREADS, group.threadCount)
+            entry.putInt(TAG_PROGRESS, group.progress)
+            entry.putInt(TAG_DURATION, group.duration)
+            entry.putString(TAG_RECIPE, group.recipeLabel)
+            entry.putInt(TAG_HIDDEN_KINDS, group.hiddenKinds)
+            val outputs = ListTag()
+            for (output in group.outputs) {
+                val outputTag = CompoundTag()
+                outputTag.putString(TAG_OUT_ITEM, output.descId)
+                outputTag.putLong(TAG_OUT_MIN, output.min)
+                outputTag.putLong(TAG_OUT_MAX, output.max)
+                outputTag.putBoolean(TAG_OUT_CHANCED, output.chanced)
+                outputs.add(outputTag)
+            }
+            entry.put(TAG_OUTPUTS, outputs)
             list.add(entry)
         }
         data.put(TAG_THREADS, list)
@@ -80,9 +93,9 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
 
     override fun appendTooltip(tooltip: ITooltip, accessor: BlockAccessor, config: IPluginConfig) {
         val data = accessor.serverData
-        if (!data.contains(TAG_LIMIT)) return
+        if (!data.contains(NBT_LIMIT)) return
 
-        val limit = data.getInt(TAG_LIMIT)
+        val limit = data.getInt(NBT_LIMIT)
         val running = data.getInt(TAG_RUNNING)
         tooltip.add(Component.translatable(ThreadedRecipeStatus.LANG_STATUS, limit, running))
         if (running <= 0) return
@@ -94,23 +107,61 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
             )
         )
 
+        val helper = tooltip.elementHelper
         val list = data.getList(TAG_THREADS, Tag.TAG_COMPOUND.toInt())
         for (i in 0 until list.size) {
             val entry = list.getCompound(i)
+            val progress = entry.getInt(TAG_PROGRESS)
+            val duration = entry.getInt(TAG_DURATION)
+            // 组行 = 绿色进度条（条内文字沿用 GTM 的白字，绿底绿字看不清）+ 紧跟其后的绿字产出
             tooltip.add(
+                helper.progress(
+                    if (duration <= 0) 0f else (progress.toFloat() / duration).coerceIn(0f, 1f),
+                    Component.translatable(ThreadedRecipeStatus.LANG_PROGRESS, progress, duration),
+                    helper.progressStyle().color(PROGRESS_BAR_ARGB).textColor(-1),
+                    BoxStyle.DEFAULT,
+                    true
+                )
+            )
+            tooltip.append(
                 Component.translatable(
-                    ThreadedRecipeStatus.LANG_LINE,
+                    ThreadedRecipeStatus.LANG_OUTPUTS,
                     entry.getInt(TAG_SLOT),
-                    entry.getString(TAG_RECIPE),
-                    "${entry.getInt(TAG_PERCENT)}%"
+                    ThreadedRecipeStatus.outputsText(readOutputs(entry), entry.getInt(TAG_HIDDEN_KINDS))
+                ).withStyle(ChatFormatting.GREEN).append(
+                    Component.translatable(
+                        ThreadedRecipeStatus.LANG_GROUP_META,
+                        entry.getString(TAG_RECIPE),
+                        entry.getInt(TAG_GROUP_THREADS)
+                    ).withStyle(ChatFormatting.GREEN)
                 )
             )
         }
-        if (running > list.size) {
-            tooltip.add(
-                Component.translatable(ThreadedRecipeStatus.LANG_MORE, running - list.size, list.size)
+
+        // 明细只写到 GROUP_LIMIT 条组，多出来的组用一行交代过去（载荷大小见 GROUP_LIMIT 的说明）
+        val groups = data.getInt(TAG_GROUPS)
+        if (groups > list.size) {
+            tooltip.add(Component.translatable(ThreadedRecipeStatus.LANG_MORE, groups - list.size, list.size))
+        }
+    }
+
+    /** 客户端按 NBT 重建产物条目（只带物品翻译键与数量，名字由客户端按自己的语言解析）。 */
+    private fun readOutputs(entry: CompoundTag): List<ThreadedRecipeStatus.OutputSnapshot> {
+        val list = entry.getList(TAG_OUTPUTS, Tag.TAG_COMPOUND.toInt())
+        if (list.isEmpty()) return emptyList()
+        val outputs = ArrayList<ThreadedRecipeStatus.OutputSnapshot>(list.size)
+        for (i in 0 until list.size) {
+            val output = list.getCompound(i)
+            outputs.add(
+                ThreadedRecipeStatus.OutputSnapshot(
+                    output.getString(TAG_OUT_ITEM),
+                    output.getLong(TAG_OUT_MIN),
+                    output.getLong(TAG_OUT_MAX),
+                    output.getBoolean(TAG_OUT_CHANCED)
+                )
             )
         }
+        return outputs
     }
 
     override fun getUid(): ResourceLocation = Gtetcore.id(UID_PATH)
@@ -135,20 +186,44 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         const val UID_PATH: String = "threaded_recipe_logic"
 
         /**
-         * 明细最多列几条线程。
+         * 本 provider 写在 Jade `serverData` **根**上的线程数上限。
          *
-         * Jade 提示是**跟着准星走**的悬浮框，行数一多会盖住半个屏幕；线程数上限能到 256，
-         * 全列出来既没用又挡视线。取 6 —— 足够看出「好几条线程各跑各的配方、各自进度不同」
-         * （这正是「线程生效」的观感证据），不够的部分由 [ThreadedRecipeStatus.LANG_MORE] 一行交代。
+         * 公开是为了让 `MixinWorkableProgressBar` 也能读到它 —— 服务端算出来的这个值比客户端现扫
+         * `getParts()` 更可靠（客户端部件表万一还没同步到，现扫会拿到「没装线程仓」）。
          */
-        private const val SAMPLE_LIMIT: Int = 6
+        const val NBT_LIMIT: String = "gtet_thread_limit"
 
-        private const val TAG_LIMIT: String = "gtet_thread_limit"
+        /**
+         * 本 provider 的绿色进度条填充色（ARGB）。
+         *
+         * 取 `0xFF4CBB17` 而不是纯绿：它就是 GTM `WorkableBlockProvider` 里「机器在跑」那条进度条的绿，
+         * 玩家看起来与别的 GT 机器是同一套观感；文字用 `ChatFormatting.GREEN`（`0xFF55FF55`），
+         * 比条上那种深绿更亮、在 Jade 的深色背景上更清楚。
+         */
+        private val PROGRESS_BAR_ARGB: Int = 0xFF4CBB17.toInt()
+
+        /**
+         * 明细最多列几条**配方组**（合并后的一行算一条）。
+         *
+         * ⚠️ 用户硬性要求 ≤ 6：Jade 提示是跟着准星走的悬浮框，行数一多会盖住半个屏幕，而线程条数上限能到 256。
+         * 6 行足够看出「多条线程各跑各的、产出各是多少」；不够的部分由 [ThreadedRecipeStatus.LANG_MORE] 一行交代。
+         */
+        private const val GROUP_LIMIT: Int = 6
+
         private const val TAG_RUNNING: String = "gtet_thread_running"
         private const val TAG_TOTAL_RUNS: String = "gtet_thread_total_runs"
+        private const val TAG_GROUPS: String = "gtet_thread_groups"
         private const val TAG_THREADS: String = "gtet_thread_list"
         private const val TAG_SLOT: String = "slot"
+        private const val TAG_GROUP_THREADS: String = "threads"
+        private const val TAG_PROGRESS: String = "progress"
+        private const val TAG_DURATION: String = "duration"
         private const val TAG_RECIPE: String = "recipe"
-        private const val TAG_PERCENT: String = "percent"
+        private const val TAG_HIDDEN_KINDS: String = "hidden_kinds"
+        private const val TAG_OUTPUTS: String = "outputs"
+        private const val TAG_OUT_ITEM: String = "item"
+        private const val TAG_OUT_MIN: String = "min"
+        private const val TAG_OUT_MAX: String = "max"
+        private const val TAG_OUT_CHANCED: String = "chanced"
     }
 }

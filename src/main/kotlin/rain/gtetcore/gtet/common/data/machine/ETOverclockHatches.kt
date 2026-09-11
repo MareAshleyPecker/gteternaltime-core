@@ -76,19 +76,6 @@ object ETOverclockHatches {
      * 全部超频仓变体。
      *
      * 每级超频的收益固定是「耗时 ÷S、EUt ×(E×S)」，所以表中 EUt/级 那一列的来历就是 `E × S`：
-     *
-     * | id | S | E | 耗时/级 | EUt/级 | tier | 定位 |
-     * |---|---|---|---|---|---|---|
-     * | `overclock_hatch_8x_lossy4`  | 8  | 4.0 | ÷8  | ×32 | IV  | 最便宜、最费电 |
-     * | `overclock_hatch_8x_lossy2`  | 8  | 2.0 | ÷8  | ×16 | LuV | 折中 |
-     * | `overclock_hatch_8x_perfect` | 8  | 1.0 | ÷8  | ×8  | ZPM | 不吃亏的 8 倍速 |
-     * | `overclock_hatch_8x_saving`  | 8  | 0.5 | ÷8  | ×4  | UV  | 又提速又省电 |
-     * | `overclock_hatch_16x_perfect`| 16 | 1.0 | ÷16 | ×16 | UEV | 不吃亏的 16 倍速 |
-     * | `overclock_hatch_16x_saving` | 16 | 0.5 | ÷16 | ×8  | UIV | 16 倍速还省电 |
-     * | `overclock_hatch_16x_saving_max` | 16 | 0.5 | ÷16 | ×8 | MAX | 顶档：16 倍速还省电 |
-     *
-     * 注意 UHV(9) 故意跳过：UHV 留给以后可能加的 8x/16x 中间档。
-     *
      * 最后一行（MAX 档）的数值与 `overclock_hatch_16x_saving` **完全相同**（16× / E=0.5），
      * 差的只是铭牌等级（`GTValues.MAX`）与外壳贴图 —— 有意如此：MAX 档在这个表里是
      * 「量级上的终点」，不是又一次数值跃迁；真要更激进（例如 S=32），改这一行的第一、二个参数即可。
@@ -98,20 +85,16 @@ object ETOverclockHatches {
     val VARIANTS: List<OverclockHatchVariant> = listOf(
         // ── 8× 家族：每级耗时 ÷8（相当于原版 3 级 perfect 超频的提速）──
         // E=4.0：越级提速的代价最高档，每级电 ×4×8=32
-        OverclockHatchVariant("overclock_hatch_8x_lossy4", 8, 4.0, GTValues.IV),
-        // E=2.0：电 ×2×8=16
-        OverclockHatchVariant("overclock_hatch_8x_lossy2", 8, 2.0, GTValues.LuV),
-        // E=1.0：perfect —— 只按提速倍数收电，×1×8=8
-        OverclockHatchVariant("overclock_hatch_8x_perfect", 8, 1.0, GTValues.ZPM),
-        // E=0.5：saving —— 每级电只 ×0.5×8=4，比原版超频（×4）持平但快 8 倍
-        OverclockHatchVariant("overclock_hatch_8x_saving", 8, 0.5, GTValues.UV),
-        // ── 16× 家族：每级耗时 ÷16 ──
-        // E=1.0：perfect，每级电 ×1×16=16
-        OverclockHatchVariant("overclock_hatch_16x_perfect", 16, 1.0, GTValues.UEV),
-        // E=0.5：saving，每级电 ×0.5×16=8（比 8x_perfect 更快且同耗电）
-        OverclockHatchVariant("overclock_hatch_16x_saving", 16, 0.5, GTValues.UIV),
-        // MAX 档：数值与上一条一致，只换铭牌等级（见 KDoc 里那段说明）
-        OverclockHatchVariant("overclock_hatch_16x_saving_max", 16, 0.5, GTValues.MAX),
+        OverclockHatchVariant("overclock_hatch_8x_lossy4"       , 8 , 4.0, GTValues.LuV  ),
+        OverclockHatchVariant("overclock_hatch_8x_lossy2"       , 8 , 2.0, GTValues.ZPM ),
+        OverclockHatchVariant("overclock_hatch_8x_perfect"      , 8 , 1.0, GTValues.UV ),
+        OverclockHatchVariant("overclock_hatch_8x_saving"       , 8 , 0.5, GTValues.UHV ),
+        OverclockHatchVariant("overclock_hatch_16x_lossy4"      , 16, 4.0, GTValues.UIV ),
+        OverclockHatchVariant("overclock_hatch_16x_lossy2"      , 16, 2.0, GTValues.UXV ),
+        OverclockHatchVariant("overclock_hatch_16x_perfect"     , 16, 1.0, GTValues.UEV ),
+        OverclockHatchVariant("overclock_hatch_16x_saving_max"  , 16, 0.5, GTValues.MAX ),
+
+
     )
 
     /**

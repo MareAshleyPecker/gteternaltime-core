@@ -98,6 +98,21 @@ object RecipeEditorBehavior : IItemUIFactory {
     private const val PLAYER_INV_Y = 84
 
     /**
+     * 代码预览（页 1 的迷你预览与页 3 的整页列表）的文字颜色：**不透明黑**。
+     *
+     * ⚠️ LDLib 的 `setColor(int)` 收的是 **ARGB**（不像 `java.awt.Color` 那样是 0xRRGGBB），
+     * 所以「黑」要写成 `0xFF000000` —— 高两位是 alpha；写成 `0x00000000` 会变成完全透明、字全看不见。
+     *
+     * 为什么改黑：玩家反馈原来的淡绿 `0xA0FFA0` 看长段代码「太伤眼睛」；
+     * 代码区坐在 GT 的浅色面板底纹（`GuiTextures.BACKGROUND`）上，黑字对比度足够。
+     * 注意这里**只**管代码文本，不动配置里那套覆盖层颜色。
+     *
+     * 写成 `0xFF000000.toInt()` 而不是 `const val ... = 0xFF000000`：Kotlin 里 `0xFF000000`
+     * 超过了 `Int.MAX_VALUE`，字面量会被推成 `Long`，而 `toInt()` 不是编译期常量表达式、进不了 `const`。
+     */
+    private val CODE_TEXT_COLOR: Int = 0xFF000000.toInt()
+
+    /**
      * 槽区高度预算（最坏情况全部占满时会不会压到按钮行）：
      *
      * ```
@@ -228,6 +243,8 @@ object RecipeEditorBehavior : IItemUIFactory {
         )
 
         // ── 幽灵槽 ──
+        // 物品槽用 GTET 自己的 [PhantomCountSlotWidget]（= PhantomSlotWidget + 中键弹输入框改数量），
+        // 只加了一路中键分发，左/右键行为与原来完全一致；流体槽与幽灵电路槽仍用原控件。
         // 「用几个槽」是配方类型的属性（装配线 16 物品输入 + 4 流体输入、研磨机 1 + 0、
         // 燃烧发电机 0 + 1 …），所以这里一次性把每个扇区都建满，之后只改**可见性与位置**
         // （见下面的 relayout），不增删控件。
@@ -244,10 +261,12 @@ object RecipeEditorBehavior : IItemUIFactory {
         //  `inputSlots()/outputSlots()` 建一次，在 ② 类型 页换类型只改了草稿，界面不会重建，
         //  于是槽位数量永远停在打开界面那一刻的（默认熔炉 = 输入 1 + 输出 1，加上幽灵电路槽共 3 个）。
         val inputWidgets: Array<Widget> = Array(RecipeDraft.MAX_INPUTS) { i ->
-            PhantomSlotWidget(draft.inputs, i, 0, 0).setBackground(GuiTextures.SLOT) as Widget
+            PhantomCountSlotWidget(draft.inputs, i, 0, 0, onCountChanged = { touch() })
+                .setBackground(GuiTextures.SLOT) as Widget
         }
         val outputWidgets: Array<Widget> = Array(RecipeDraft.MAX_OUTPUTS) { i ->
-            PhantomSlotWidget(draft.outputs, i, 0, 0).setBackground(GuiTextures.SLOT) as Widget
+            PhantomCountSlotWidget(draft.outputs, i, 0, 0, onCountChanged = { touch() })
+                .setBackground(GuiTextures.SLOT) as Widget
         }
         val fluidInputWidgets: Array<Widget> = Array(RecipeDraft.MAX_FLUID_INPUTS) { i ->
             PhantomFluidWidget(
@@ -265,13 +284,16 @@ object RecipeEditorBehavior : IItemUIFactory {
         }
 
         // 四段标题：文本走 Supplier（每帧重新取，切类型 / 改数量时自己就刷新了），位置由 relayout 摆。
+        // 「中键改数量」只写在物品那两段上 —— 流体槽没有数量输入框（量走上面的「流体量 (mB)」字段）。
         val inputLabel = label(SLOT_LEFT, SLOT_TOP) {
-            "§7物品输入 §f${draft.inputSlots()} §8(点槽放物品 / 右键清空)"
+            "§7物品输入 §f${draft.inputSlots()} §8(点槽放物品 / 右键清空 / 中键改数量)"
         }
         val fluidInputLabel = label(SLOT_LEFT, SLOT_TOP) {
             "§7流体输入 §f${draft.fluidInputSlots()} §8(拖入流体 / 点槽用容器装填 / 右键清空)"
         }
-        val outputLabel = label(SLOT_LEFT, SLOT_TOP) { "§7物品输出 §f${draft.outputSlots()} §8(右键清空)" }
+        val outputLabel = label(SLOT_LEFT, SLOT_TOP) {
+            "§7物品输出 §f${draft.outputSlots()} §8(右键清空 / 中键改数量)"
+        }
         val fluidOutputLabel = label(SLOT_LEFT, SLOT_TOP) { "§7流体输出 §f${draft.fluidOutputSlots()} §8(右键清空)" }
         for (widget in listOf(inputLabel, fluidInputLabel, outputLabel, fluidOutputLabel)) {
             pageRecipe.addWidget(widget)
@@ -298,44 +320,44 @@ object RecipeEditorBehavior : IItemUIFactory {
 
             var y = SLOT_TOP
 
-            inputLabel.setVisible(itemIn > 0)
+            inputLabel.isVisible = itemIn > 0
             inputLabel.setSelfPosition(SLOT_LEFT, y)
             if (itemIn > 0) y += LABEL_H
             inputWidgets.forEachIndexed { i, widget ->
-                widget.setVisible(i < itemIn)
+                widget.isVisible = i < itemIn
                 if (i < itemIn) {
                     widget.setSelfPosition(SLOT_LEFT + (i % itemCols) * ITEM_PITCH, y + (i / itemCols) * ITEM_PITCH)
                 }
             }
             y += slotRows(itemIn, itemCols) * ITEM_PITCH
 
-            fluidInputLabel.setVisible(fluidIn > 0)
+            fluidInputLabel.isVisible = fluidIn > 0
             fluidInputLabel.setSelfPosition(SLOT_LEFT, y)
             if (fluidIn > 0) y += LABEL_H
             fluidInputWidgets.forEachIndexed { i, widget ->
-                widget.setVisible(i < fluidIn)
+                widget.isVisible = i < fluidIn
                 if (i < fluidIn) {
                     widget.setSelfPosition(SLOT_LEFT + (i % FLUID_COLS) * FLUID_PITCH, y + (i / FLUID_COLS) * FLUID_PITCH)
                 }
             }
             y += slotRows(fluidIn, FLUID_COLS) * FLUID_PITCH
 
-            outputLabel.setVisible(itemOut > 0)
+            outputLabel.isVisible = itemOut > 0
             outputLabel.setSelfPosition(SLOT_LEFT, y)
             if (itemOut > 0) y += LABEL_H
             outputWidgets.forEachIndexed { i, widget ->
-                widget.setVisible(i < itemOut)
+                widget.isVisible = i < itemOut
                 if (i < itemOut) {
                     widget.setSelfPosition(SLOT_LEFT + (i % ITEM_COLS) * ITEM_PITCH, y + (i / ITEM_COLS) * ITEM_PITCH)
                 }
             }
             y += slotRows(itemOut, ITEM_COLS) * ITEM_PITCH
 
-            fluidOutputLabel.setVisible(fluidOut > 0)
+            fluidOutputLabel.isVisible = fluidOut > 0
             fluidOutputLabel.setSelfPosition(SLOT_LEFT, y)
             if (fluidOut > 0) y += LABEL_H
             fluidOutputWidgets.forEachIndexed { i, widget ->
-                widget.setVisible(i < fluidOut)
+                widget.isVisible = i < fluidOut
                 if (i < fluidOut) {
                     widget.setSelfPosition(
                         SLOT_LEFT + (i % FLUID_COLS) * FLUID_PITCH,
@@ -364,7 +386,7 @@ object RecipeEditorBehavior : IItemUIFactory {
             relayout()
             preview.invalidate()
         })
-        pageRecipe.addWidget(button(72, 220, 76, 18, { "导出到目录" }) { export(holder, draft) })
+        pageRecipe.addWidget(button(72 , 220, 76, 18, { "导出到目录" }) { export(holder, draft) })
         pageRecipe.addWidget(button(152, 220, 76, 18, { "复制代码" }) { copyToClipboard(holder, draft) })
         pageRecipe.addWidget(button(232, 220, 76, 18, { "看完整代码" }) { showPage(2) })
         for (line in 0 until 4) {
@@ -372,7 +394,7 @@ object RecipeEditorBehavior : IItemUIFactory {
                 val lines = preview.lines(draft)
                 if (line < lines.size) lines[line] else ""
             }
-            label.setColor(0xA0FFA0)
+            label.setColor(CODE_TEXT_COLOR)
             pageRecipe.addWidget(label)
         }
 
@@ -431,7 +453,7 @@ object RecipeEditorBehavior : IItemUIFactory {
                 val lines = preview.lines(draft)
                 if (line < lines.size) lines[line] else ""
             }
-            label.setColor(0xA0FFA0)
+            label.setColor(CODE_TEXT_COLOR)
             codeList.addWidget(label)
         }
         pageCode.addWidget(codeList)

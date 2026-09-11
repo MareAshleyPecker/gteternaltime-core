@@ -19,14 +19,16 @@ import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
  * 研磨配方是全 GTCEu 最多的一类，最容易验证「不同配方各自跑」）。
  *
  * ## 接上内核之后的行为
- * - 装线程仓 → 最多同时跑 N 种**不同**配方（N = 线程仓的 `threadCount`，UV=4 起、MAX=256），
+ * - 装线程仓 → 最多同时跑 N 条线程（N = 线程仓的 `threadCount`，UV=4 起、MAX=256）；⚠️ 是线程条数，
+ *   同一种配方可以占多条（空闲线程会被发给已经在跑的同一种配方），所以线程条数 ≥ 配方种数；
  *   没装仓时退化成原版「一台机器一条配方」（`threadCount` 默认 1）；
  * - 每条线程各扣各的料、各自计时、各自出料，并**各自吃一遍并行仓的并行倍率**
  *   （见 [ThreadedRecipeLogic] 的「每线程并行怎么套」一节）。
  * - **线程状态可见**：机器面板里（[addDisplayText] 追加的行）与 Jade 提示里
  *   （`rain.gtetcore.gtet.integration.jade.provider.ThreadedRecipeLogicProvider`）都会报
- *   「线程 256（在用 k）」+ 整机同时处理次数 + 每条在跑线程的配方 id 与进度百分比 ——
- *   这是「线程真的开了」在游戏里唯一能直接看到的地方（线程表本身不同步到客户端）。
+ *   「线程 256（在用 k）」+ 整机同时处理次数 + 逐**配方组**一行（进度 + 该组所有线程加起来的产出物×数量，
+ *   合并规则与行数上限见 [ThreadedRecipeStatus]）—— 这是「线程真的开了」在游戏里唯一能直接看到的地方
+ *   （线程表本身不同步到客户端）。
  *
  * ## 为什么重写 `createRecipeLogic` 就够了（不需要 mixin）
  * [com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine] 的构造函数里有一句

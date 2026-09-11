@@ -24,7 +24,7 @@ object ETItems {
     val STRUCTURE_TOOLS: ItemEntry<ComponentItem> = OnlyETreg.ETRegistrate
         .itemAndLang("structure_tools", "结构工具", ComponentItem::create)
         .tooltips("structure_tools",
-            "Right-click a block: drag the nearer corner (grow or shrink)" to "右键方块：拖动较近的那个角（可扩可缩）",
+            "Right-click a block: the first click sets the fixed start corner, later clicks drag the opposite end corner (grow or shrink)" to "右键方块：第一下确定固定起点，之后每次右键拖动对角终点（可扩可缩）",
             "Shift+right-click to clear" to "潜行右键清除选区",
             "Right-click air to open export GUI" to "右键空气打开导出 GUI",
         )
@@ -62,7 +62,7 @@ object ETItems {
         .tooltips("structure_tool",
             "Aim at air + Shift + scroll to switch work mode" to "对着空气 Shift+滚轮 切换工作模式",
             "Modes: area export / recheck / detect" to "模式：选区导出 / 结构重检 / 结构检测",
-            "Export: right-click a block to drag the nearer corner, Shift+right-click to clear" to "导出模式：右键方块拖动较近的角（可扩可缩），Shift+右键清空",
+            "Export: the first right-click sets the fixed start corner, later right-clicks drag the opposite end corner, Shift+right-click to clear" to "导出模式：第一下右键确定固定起点，之后右键拖动对角终点（可扩可缩），Shift+右键清空",
             "Recheck: Shift+right-click a controller / Detect: right-click a controller" to "重检模式：Shift+右键控制器 / 检测模式：右键控制器",
         )
         .properties { p -> p.stacksTo(1) }

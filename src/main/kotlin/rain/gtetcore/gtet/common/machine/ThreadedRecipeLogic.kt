@@ -38,24 +38,68 @@ import rain.gtetcore.gtet.Gtetcore
  * 1. **推进**：遍历所有**已在跑**的线程槽，各自检查条件 → 扣每 tick 的输入（EUt 等）→ `progress++`，
  *    到点就走 [finishThread] 结算输出。线程之间完全独立，一个线程在等待/空闲不影响别的线程。
  * 2. **开新线程**：只有当存在**空闲槽位**时才去找配方（每 [SEARCH_INTERVAL] tick 搜一次，
- *    避免每条 tick 都去翻配方库）。找到候选后：
- *    - **重复检查**（GTO 的 `duplicateCheck` 语义）：`id` 与「已有线程正在跑的配方」相同的候选**直接跳过**，
- *      所以同一种配方永远只占 1 条线程，N 条线程 = N 种**不同**配方；
- *    - 套机器自己的配方修改器（超频等）→ 套本线程的并行 → 条件检查 → 模拟匹配
- *      （`RecipeHelper.matchContents`）→ `machine.beforeWorking` → **真正扣料** → 占住槽位。
+ *    避免每条 tick 都去翻配方库）。[tryStartThreads] 分**两轮**发线程：
+ *    - **第一轮「不同配方各一条」**（原行为，不退化）：配方库里命中、且「还没有线程在跑它」的候选占一条
+ *      空闲槽位；同一种配方在这一轮最多占一条线程；
+ *    - **第二轮「同一种配方去吃剩下的空闲线程」**（本版新增的「吃线程并行」）：第一轮开完还有空闲槽位时，
+ *      把**已经在跑**的配方再多开一条线程，分配规则见下面「同配方多线程怎么分配」。
+ *
+ *    两轮走的都是同一条开线程流程：套机器自己的配方修改器（超频等）→ 套本线程的并行 → 条件检查 →
+ *    模拟匹配（`RecipeHelper.matchContents`）→ `machine.beforeWorking` → **真正扣料** → 占住槽位。
  * 3. **上限**：能开几条线程由 [threadLimit] 决定（= 线程仓的 `threadCount`，没装仓就是 1）。
  *
+ * ## 同配方多线程怎么分配（本版核心）
+ * 「同一种配方最多占一条线程」原本是 GTO `duplicateCheck` 的语义，代价是**只有一种原料时整机只用到 1 条线程**：
+ * 线程仓有 256 条、并行仓写着 3200，实际同时处理次数仍然只有「一条线程的那一份」。
+ * 本版让空闲线程也发给同一种配方，目标是「总处理次数 → 线程数 × 每线程次数」（上限另有约束，见下）。
+ *
+ * 难点是**不能超发**。`ParallelLogic#getParallelAmount(machine, recipe, M)` 是按**当前库存**算的，
+ * 而 GTM 的输入分两类，两类在「开过线程之后」的表现完全不同：
+ * - **非 tick 输入（物品/流体）在开线程那一刻就被真扣掉了**（[startThread] 里的 `handleRecipeIO(IN)`），
+ *   所以后开的线程看到的库存本来就少了一份 —— 这一类天然不会重复计；
+ * - **tick 输入（EUt）与出料口容量不会被提前扣掉**：`EURecipeCapability#getMaxParallelByInput(tick=true)`
+ *   算的是「能量仓电压 / 配方 EUt」，`ParallelLogic#limitByOutputMerging` 算的是「出料口塞不塞得下」，
+ *   两者在开线程那一刻都还是**满的** → k 条线程会各算一遍同一批额度，加起来就是 k 份，纯属白开
+ *   （落后的线程只能等待/回退）。
+ *
+ * 所以第二轮**不做「每条线程各算一次」**，而是**一组一预算、再把预算均分**（依据见 GTM 源码：
+ * `ParallelLogic#getParallelAmount` / `#getMaxByInput` / `#limitByOutputMerging`、
+ * `EURecipeCapability#getMaxParallelByInput`、`RecipeCapability#getMaxParallelByInput`）：
+ * 1. 取并行仓上限 `M` = `IParallelHatch#getCurrentParallel()`（单线程上限）；
+ * 2. 聚合上限 = `M × 本组最多能占的线程数`（= 已在跑条数 + 当前空闲槽位数）；
+ * 3. 拿聚合上限当 `parallelLimit` **只调一次** `ParallelLogic#getParallelAmount(...)` ——
+ *    这一次调用里 GTM 已经把「输入 / tick 输入 / 输出」三头都判过一遍了；
+ * 4. 减掉**本组已在跑线程已经提交的份额** `Σ getTotalRuns() ÷ (subtick × batch)`（[committedUnits]）：
+ *    这一步专治上面第二类重复计 —— tick 输入与出料口容量不会因为「已经开过线程」而变小，
+ *    只能自己记账减掉；
+ * 5. 剩下的按「本组还能开几条线程」**均分**（`extra / openable`），每条再夹到单线程上限 `M`。
+ *
+ * 这一轮开不完的空闲线程，下一轮（[SEARCH_INTERVAL] tick 后）按同样规则继续，
+ * 直到「本组预算用完 / 没空闲槽位 / 谁都开不出来」。
+ *
+ * ## 公平性（多个配方争抢空闲线程）
+ * 第二轮是**轮转**的：每一趟给「每个在跑的配方」各加**最多一条**线程，趟与趟之间循环，直到没人能再开。
+ * 于是多个配方是**齐步长**的（A 加一条、B 加一条、A 再加一条…），谁也不会把空闲线程吃光。
+ * 均分用的 `openable` 里还含「本组还能用几条空闲槽位」这一层，所以「好几个配方 + 槽位不够」
+ * 时每个配方各自分到的倍数也会跟着自己的线程数一起缩。
+ *
  * ## 每线程并行怎么套（④）
- * 每条线程**自己**调用 [applyThreadParallel]：读 `IMultiController#getParallelHatch()` 的
- * `getCurrentParallel()` 当上限 M，再用 `ParallelLogic#getParallelAmount(...)`
- * 把 M 收缩到「这台机器当下真的喂得起的倍数」（输入不够按输入算、输出塞不下按输出算，
- * 这段判定不自己写），然后套
+ * 每条线程**自己**读 `IMultiController#getParallelHatch()` 的 `getCurrentParallel()` 当上限 M，
+ * 再用 `ParallelLogic#getParallelAmount(...)` 收缩到「这台机器当下真的喂得起的倍数」
+ * （输入不够按输入算、输出塞不下按输出算，这段判定不自己写），然后套
  * `ModifierFunction.builder().modifyAllContents(×p).eutMultiplier(×p).parallels(p)`。
+ * 差别只在「p 从哪来」：[planThreadParallel] 里第一轮是「这一条线程自己能吃多少」，
+ * 第二轮是「本组总预算减掉已提交，再均分」。
  *
  * 之所以走 `ModifierFunction` 链路而不是自己改内容表：概率逻辑、tick 内容、
  * `parallels` 与 `getTotalRuns()`（概率掷点要按总运行次数算）全都挂在 GTRecipe 的既有语义上，
  * 自己手改内容会把这些一起改坏。
- * 于是「总处理次数上限 ≈ 线程数 × M」，每种配方各自吃满自己的那份并行。
+ *
+ * ## ⚠️ 并行口径的变化（接入本内核的机器必读）
+ * 并行仓的 `getCurrentParallel()` 在本内核里被定义为**每条线程**的并行上限，
+ * 整机上限 = `M × 同时跑的线程数`。这是线程仓存在的意义（「在并行仓之上再叠一层线程」），
+ * 但接线的机器要清楚这条口径：**装了线程仓 + 并行仓时，总处理次数上限 = 线程数 × 并行倍数**，
+ * 而不再是「并行仓数字」本身。实际能吃到多少还受输入供给、EUt、出料口容量的约束（见上）。
  *
  * ## 每线程记账（⑤ + 独立扣料/出料）
  * 每条线程**独立**走一遍 `RecipeHelper#checkConditions` / `matchTickRecipe` / `handleRecipeIO(IN/OUT)` /
@@ -96,6 +140,22 @@ import rain.gtetcore.gtet.Gtetcore
  *    等机器恢复后继续跑。理由是「多线程下打断一条线程的代价是吞掉一份材料，而玩家看不出来是哪条」。
  * 7. **`machine.onWorking()` 每 tick 只调一次**（不是每条线程一次）：部件回调不会被线程数放大，
  *    代价是「某条线程的独立失败」无法通过这个钩子表达 —— 属于接线时的取舍。
+ * 8. **同配方多线程的预算是「一组一份」的，跨组不互算**：k 条线程跑**不同**配方时，每条线程仍各算一遍
+ *    `getParallelAmount`（与加入 fan-out 之前完全一致）—— 也就是说「tick 输入 / 出料口容量」这类
+ *    不会被提前扣掉的资源，在**多个不同配方之间**仍然可能各算一份。这是改动前就有的口径，
+ *    本版**不动它**：一改就会把「不同配方各跑各的」变成「不同配方互相抢并行」，
+ *    而「每种原料各吃满自己那份」正是这台机器原本的卖点。同配方多线程那一侧则由
+ *    [committedUnits] 记账兜住（见类 KDoc「同配方多线程怎么分配」第 4 步）。
+ * 9. **跨轮次时对「已真扣掉的物品」会保守地再减一次**：`committedUnits` 减的是「已在跑线程提交的
+ *    全部份额」，而非 tick 输入那部分库存其实**已经**被扣过了 → 预算会被低估一点点，
+ *    表现为「同一种配方在物品刚好够时可能少开一条线程」。这是有意选的保守侧：
+ *    物品有 `RecipeHelper#matchContents` 这道闸门兜底（不够就开不出来，不会凭空吞），
+ *    而 **tick 输入与出料口容量没有这道闸门**，宁可少开也不超发。
+ *    同一条账还覆盖不到的地方是**机器修改器自己算出来的那一份**（超频的 `subtickParallels`、
+ *    批处理的 `batchParallels` 都在 `fullModifyRecipe` 里按当时库存各算一遍）：本内核只能在
+ *    「每条线程该拿几倍并行」这一层记账，这已经能把 `parallels` 那一份卡住；剩下那一份靠
+ *    「非 tick 输入开线程时真扣料」自然收敛，只有 tick 输入 / 出料口容量仍可能在多线程下多算，
+ *    后果是「线程等电」（自限）与「出料口满时丢产物」（GTM 单配方本来就这样丢，见第 5 条）。
  *
  * ## 与「并行仓不能重复套」的契约（重要）
  * 接入本逻辑的多方块，其 `recipeModifier` **不能**再包含并行修改器
@@ -118,7 +178,7 @@ import rain.gtetcore.gtet.Gtetcore
  * ## 思路来源
  * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）的线程记录结构 `ICrossRecipeMachine$Thread { progress, recipe, duration, use }` 与 `ICrossRecipeMachine$Logic`（`updateTickSubscription` / `findAndHandleRecipe` / `serverTick` / `onRecipeFinish` / `saveCustomPersistedData` / `loadCustomPersistedData` 一整套 `native` 覆盖）—— 借的只是「每条线程一条记录（配方 + 进度 + 时长）」和「线程逻辑要自己接管 tick / 存档」这两个形状。
  *   ⚠️ **必须注明**：GTO 的**调度与记账算法一行都拿不到** —— `libs/gtolib-1.0.jar` 里 `ICrossRecipeMachine`、`ICrossRecipeMachine$Thread`、`ICrossRecipeMachine$Logic`、`ThreadPartMachine` 的方法体全是 `native`（`javap` 只能看到签名，实现被抽到 `native0/native/` 那堆 `.bin` 的加密库里）。所以**线程表调度、动态开线程策略、每线程独立 IO 记账、线程数上限来源，全部是 GTET 自研**（见下面的【自研】条）。
- * - 【自研】线程表（`data class ThreadRec` 槽位数组）+ `duplicateCheck` 去重（按 `GTRecipe#id`，`id == null` 时退化成引用相等 —— 现成的 `GTRecipe#equals` 只比 id 且对 null id 会 NPE）+ 「线程数上限由线程仓 tier 决定」+ 「玩家下调线程数不砍已开线程」+ 「每线程独立 `chanceCaches`」+ 「基类单进度镜像」+ 存档恢复策略：这些在 GTOCore 里都没有可抄的实现（GTO 那半边在 native 里，且是 `ICrossRecipeMachine` 专属的私有调度）。
+ * - 【自研】线程表（`data class ThreadRec` 槽位数组）+ 「先给不同配方、再把剩余空闲线程发给**同一种**配方」的两轮调度（[tryStartThreads]）+ 「一组一预算、再均分」的防超发记账（[planThreadParallel] / [committedUnits]：用 `ParallelLogic#getParallelAmount` 的聚合上限调用一次性判定「输入 / tick 输入 / 输出」三头，再减掉本组已提交的份额，然后按本组还能开的线程数均分）+ 轮转式公平分配 + 同配方判等（按 `GTRecipe#id`，`id == null` 时退化成引用相等 —— 现成的 `GTRecipe#equals` 只比 id 且对 null id 会 NPE）+ 「线程数上限由线程仓 tier 决定」+ 「玩家下调线程数不砍已开线程」+ 「每线程独立 `chanceCaches`」+ 「基类单进度镜像」+ 存档恢复策略：这些在 GTOCore 里都没有可抄的实现（GTO 那半边在 native 里，且是 `ICrossRecipeMachine` 专属的私有调度 —— 它只有「同一种配方占一条线程」的 `duplicateCheck` 语义，没有「同配方多线程」这回事）。
  *
  * @param machine 持有本逻辑的机器（应当实现 [IThreadedRecipeMachine]；否则线程数上限退化为 1）
  *
@@ -203,6 +263,15 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
      * 这个数字才是「这台机器此刻同时在处理多少次配方」的**整机口径**：
      * GTM 自己的 Jade 提示只报 [runningThreads] 里某**一条**配方的 `getTotalRuns()`，
      * 天然不含线程数，所以两者要相乘着看（见类 KDoc 末尾「与 GTM 提示的口径差异」）。
+     *
+     * ## 「吃线程并行」之后这个数字的含义变化（⚠️ 玩家/UI 必读）
+     * 加入 fan-out 之前：`Σ` = 「**不同配方**各自那一份并行之和」，同一种配方最多贡献一份。
+     * 加入之后：**同一种配方可以同时占多条线程**，每条线程的 `parallels` 是「本组预算均分下来的一份」，
+     * 于是 `Σ` 仍然等于「整机此刻一次性处理多少次配方运行」，但它的**来源变了**：
+     * 它可以由 k 条跑同一种配方的线程凑出来（≈ `k × 每线程倍数`），而不是「k 种不同配方各一份」。
+     * 换句话说：显示不变、口径不变（都是「同时处理次数」），变的是**它现在会随线程数一起涨**。
+     * 能不能真的涨到 `线程数 × 并行仓倍数`，取决于输入供给 / EUt / 出料口容量
+     * （见类 KDoc「同配方多线程怎么分配」；本内核只保证**不超发**，不保证喂得起）。
      */
     val runningTotalRuns: Long get() = runningThreads.sumOf { it.recipe.totalRuns.toLong() }
 
@@ -234,8 +303,12 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
         diagLastRunning = running
         diagCooldown = DIAG_INTERVAL
         // 样本只取前几条：256 线程全打出来会让一行日志有上万字符
+        // 带上每条线程自己的并行倍数（`×p`）—— 「吃线程并行」是否生效就看这一列：
+        // 同一种配方应当出现多行、每行的 p 是「本组总预算 ÷ 线程数」而不是满 M
         val sample = runningThreadSlots.take(DIAG_SAMPLE)
-            .joinToString(", ") { (slot, rec) -> "#$slot ${rec.recipe.id ?: "?"} ${rec.percent}%" }
+            .joinToString(", ") { (slot, rec) ->
+                "#$slot ${rec.recipe.id ?: "?"} ×${rec.recipe.parallels} ${rec.percent}%"
+            }
         Gtetcore.LOGGER.info(
             "[GTET][线程诊断] 在跑线程 {}/{}；同时处理次数合计 {}；样本：[{}]",
             running,
@@ -378,17 +451,55 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
      * 给空闲槽位找配方。用的是 GTM 现成的 `GTRecipeType#searchRecipe`（配方库自带的内容过滤），
      * 没有自己重写配方匹配。
      *
-     * 一轮搜索可以填满多个空闲槽：每命中一条就占一个槽位继续往下找，
-     * 所以 `[A, B, C] → 三条线程` 只需要一轮。
+     * 分**两轮**发线程（见类 KDoc「调度策略」与「同配方多线程怎么分配」）：
+     * 1. **第一轮：不同配方各占一条**（原行为）—— 命中且「还没有线程在跑它」的候选占一条空闲槽位；
+     * 2. **第二轮：同一种配方去吃剩下的空闲线程**（「吃线程并行」）—— **轮转**着给每个在跑的配方
+     *    各加最多一条线程，一趟下来一条都没开出来就收手。
+     *
+     * ⚠️ 第二轮的「在跑配方」池必须**含本轮刚从第一轮开出来的那些**：池子是在第一轮的遍历里就地攒的
+     * （「已经在线程表里的」和「这一轮刚开成功的」都进池），而不是只收「进这一轮之前就在跑的」——
+     * 短配方（`duration = 1` tick）可能在**下一次搜索（[SEARCH_INTERVAL] = 5 tick）之前就跑完**，
+     * 那时它已经不在「在跑」状态；只认「之前就在跑」的话，这种配方永远等不到 fan-out，
+     * 而「一种原料、只跑一条线程」恰恰就是这种场景。
+     *
+     * 池子里装的是**配方库给的原始候选对象**：已在跑线程的 `rec.recipe` 已经被套过机器修改器与并行，
+     * 拿它再 `fullModifyRecipe` 一遍会重复超频，所以绝不能拿来当原配方。
+     * 反过来，`machine.fullModifyRecipe` 每次都会**新建副本**（`ModifierFunction#apply` 里 `new GTRecipe(...)`），
+     * 不会改到候选对象本身，所以同一轮里对同一条候选反复算并行是安全的。
+     *
+     * 一轮搜索本来就能填满多个空闲槽（每命中一条占一个槽位继续往下找），
+     * 所以 `[A, B, C] → 三条线程` 仍然只需要一轮。
      */
     private fun tryStartThreads(limit: Int) {
+        // ① 第一轮：不同配方各一条线程；池子顺便在这里就地攒（见 KDoc 的 ⚠️）
+        val repeats = ArrayList<GTRecipe>()
         val iterator = machine.recipeType.searchRecipe(machine) { true }
         while (iterator.hasNext()) {
-            val slot = freeThreadSlot(limit) ?: return
             val candidate = iterator.next()
-            // ② duplicateCheck：这条配方已经有别的线程在跑 → 跳过，不给它开第二条线程
-            if (isRunningElsewhere(candidate)) continue
-            startThread(slot, candidate)
+            // 已经有线程在跑这一种配方 → 跳过它（留给第二轮去吃空闲线程）
+            if (isRunningElsewhere(candidate)) {
+                if (repeats.none { sameRecipe(it, candidate) }) repeats.add(candidate)
+                continue
+            }
+            // 槽位满了：第一轮到此为止（第二轮也没槽位可用，直接收工）
+            val slot = freeThreadSlot(limit) ?: return
+            if (startThread(slot, candidate, fanOut = false, limit = limit)) {
+                // 刚开出来的也要进池子：短配方可能在下一次搜索之前就跑完，那时它已经不在「在跑」状态
+                if (repeats.none { sameRecipe(it, candidate) }) repeats.add(candidate)
+            }
+        }
+        if (repeats.isEmpty()) return
+
+        // ② 第二轮：轮转着把同一种配方再开一条线程。
+        //    每一趟「每个配方组各加最多一条」→ 多个配方齐步长，谁也不会把空闲线程吃光；
+        //    某一趟一条都没开出来（本组预算用完 / 谁都匹配不上）就整轮收手 —— 下一轮搜索会再试。
+        while (true) {
+            var opened = false
+            for (candidate in repeats) {
+                val slot = freeThreadSlot(limit) ?: return
+                if (startThread(slot, candidate, fanOut = true, limit = limit)) opened = true
+            }
+            if (!opened) return
         }
     }
 
@@ -397,14 +508,13 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
      * 机器配方修改器（超频等）→ 本线程并行 → 条件 → 模拟匹配 → `beforeWorking` → **真正扣料** → 占槽。
      *
      * 中间任何一步失败都只是「这条候选不能用」，不影响别的线程。
+     *
+     * @param fanOut `false` = 第一轮「不同配方各一条」；`true` = 第二轮「同一种配方再吃一条空闲线程」，
+     *               并行倍数走 [planThreadParallel] 的「一组一预算、再均分」
+     * @param limit  当前生效的线程数上限（fan-out 的预算要用它数空闲槽位）
      */
-    private fun startThread(slot: Int, origin: GTRecipe): Boolean {
-        // ① 机器自己的配方修改器（超频等）。
-        //    注意契约：接入本逻辑的多方块，其 recipeModifier 不应包含并行修改器（见类 KDoc）。
-        val modified = machine.fullModifyRecipe(origin) ?: return false
-
-        // ④ 这条线程**自己**那份并行
-        val threaded = applyThreadParallel(modified) ?: return false
+    private fun startThread(slot: Int, origin: GTRecipe, fanOut: Boolean, limit: Int): Boolean {
+        val threaded = buildThreadRecipe(origin, fanOut, limit) ?: return false
 
         // ③ 条件 + 材料（模拟匹配，复用 GTM 现成 API）
         val conditions = RecipeHelper.checkConditions(threaded, this)
@@ -431,45 +541,178 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
     }
 
     /**
-     * 给一条线程套上「并行仓的并行倍率」（④）。
+     * 「机器配方修改器（①） + 本线程并行（④）」这两步，开线程与存档恢复共用。
      *
-     * - 上限取 `IMultiController#getParallelHatch()` 的 `getCurrentParallel()`；
-     * - 用 `ParallelLogic#getParallelAmount(...)` 把上限收缩到「当下喂得起」的倍数
-     *   （输入不够就按输入算、输出塞不下就按输出算 —— 这段判定不自己写）；
-     * - 套法：内容 ×p、EUt ×p、`recipe.parallels = p`（三样缺一不可：只乘内容不设 `parallels`
-     *   会让概率掷点按 1 次算，只设 `parallels` 不乘内容则等于白开线程）。
-     *
-     * @return 套好并行的配方；`null` = 这条配方当下连 1 份都跑不了
+     * @return 这条线程要跑的配方；`null` = 这条配方当下开不出线程
+     *         （喂不起 / 上游已经并行过而又要 fan-out —— 见下）
      */
-    private fun applyThreadParallel(recipe: GTRecipe): GTRecipe? {
-        // 防御：上游修改器已经并行过了就别再叠一遍（会变成 并行²）
-        if (recipe.parallels > 1) {
-            if (!warnedAlreadyParallel) {
-                warnedAlreadyParallel = true
-                Gtetcore.LOGGER.warn(
-                    "[GTET] 线程仓：配方 {} 在机器配方修改器里已经吃过并行（parallels={}），" +
-                        "线程逻辑不再叠加。请把该多方块的 recipeModifier 换成不含并行的版本。",
-                    recipe.id,
-                    recipe.parallels
-                )
-            }
-            return recipe
+    private fun buildThreadRecipe(origin: GTRecipe, fanOut: Boolean, limit: Int): GTRecipe? {
+        // ① 机器自己的配方修改器（超频等）。
+        //    注意契约：接入本逻辑的多方块，其 recipeModifier 不应包含并行修改器（见类 KDoc）。
+        val modified = machine.fullModifyRecipe(origin) ?: return null
+
+        // 防御：上游修改器已经并行过了就别再叠一遍（会变成 并行²）。
+        // 这种配方**也不参与 fan-out**：它的倍数是上游算的，本内核拿不到干净的「本组已提交多少」
+        // 口径，硬叠只会超发（第一条线程照旧按原行为直接用它）。
+        if (modified.parallels > 1) {
+            warnAlreadyParallel(modified)
+            return if (fanOut) null else modified
         }
 
-        val hatch = parallelHatch() ?: return recipe
-        val limit = hatch.currentParallel
-        if (limit <= 1) return recipe
+        // ④ 这条线程**自己**那份并行
+        val parallels = planThreadParallel(modified, fanOut, limit) ?: return null
+        return applyParallel(modified, parallels)
+    }
 
-        val achievable = ParallelLogic.getParallelAmount(getMachine(), recipe, limit)
-        if (achievable <= 0) return null
-        if (achievable == 1) return recipe
+    /**
+     * 「上游修改器已经套过并行」这条警告只打一次，免得刷屏。
+     *
+     * 之所以刷屏风险真实存在：fan-out 每轮搜索都可能再撞上同一批配方，而去重只做一次。
+     */
+    private fun warnAlreadyParallel(recipe: GTRecipe) {
+        if (warnedAlreadyParallel) return
+        warnedAlreadyParallel = true
+        Gtetcore.LOGGER.warn(
+            "[GTET] 线程仓：配方 {} 在机器配方修改器里已经吃过并行（parallels={}），" +
+                "线程逻辑不再叠加。请把该多方块的 recipeModifier 换成不含并行的版本。",
+            recipe.id,
+            recipe.parallels
+        )
+    }
 
+    /**
+     * 算「这条新线程该拿几倍并行」（④）。
+     *
+     * **[fanOut] = false（第一轮：这一种配方还没有别的线程在跑）**：沿用原行为 ——
+     * 上限取并行仓的 `getCurrentParallel()`（记作 M），再用 `ParallelLogic#getParallelAmount(...)`
+     * 把 M 收缩到「这台机器当下真的喂得起的倍数」（输入不够按输入算、输出塞不下按输出算，
+     * 这段判定不自己写）。
+     *
+     * **[fanOut] = true（第二轮：同一种配方再吃一条空闲线程）**：**一组一预算、再均分**。
+     * 为什么不能像第一轮那样「每条线程各算一次」：`getParallelAmount` 看的只是**当下库存**，
+     * 而 tick 输入（EUt：`EURecipeCapability#getMaxParallelByInput` 算的是「能量仓电压 / 配方 EUt」）
+     * 与出料口容量（`ParallelLogic#limitByOutputMerging`）在开线程那一刻**都是满的**，
+     * k 条线程会各算一遍同一份额度 → 加起来 k 份，等于白开。所以：
+     * ```
+     * 聚合上限 = M × (本组已在跑条数 + 当前空闲槽位数)
+     * 本组总预算 = ParallelLogic.getParallelAmount(machine, recipe, 聚合上限)   ← 只调一次
+     * 还能提交   = 本组总预算 − Σ(本组已在跑线程已提交的份额)                     ← 自己记账减掉
+     * 本条线程   = clamp(还能提交 ÷ 本组还能开的线程数, 1, M)
+     * ```
+     * 「已提交的份额」用 [committedUnits] 换算成**当下这份配方的运行次数**为单位
+     * （`parallels × subtickParallels × batchParallels`，即 `GTRecipe#getTotalRuns()`）：
+     * `getParallelAmount` 判的是「**这份配方**还能跑几次」，而每条线程其实跑的是
+     * `getTotalRuns()` 那么多次 —— 有 `OC_NON_PERFECT_SUBTICK` / `BATCH_MODE` 时
+     * 每线程的 `subtickParallels × batchParallels` 是按**当时库存**各算各的，线程之间可能不一样，
+     * 只按 `parallels` 记账会在这种时候低估上游线程真正吃掉的那份料。形状相同时
+     * （稳态下就是这样）这项换算恰好退化成 `Σ parallels`，不影响「cap 限住时 k 条线程各拿满 M」这条主路径。
+     *
+     * 非 tick 输入（物品/流体）那一侧本来就因为「开线程时真扣料」而自动变小，
+     * 这里再减一次已提交份额属于**保守**（见类 KDoc「v1 已知简化」第 9 条）。
+     *
+     * @return 该线程的并行倍数（≥1）；`null` = 这条配方当下连 1 份都喂不起（开不出线程）
+     */
+    private fun planThreadParallel(recipe: GTRecipe, fanOut: Boolean, limit: Int): Int? {
+        val hatch = parallelHatch() ?: return 1
+        val cap = hatch.currentParallel
+        if (cap <= 1) return 1
+
+        if (!fanOut) {
+            val achievable = ParallelLogic.getParallelAmount(getMachine(), recipe, cap)
+            return if (achievable <= 0) null else achievable
+        }
+
+        val running = countRunningSameRecipe(recipe)
+        val committed = committedUnits(recipe, unitRuns(recipe))
+        val free = countFreeSlots(limit)
+        if (free <= 0) return null
+
+        // 聚合上限 = M × 本组最多能占的线程数；先按 Long 乘再夹到 Int，免得高位 tier 直接溢出
+        val threadsForGroup = (running + free).toLong()
+        val aggregateCap = minOf(cap.toLong() * threadsForGroup, Int.MAX_VALUE.toLong()).toInt()
+
+        // 便宜的早退：`getParallelAmount` 的结果永远 ≤ 传进去的上限，所以上限已经 ≤ 已提交时
+        // 一定没有余量 —— 省掉一次「输入/输出模拟」（大倍数下 `limitByOutputMerging` 是二分搜索，
+        // 每 5 tick 每个空闲槽位都调一次的话不便宜）
+        if (aggregateCap.toLong() <= committed) return null
+
+        val affordable = ParallelLogic.getParallelAmount(getMachine(), recipe, aggregateCap)
+
+        // 减掉本组已经提交的份额 —— 这一步专治「tick 输入 / 出料口容量不会因为开过线程而变小」
+        val extra = affordable.toLong() - committed
+        if (extra < 1L) return null
+
+        // 均分：本组还能开的线程数（每条至少 1 份，所以取 min(free, extra)）
+        val openable = minOf(free.toLong(), extra)
+        return minOf(cap.toLong(), maxOf(1L, extra / openable)).toInt()
+    }
+
+    /**
+     * 「当下这份配方跑一次」等于多少次**配方运行**：`subtickParallels × batchParallels`
+     * （配方的 `parallels` 还没套，所以 `GTRecipe#getTotalRuns()` 此刻就等于这个乘积）。
+     *
+     * 这是 [planThreadParallel] 与 [committedUnits] 之间的**换算单位**：不这么做的话，
+     * 「有亚 tick / 批处理的机器」上线程之间的份额就没法比较（每线程的乘积是按当时库存各算的）。
+     * 两个字段都 ≥1（GTRecipe 的默认值），所以不用担心除零。
+     */
+    private fun unitRuns(recipe: GTRecipe): Long =
+        recipe.subtickParallels.toLong() * recipe.batchParallels.toLong()
+
+    /**
+     * 本组（同 [sameRecipe]）已在跑线程**已经提交**的份额，单位 = 当下这份配方的运行次数
+     * （见 [unitRuns]）：Σ 各线程 `getTotalRuns() ÷ unitRuns`，**向上取整**。
+     *
+     * 为什么必须自己记这份账：[planThreadParallel] 里说过 —— 非 tick 输入在开线程时就被真扣掉了
+     * （库存会自己变小），而 **tick 输入与出料口容量不会**，`ParallelLogic` 每次去看都还是「满的」，
+     * 只能靠这份账把它们减掉。向上取整是有意的：宁可高估已提交（少开一条），也不超发。
+     */
+    private fun committedUnits(recipe: GTRecipe, unit: Long): Long {
+        var sum = 0L
+        for (rec in threads) {
+            if (rec == null || !sameRecipe(rec.recipe, recipe)) continue
+            val runs = rec.recipe.totalRuns.toLong()
+            sum += if (unit <= 0L) runs else (runs + unit - 1L) / unit
+        }
+        return sum
+    }
+
+    /**
+     * 把并行倍数真正套到配方上。
+     *
+     * 套法：内容 ×p、EUt ×p、`recipe.parallels = p`（三样缺一不可：只乘内容不设 `parallels`
+     * 会让概率掷点按 1 次算，只设 `parallels` 不乘内容则等于白开线程）。
+     * 走 `ModifierFunction` 链路而不是自己改内容表：概率逻辑、tick 内容、
+     * `parallels` 与 `getTotalRuns()`（概率掷点要按总运行次数算）全都挂在 GTRecipe 的既有语义上，
+     * 自己手改内容会把这些一起改坏。
+     *
+     * @return 套好并行的配方；`null` = 上游修改器判了 NULL（`ModifierFunction.NULL`）
+     */
+    private fun applyParallel(recipe: GTRecipe, parallels: Int): GTRecipe? {
+        if (parallels <= 1) return recipe
         return ModifierFunction.builder()
-            .modifyAllContents(ContentModifier.multiplier(achievable.toDouble()))
-            .eutMultiplier(achievable.toDouble())
-            .parallels(achievable)
+            .modifyAllContents(ContentModifier.multiplier(parallels.toDouble()))
+            .eutMultiplier(parallels.toDouble())
+            .parallels(parallels)
             .build()
             .apply(recipe)
+    }
+
+    /** 这一种配方（同 [sameRecipe] 口径）此刻有几条线程在跑。 */
+    private fun countRunningSameRecipe(recipe: GTRecipe): Int {
+        var n = 0
+        for (rec in threads) {
+            if (rec != null && sameRecipe(rec.recipe, recipe)) n++
+        }
+        return n
+    }
+
+    /** 线程上限以内的空闲槽位数（fan-out 的「本组还能开几条线程」与均分都用它）。 */
+    private fun countFreeSlots(limit: Int): Int {
+        var n = 0
+        for (slot in 0 until minOf(limit, threads.size)) {
+            if (threads[slot] == null) n++
+        }
+        return n
     }
 
     /** 控制器上挂着的并行仓（`IMultiController#getParallelHatch()` 只缓存一个实例）。 */
@@ -485,18 +728,8 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
         return false
     }
 
-    /**
-     * 两条配方算不算「同一种」。
-     *
-     * GTM 的 `GTRecipe#equals` 就是「比 `id`」，但它对 `id == null` 的配方会 NPE
-     * （`return this.id.equals(recipe.id);`），所以这里自己判一次：
-     * 两边都有 id 就比 id，否则退化成引用相等。
-     */
-    private fun sameRecipe(a: GTRecipe, b: GTRecipe): Boolean {
-        val idA = a.id
-        val idB = b.id
-        return if (idA != null && idB != null) idA == idB else a === b
-    }
+    /** 两条配方算不算「同一种」；判定见 [isSameRecipe]。 */
+    private fun sameRecipe(a: GTRecipe, b: GTRecipe): Boolean = isSameRecipe(a, b)
 
     // ────────────────────────────────────────────────
     //  槽位 / 状态 / 客户端镜像
@@ -613,6 +846,10 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
      * 只在能跑 `serverTick`（服务端）且结构可用时才恢复；配方从 `RecipeManager` 重取，
      * 再重跑一遍 `fullModifyRecipe` + 本线程并行 —— **不再扣一次料**（料在存档前就扣过了），
      * 所以这里绕开 [startThread] 自己拼 `ThreadRec`。
+     *
+     * 存档里同一种配方可能有好几条线程（fan-out 开出来的，见类 KDoc「同配方多线程怎么分配」），
+     * 所以除第一条之外都按 [planThreadParallel] 的 fan-out 预算走 —— 否则恢复时每条线程都会
+     * 各算一遍满 M，tick 输入与出料口容量又被重复计一遍。
      */
     private fun restoreThreadsIfPossible() {
         val pending = pendingRestore ?: return
@@ -625,8 +862,8 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
         for ((id, savedProgress) in pending) {
             if (slot >= limit) break
             val origin = getRecipeManager().byKey(id).orElse(null) as? GTRecipe ?: continue
-            val modified = machine.fullModifyRecipe(origin) ?: continue
-            val threaded = applyThreadParallel(modified) ?: continue
+            val fanOut = countRunningSameRecipe(origin) > 0
+            val threaded = buildThreadRecipe(origin, fanOut, limit) ?: continue
             threads[slot] = ThreadRec(threaded, savedProgress.coerceIn(0, threaded.duration), threaded.duration)
             threadChanceCaches[slot] = makeChanceCaches()
             slot++
@@ -648,5 +885,18 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
         private const val TAG_THREADS: String = "gtet_threads"
         private const val TAG_RECIPE: String = "recipe"
         private const val TAG_PROGRESS: String = "progress"
+
+        /**
+         * 两条配方算不算「同一种」：两边都有 `id` 就比 `id`，否则退化成引用相等。
+         *
+         * 不用现成的 `GTRecipe#equals`：它只比 `id`，且对 `id == null` 会 NPE（`return this.id.equals(recipe.id);`）。
+         * 公开出来是给显示层的「同配方合并」（[ThreadedRecipeStatus.groupSnapshots]）复用同一条判定，
+         * 免得两处口径各写一份后漂移。
+         */
+        fun isSameRecipe(a: GTRecipe, b: GTRecipe): Boolean {
+            val idA = a.id
+            val idB = b.id
+            return if (idA != null && idB != null) idA == idB else a === b
+        }
     }
 }

@@ -18,7 +18,8 @@
       "GTMT.AutoBuildSettingMixin"
     ],
     "client": [
-
+      "GTM.MixinParallelProviderTooltip",
+      "GTM.MixinWorkableProgressBar"
     ],
     "server": [
 
