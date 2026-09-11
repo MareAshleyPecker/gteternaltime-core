@@ -43,18 +43,23 @@ open class ETGTAddon : IGTAddon {
     override fun initializeAddon() {
         ETItems.init()
         ETBlock.init()
-        // 机器（含多方块部件「超频仓」）也在这里注册。
+        // 机器（含多方块部件「超频仓」）**只**在这里注册。
         //
-        // 为什么不靠 `CommonProxy.registerMachines` 事件：GTM 的
-        // `RegisterEvent<ResourceLocation, MachineDefinition>` 是 GTM 在自己 mod 构造期间
+        // 这里曾经是「双入口」：CommonProxy 里还挂着一个 `registerMachines` 监听器，谁先跑到谁注册。
+        // 那个监听器已按「注册必须确定」的理由删掉（完整原因写在 CommonProxy 里那段注释中）：
+        // GTM 的 `RegisterEvent<ResourceLocation, MachineDefinition>` 是 GTM 在自己 mod 构造期间
         // （GTCEu() → ClientProxy/CommonProxy → CommonProxy.init() → GTMachines.init() → postEvent）
-        // 发出的，而 Forge 是**并行构造 mod**的，本 mod 的 CommonProxy 有可能还没构造完 —— 这是个竞态，
-        // 实测经常收不到（GTET 之前没有机器，所以这个坑一直没暴露）。留着那个监听器只是「万一赶上了就先注册」。
+        // 发出的，而 Forge 是**并行构造 mod**的，本 mod 的 CommonProxy 不一定赶得上 —— 这个竞态会让
+        // 渲染态 id 的分配顺序在服务端/客户端两个 JVM 之间错位（id 顺序 = 网络协议的一部分）。
         //
         // 这里则是 GTCEu 官方的 addon 回调，位置在 GTM `CommonProxy.init()` 的最末尾
         // （`AddonFinder.getAddons().forEach(IGTAddon::initializeAddon)`），此时材料、机器、模型
         // 都已经准备好，同时仍远早于 Forge 的 RegisterEvent，Registrate 能正常收下这些条目。
-        // 两个 init 自身都带幂等保护，重复调用无副作用。
+        // 调用顺序固定 ⇒ 渲染态 id 顺序在两端一致。
+        //
+        // 幂等保护的证据：`ALLMmchine.init()` 开头就是 `if (initialized) return`
+        // （ALLMmchine 第 22-23 行的 `initialized` 标志 + 第 112-113 行），重复调用只会空转，
+        // 不会重复注册；`ALLSmahine.init()` 目前是空实现。
         ALLMmchine.init()
         ALLSmahine.init()
     }

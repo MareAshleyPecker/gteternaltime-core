@@ -14,6 +14,7 @@
       "GTM.MixinGTMaterialOreBlocks",
       "GTM.MixinPowerSubstationMachine",
       "GTMT.AdvancedTerminalBehaviorMixin",
+      "GTMT.AdvancedBlockPatternMixin",
       "GTMT.AutoBuildSettingMixin"
     ],
     "client": [
