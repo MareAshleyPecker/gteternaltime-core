@@ -32,8 +32,8 @@ enum class CoilType(
 ) : StringRepresentable, ICoilType {
 
     /** 示例线圈 — 铜镍合金，基础等级 */
-    NAME("cupronickel", "测试线圈方块", 18000, 10, 10, Supplier { ETMaterial.MaterialNAME },
-        id("block/coil/testcoil/machine_coil_cupronickel"))
+    NAME("cupronickel", "测试线圈方块", 18000, 10, 10,
+        Supplier { ETMaterial.MaterialNAME }, id("block/coil/testcoil/machine_coil_cupronickel"))
 
     ;
 
@@ -41,7 +41,6 @@ enum class CoilType(
         val blockId = "%s_coil_block".format(serializedName)
         LangUtil.BLOCK_LANG[blockId] = cnName
     }
-
     // ======================== ICoilType 实现 ========================
 
     override fun getName(): String = serializedName

@@ -9,7 +9,10 @@
       "GTM.MixinGTFluids",
       "GTM.MixinGTMaterialBlocks",
       "GTM.MixinGTMaterialItems",
-      "GTM.MixinGTMaterialOreBlocks"
+      "GTM.MixinGTMaterialOreBlocks",
+      "GTM.MixinPowerSubstationMachine",
+      "GTMT.AdvancedTerminalBehaviorMixin",
+      "GTMT.AutoBuildSettingMixin"
     ],
     "client": [
 

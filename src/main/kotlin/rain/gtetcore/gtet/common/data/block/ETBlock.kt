@@ -28,7 +28,6 @@ object ETBlock {
     /**
      * 方块初始化入口，由 [rain.gtetcore.gtet.init.CommonProxy.kotlinInit] 调用。
      */
-    @SuppressWarnings("all")
     fun init() {
         val COIL_TEST_NAME = createCoilBlock(CoilType.NAME)
     }

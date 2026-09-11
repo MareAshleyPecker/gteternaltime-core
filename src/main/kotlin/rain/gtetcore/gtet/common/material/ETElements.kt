@@ -11,5 +11,6 @@ import com.gregtechceu.gtceu.api.data.chemical.Element
  */
 object ETElements {
     fun init() {}
-    val MaterialNAME = Element(1, 1, -1, null, "name", "NAME", false)
+    val MaterialNAME = Element(1, 1, -1,
+        null, "name", "NAME", false)
 }

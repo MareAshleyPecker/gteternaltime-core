@@ -33,8 +33,7 @@ object GTETClientCommands {
                     ctx.source.sendFailure(Component.literal("Nothing in main hand"))
                     return@executes 0
                 }
-                @Suppress("DEPRECATED")
-                val id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.item).toString()
+                val id = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.item)?.toString() ?: "unknown"
                 val nbtStr = formatNbt(stack)
                 val output = if (nbtStr.isEmpty()) id else "$id$nbtStr"
 

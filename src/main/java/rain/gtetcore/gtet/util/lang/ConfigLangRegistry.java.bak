@@ -1,0 +1,131 @@
+package rain.gtetcore.gtet.util.lang;
+
+import com.mojang.logging.LogUtils;
+
+import dev.toma.configuration.config.ConfigHolder;
+import dev.toma.configuration.config.value.ConfigValue;
+import dev.toma.configuration.config.value.ObjectValue;
+
+import org.slf4j.Logger;
+
+import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+/**
+ * 配置翻译键的自动注册。
+ *
+ * <p>configuration 库的游戏内界面按 <b>{@code config.<configId>.option.<选项 id>}</b> 取选项名
+ * （见库内 {@code ConfigEntryWidget} 构造器：
+ * {@code Component.translatable("config." + configId + ".option." + value.getId())}）。
+ * 本类在配置注册之后递归遍历库解析出来的所有 {@link ConfigValue}（分组项
+ * {@link ObjectValue} 的 {@link ObjectValue#get()} 就是子项表），按上面的规则生成键，
+ * 再按下面的顺序决定中英文文本：
+ *
+ * <ol>
+ *   <li>字段上标了 {@link Bilingual} → 用注解里的 {@code en} / {@code cn}；</li>
+ *   <li>否则取 {@code @Configurable.Comment} 的文本，按字符集拆：含中日韩字符的算中文，
+ *       其余算英文；</li>
+ *   <li>只有一边时，另一边用同一份文本兜底。</li>
+ * </ol>
+ *
+ * 注册进 {@link LangUtil} 后由 {@link rain.gtetcore.gtet.data.lang.LangHandler} 写进
+ * {@code en_us} / {@code zh_cn} 两个语言文件，因此必须在数据生成之前调用。
+ *
+ * @author rain fox
+ */
+public final class ConfigLangRegistry {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    /** 中日韩字符（含全角标点），用来判断一行注释是不是中文。 */
+    private static final Pattern CJK = Pattern.compile("[\\u3000-\\u303F\\u4E00-\\u9FFF\\uFF00-\\uFFEF]");
+
+    private ConfigLangRegistry() {}
+
+    /**
+     * 注册某个配置下所有选项的翻译键。
+     *
+     * @param holder {@code Configuration.registerConfig(...)} 返回的配置句柄
+     * @return 实际注册的条目数
+     */
+    public static int register(ConfigHolder<?> holder) {
+        if (holder == null) return 0;
+
+        Map<String, ConfigValue<?>> values = new LinkedHashMap<>();
+        for (ConfigValue<?> value : holder.values()) {
+            collect(value, values);
+        }
+
+        String prefix = "config." + holder.getConfigId() + ".option.";
+        int count = 0;
+        for (ConfigValue<?> value : values.values()) {
+            String key = prefix + value.getId();
+            String cn = null;
+            String en = null;
+
+            // 1) @Bilingual 优先
+            Bilingual annotation = bilingualOf(value);
+            if (annotation != null) {
+                cn = annotation.cn();
+                en = annotation.en();
+            }
+
+            // 2) 否则从 @Configurable.Comment 里按字符集拆
+            if (isBlank(cn) || isBlank(en)) {
+                String[] description = value.getDescription();
+                if (description != null) {
+                    for (String line : description) {
+                        if (line == null || line.isBlank()) continue;
+                        if (CJK.matcher(line).find()) {
+                            if (isBlank(cn)) cn = line.trim();
+                        } else if (isBlank(en)) {
+                            en = line.trim();
+                        }
+                    }
+                }
+            }
+
+            // 3) 只有一边时互相兜底
+            if (isBlank(cn) && isBlank(en)) continue;
+            if (isBlank(cn)) cn = en;
+            if (isBlank(en)) en = cn;
+
+            LangUtil.add(key, en, cn);
+            LOGGER.debug("config lang key: {} = {} / {}", key, en, cn);
+            count++;
+        }
+
+        LOGGER.info("Registered {} config translation keys for {}", count, holder.getConfigId());
+        return count;
+    }
+
+    /** 把配置项（含分组的子项）摊平进 {@code out}，键为选项 id。 */
+    private static void collect(ConfigValue<?> value, Map<String, ConfigValue<?>> out) {
+        out.putIfAbsent(value.getId(), value);
+        if (value instanceof ObjectValue objectValue) {
+            Map<String, ConfigValue<?>> children = objectValue.get();
+            if (children == null) return;
+            for (ConfigValue<?> child : children.values()) {
+                if (child != null) collect(child, out);
+            }
+        }
+    }
+
+    /** 取字段上的 {@link Bilingual} 注解（没有则为 {@code null}）。 */
+    private static Bilingual bilingualOf(ConfigValue<?> value) {
+        try {
+            Field owner = value.getSerializationContext().getOwner();
+            if (owner == null) return null;
+            Bilingual[] annotations = owner.getAnnotationsByType(Bilingual.class);
+            return annotations.length > 0 ? annotations[0] : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+}

@@ -1,13 +1,16 @@
 package rain.gtetcore.gtet.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.logging.LogUtils;
 
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.debug.DebugRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -17,20 +20,55 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-import org.lwjgl.opengl.GL11;
+import org.slf4j.Logger;
 
-import rain.gtetcore.gtet.common.item.StructureWriteBehavior;
+import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.common.item.StructureDetectBehavior;
+import rain.gtetcore.gtet.common.item.StructureWriteBehavior;
 
 /**
  * 客户端渲染器：手持结构工具时绘制选区半透明立方体，
- * 手持结构检测工具时绘制红色（错误）和绿色（正确）单方块线框。
+ * 手持结构检测工具时绘制蓝色单方块线框。
+ *
+ * <p>关键点（旧实现的两个坑）：
+ * <ol>
+ *   <li>所有顶点都交给原版 <b>RenderType 管线</b>绘制，不再直接用 {@code Tesselator} +
+ *       {@code RenderSystem}：手写顶点时必须自己乘 pose 矩阵，
+ *       而 {@link LevelRenderer#renderLineBox} 这类原版工具内部已经乘过了，
+ *       两者混用会让一部分几何被平移一整个相机坐标（飘出视野）。</li>
+ *   <li>线框走 {@link RenderType#lines()}（{@code POSITION_COLOR_NORMAL} + {@code rendertype_lines} 着色器，
+ *       由法线把线段展开成屏幕空间四边形）。旧的 {@code GameRenderer.getPositionColorShader()}
+ *       配 {@code Mode.LINES} 在现代 GL 下只能是 1px 发丝线，
+ *       {@code RenderSystem.lineWidth} 对它完全无效。该 RenderType 还带
+ *       {@code VIEW_OFFSET_Z_LAYERING}，顺带解决线框与方块面重合导致的闪烁。</li>
+ * </ol>
+ *
+ * @author rain fox
  */
 @OnlyIn(Dist.CLIENT)
 public final class StructureOverlayRenderer {
 
     // 持有自身引用防止 GC
     private static final StructureOverlayRenderer INSTANCE = new StructureOverlayRenderer();
+
+    private static final Logger LOGGER = LogUtils.getLogger();
+
+    // ── 覆盖层颜色 ──
+    // 配在 config/gtetcore/gtetcore-common.toml 的 [overlay] 段，一行一个颜色：
+    //   writeColor  = "R;G;B;线透明度;填充透明度"  ← 选区导出（线框 + 半透明填充）
+    //   detectColor = "R;G;B;透明度"               ← 结构检测错误位置（线框）
+    // 渲染每帧都要取一次颜色，所以按「上次解析过的原始串」缓存，配置改了才重新解析。
+
+    /** 默认：选区绿色线框 + 淡绿填充。 */
+    private static final OverlayColor DEFAULT_WRITE_COLOR = new OverlayColor(0.2F, 0.9F, 0.2F, 1.0F, 0.15F);
+
+    /** 默认：错误位置蓝色线框。 */
+    private static final OverlayColor DEFAULT_DETECT_COLOR = new OverlayColor(0.2F, 0.4F, 1.0F, 1.0F, 1.0F);
+
+    private static volatile String writeColorRawCache;
+    private static volatile OverlayColor writeColorCache = DEFAULT_WRITE_COLOR;
+    private static volatile String detectColorRawCache;
+    private static volatile OverlayColor detectColorCache = DEFAULT_DETECT_COLOR;
 
     public static void register() {
         MinecraftForge.EVENT_BUS.register(INSTANCE);
@@ -43,127 +81,130 @@ public final class StructureOverlayRenderer {
         var player = Minecraft.getInstance().player;
         if (player == null) return;
 
-        var mainStack = player.getMainHandItem();
-        var offStack = player.getOffhandItem();
+        ItemStack mainStack = player.getMainHandItem();
+        ItemStack offStack = player.getOffhandItem();
 
-        // 结构选区工具 — 绿色大立方体
-        var writeStack = StructureWriteBehavior.isItemStructureWriter(mainStack) ? mainStack :
-                StructureWriteBehavior.isItemStructureWriter(offStack) ? offStack : null;
-        if (writeStack != null) {
-            renderWriteBox(event, writeStack);
-        }
+        ItemStack writeStack = StructureWriteBehavior.isItemStructureWriter(mainStack) ? mainStack
+                : StructureWriteBehavior.isItemStructureWriter(offStack) ? offStack : null;
+        ItemStack detectStack = StructureDetectBehavior.isItem(mainStack) ? mainStack
+                : StructureDetectBehavior.isItem(offStack) ? offStack : null;
+        if (writeStack == null && detectStack == null) return;
 
-        // 结构检测工具 — 参照 GTO，错误位置蓝色线框
-        var detectStack = StructureDetectBehavior.isItem(mainStack) ? mainStack :
-                StructureDetectBehavior.isItem(offStack) ? offStack : null;
-        if (detectStack != null) {
-            renderDetectBoxes(event, detectStack);
+        MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camPos = event.getCamera().getPosition();
+
+        // 原版给的 pose stack 是相机空间且未做相机平移（原版画方块轮廓时也是手动减相机坐标），
+        // 所以这里平移一次，之后一律用世界坐标。
+        poseStack.pushPose();
+        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+        try {
+            if (writeStack != null) {
+                renderWriteBox(poseStack, buffers, writeStack);
+            }
+            if (detectStack != null) {
+                renderDetectBoxes(poseStack, buffers, detectStack);
+            }
+        } finally {
+            poseStack.popPose();
+            // 半透明面先画、线框后画，避免线被面糊上一层
+            buffers.endBatch(RenderType.debugFilledBox());
+            buffers.endBatch(RenderType.lines());
         }
     }
 
-    private void renderWriteBox(RenderLevelStageEvent event, net.minecraft.world.item.ItemStack stack) {
+    /** 结构工具：选区立方体（半透明面 + 线框，颜色走配置）。 */
+    private void renderWriteBox(PoseStack poseStack, MultiBufferSource buffers, ItemStack stack) {
         BlockPos[] pos = StructureWriteBehavior.getPos(stack);
         if (pos == null) return;
 
-        Camera camera = event.getCamera();
-        Vec3 camPos = camera.getPosition();
-        PoseStack poseStack = event.getPoseStack();
-        poseStack.pushPose();
-        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+        // pos[0] / pos[1] 是含端点的最小 / 最大方块，所以 +1 才是覆盖整块的包围盒
+        AABB box = blockRangeBox(pos[0], pos[1]);
 
-        BlockPos min = pos[0], max = pos[1];
-        AABB aabb = new AABB(
-                min.getX(), min.getY(), min.getZ(),
-                max.getX() + 1.0, max.getY() + 1.0, max.getZ() + 1.0);
-
-        RenderSystem.enableBlend();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.disableCull();
-        RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-        Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder builder = tessellator.getBuilder();
-
-        // 绿色线框
-        RenderSystem.lineWidth(2.0F);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        builder.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR);
-        LevelRenderer.renderLineBox(poseStack, builder, aabb, 0.2F, 0.9F, 0.2F, 0.9F);
-        tessellator.end();
-
-        // 半透明面
-        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        fillFaces(builder, aabb, 0.2F, 0.9F, 0.2F, 0.15F);
-        tessellator.end();
-
-        RenderSystem.lineWidth(1.0F);
-        RenderSystem.depthMask(true);
-        RenderSystem.enableCull();
-        RenderSystem.disableBlend();
-        poseStack.popPose();
+        OverlayColor color = writeColor();
+        DebugRenderer.renderFilledBox(poseStack, buffers, box,
+                color.r(), color.g(), color.b(), color.fillAlpha());
+        LevelRenderer.renderLineBox(
+                poseStack, buffers.getBuffer(RenderType.lines()), box,
+                color.r(), color.g(), color.b(), color.lineAlpha());
     }
 
-    /** 渲染结构检测工具的错误方块线框（参照 GTO 用蓝色） */
-    private void renderDetectBoxes(RenderLevelStageEvent event, net.minecraft.world.item.ItemStack stack) {
-        var errors = StructureDetectBehavior.getPos(stack);
+    /** 结构检测工具：逐个错误位置的线框（颜色走配置）。 */
+    private void renderDetectBoxes(PoseStack poseStack, MultiBufferSource buffers, ItemStack stack) {
+        BlockPos[] errors = StructureDetectBehavior.getPos(stack);
         if (errors == null || errors.length == 0) return;
 
-        Camera camera = event.getCamera();
-        Vec3 camPos = camera.getPosition();
-        PoseStack poseStack = event.getPoseStack();
-        poseStack.pushPose();
-        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
-
-        RenderSystem.enableBlend();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthMask(false);
-        RenderSystem.disableCull();
-        RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-        Tesselator tessellator = Tesselator.getInstance();
-        BufferBuilder builder = tessellator.getBuilder();
-
-        RenderSystem.lineWidth(3.0F);
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-
-        for (var p : errors) {
+        OverlayColor color = detectColor();
+        VertexConsumer lines = buffers.getBuffer(RenderType.lines());
+        for (BlockPos p : errors) {
             if (p == null) continue;
-            builder.begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR);
-            LevelRenderer.renderLineBox(poseStack, builder,
-                    p.getX(), p.getY(), p.getZ(),
-                    p.getX() + 1.0, p.getY() + 1.0, p.getZ() + 1.0,
-                    0.2F, 0.4F, 1.0F, 0.9F);  // GTO: blue highlight
-            tessellator.end();
+            LevelRenderer.renderLineBox(poseStack, lines, new AABB(p),
+                    color.r(), color.g(), color.b(), color.lineAlpha());
+        }
+    }
+
+    // ── 颜色解析 ──
+
+    /** 选区颜色（跟随配置；配置串非法时退回默认值）。 */
+    private static OverlayColor writeColor() {
+        String raw = GTETConfig.writeOverlayColor();
+        if (!raw.equals(writeColorRawCache)) {
+            writeColorRawCache = raw;
+            writeColorCache = parseColor(raw, DEFAULT_WRITE_COLOR, "writeColor");
+        }
+        return writeColorCache;
+    }
+
+    /** 错误位置颜色（跟随配置；配置串非法时退回默认值）。 */
+    private static OverlayColor detectColor() {
+        String raw = GTETConfig.detectOverlayColor();
+        if (!raw.equals(detectColorRawCache)) {
+            detectColorRawCache = raw;
+            detectColorCache = parseColor(raw, DEFAULT_DETECT_COLOR, "detectColor");
+        }
+        return detectColorCache;
+    }
+
+    /**
+     * 解析一行颜色配置：{@code R;G;B}，后面可以按顺序再跟透明度（先是线框、后是填充）。
+     *
+     * <p>分量用分号或逗号分隔、取值 0~1（超范围会被夹回去）；某个分量写错了就用默认值，
+     * 只有连 R;G;B 都凑不齐时才整条退回默认颜色，并记一条警告。
+     */
+    private static OverlayColor parseColor(String raw, OverlayColor fallback, String key) {
+        if (raw == null || raw.isBlank()) return fallback;
+
+        String[] parts = raw.trim().split("[;,]", -1);
+        if (parts.length < 3) {
+            LOGGER.warn("[gtetcore] overlay.{} 要写成 R;G;B（可再跟透明度），当前是 \"{}\"，已退回默认颜色",
+                    key, raw);
+            return fallback;
         }
 
-        RenderSystem.lineWidth(1.0F);
-        RenderSystem.depthMask(true);
-        RenderSystem.enableCull();
-        RenderSystem.disableBlend();
-        poseStack.popPose();
+        return new OverlayColor(
+                component(parts[0], fallback.r()),
+                component(parts[1], fallback.g()),
+                component(parts[2], fallback.b()),
+                parts.length > 3 ? component(parts[3], fallback.lineAlpha()) : fallback.lineAlpha(),
+                parts.length > 4 ? component(parts[4], fallback.fillAlpha()) : fallback.fillAlpha());
     }
 
-    private static void fillFaces(BufferBuilder b, AABB box, float r, float g, float bl, float a) {
-        double x1 = box.minX, y1 = box.minY, z1 = box.minZ;
-        double x2 = box.maxX, y2 = box.maxY, z2 = box.maxZ;
-
-        quad(b, x2, y1, z1, x1, y1, z1, x1, y1, z2, x2, y1, z2, r, g, bl, a);
-        quad(b, x1, y2, z2, x2, y2, z2, x2, y2, z1, x1, y2, z1, r, g, bl, a);
-        quad(b, x1, y1, z1, x2, y1, z1, x2, y2, z1, x1, y2, z1, r, g, bl, a);
-        quad(b, x2, y1, z2, x1, y1, z2, x1, y2, z2, x2, y2, z2, r, g, bl, a);
-        quad(b, x1, y1, z2, x1, y1, z1, x1, y2, z1, x1, y2, z2, r, g, bl, a);
-        quad(b, x2, y2, z1, x2, y2, z2, x2, y1, z2, x2, y1, z1, r, g, bl, a);
+    /** 单个分量：解析失败用默认值，数值夹到 0~1。 */
+    private static float component(String raw, float fallback) {
+        try {
+            return Math.max(0.0F, Math.min(1.0F, Float.parseFloat(raw.trim())));
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 
-    private static void quad(BufferBuilder b, double x1, double y1, double z1,
-                             double x2, double y2, double z2,
-                             double x3, double y3, double z3,
-                             double x4, double y4, double z4,
-                             float r, float g, float bl, float a) {
-        b.vertex(x1, y1, z1).color(r, g, bl, a).endVertex();
-        b.vertex(x2, y2, z2).color(r, g, bl, a).endVertex();
-        b.vertex(x3, y3, z3).color(r, g, bl, a).endVertex();
-        b.vertex(x4, y4, z4).color(r, g, bl, a).endVertex();
+    /** 解析好的覆盖层颜色：RGB + 线框透明度 + 填充透明度。 */
+    private record OverlayColor(float r, float g, float b, float lineAlpha, float fillAlpha) {}
+
+    /** 由选区两个端点方块（含端点）得到包围盒。 */
+    private static AABB blockRangeBox(BlockPos min, BlockPos max) {
+        return new AABB(
+                min.getX(), min.getY(), min.getZ(),
+                max.getX() + 1.0, max.getY() + 1.0, max.getZ() + 1.0);
     }
 }

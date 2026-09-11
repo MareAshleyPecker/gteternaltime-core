@@ -11,6 +11,7 @@ import net.minecraftforge.eventbus.api.IEventBus
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
+import rain.gtetcore.gtet.config.GTETConfig
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.data.block.ETBlock
@@ -24,13 +25,13 @@ import rain.gtetcore.gtet.data.GTETDatagen
  * 通用代理 —— 客户端和服务端都需要加载的初始化逻辑。
  */
 
-open class CommonProxy {
+open class CommonProxy(private val context: FMLJavaModLoadingContext) {
 
     @Suppress("unused")
     private lateinit var materialRegistry: MaterialRegistry
 
     init {
-        @Suppress("DEPRECATION") val bus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
+        val bus: IEventBus = context.modEventBus
         bus.register(this)
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this)
         kotlinInit()
@@ -39,9 +40,16 @@ open class CommonProxy {
     /**
      * Kotlin 端额外的初始化逻辑。
      *
-     * 子类可重写以注入额外初始化。当前触发 [GTETCreativeModeTabs.init]。
+     * 子类可重写以注入额外初始化。当前触发 [GTETConfig.init] 与 [GTETCreativeModeTabs.init]。
      */
     protected fun kotlinInit() {
+        // 注册配置：config/gtetcore/gtetcore-common.toml（ForgeConfigSpec，COMMON 类型）
+        // 用 [Gtetcore] 构造器注入进来的 context 注册 —— 不再走已弃用的 ModLoadingContext.get()
+        GTETConfig.init(context)
+        // 高级终端扩展用到的双语条目（必须在数据生成前注册）
+        rain.gtetcore.gtet.common.item.terminal.TerminalLang.init()
+        // 结构工具的网络包（客户端滚轮切模式 → 服务端改 NBT）
+        rain.gtetcore.gtet.common.item.tool.ToolNetwork.register()
         GTETCreativeModeTabs.init()
         ETItems.init()
         ETBlock.init()

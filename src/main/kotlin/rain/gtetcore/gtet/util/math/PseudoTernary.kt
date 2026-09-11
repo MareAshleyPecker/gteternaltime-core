@@ -11,7 +11,6 @@ package rain.gtetcore.gtet.util.math
 class ElseBuilder<T>(private val condition: Boolean, private val trueValue: T) {
     infix fun or(falseValue: T): T = if (condition) trueValue else falseValue
 }
-
 /**
  * ```kotlin
  *  T then Ture or False

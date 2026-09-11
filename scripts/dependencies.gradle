@@ -12,6 +12,13 @@ dependencies {
 
     //gtceu
     implementation fg.deobf("com.gregtechceu.gtceu:gtceu-${mc_version}:${gtm_version}")
+
+    // configuration（dev.toma）—— 配置库，GTCEu 用 JarJar 自带
+    // jar 从 GTCEu 的 META-INF/jarjar/ 里提取到 libs/，运行时由 GTCEu 提供，这里只用于编译
+    // 注意：本 mod 的配置已改走 ForgeConfigSpec，编译期不再 import 这套库；
+    //      保留依赖是为了随时按 GTETConfig.java.bak / ConfigLangRegistry.java.bak 切回旧实现
+    compileOnly files("libs/configuration-forge-${mc_version}-${configuration_version}.jar")
+
     implementation fg.deobf("curse.maven:ldlib-626676:7809449")//ldlib-1.20.1-1.0.50-forge
     implementation fg.deobf("curse.maven:gtmthings-1104310:7712957")//gtmthings-1.6.0-forge
 
@@ -29,6 +36,13 @@ dependencies {
     implementation fg.deobf("thedarkcolour:kotlinforforge:4.12.0")
 
     compileOnly "dev:Registrate:MC1.20-1.3.11"
+
+    // Configured（MrCrayfish）—— 给标准 ForgeConfigSpec 自动生成游戏内配置界面
+    // 只挂 dev 运行环境（runtimeOnly）：它替「有 Forge 配置、自己没注册屏幕」的 mod 补 ConfigScreenHandler，
+    // 所以本 mod 不用写屏幕代码也能在 Mods 列表里可视化改配置；
+    // 玩家侧不强制（mods.toml 里不声明），装了就有界面，不装就纯 toml。
+    // 本地 jar 必须走 flatDir 记号才会被 fg.deobf 重映射（files(...) 依赖 FG 明确不支持 deobf）
+    runtimeOnly fg.deobf("libs:configured-forge-1.20.1:2.2.3")
 
     compileOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}"))
     runtimeOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}"))

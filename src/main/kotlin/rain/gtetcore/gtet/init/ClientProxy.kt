@@ -16,12 +16,14 @@ import rain.gtetcore.gtet.client.StructureOverlayRenderer
 
 /** 客户端专用代理。 */
 @OnlyIn(Dist.CLIENT)
-open class ClientProxy : CommonProxy() {
+open class ClientProxy(context: FMLJavaModLoadingContext) : CommonProxy(context) {
     init {
-        @Suppress("DEPRECATION") val bus: IEventBus = FMLJavaModLoadingContext.get().modEventBus
+        val bus: IEventBus = context.modEventBus
         bus.register(this)
         MinecraftForge.EVENT_BUS.register(ClientForgeEvents)
         StructureOverlayRenderer.register()
+        // 对着空气 Shift+滚轮 切换结构工具工作模式
+        rain.gtetcore.gtet.client.ToolScrollHandler.register()
     }
 
     @OnlyIn(Dist.CLIENT)

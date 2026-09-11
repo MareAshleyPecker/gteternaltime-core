@@ -11,6 +11,8 @@ build
 out/
 .idea
 *.iml
+.claude
+.kotlin
 # mpeltonen/sbt-idea plugin
 .idea_modules/
 

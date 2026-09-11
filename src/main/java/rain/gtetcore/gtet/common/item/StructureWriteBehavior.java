@@ -26,6 +26,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import rain.gtetcore.gtet.util.RegistriesUtil;
+import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.Gtetcore;
 
 import java.io.BufferedWriter;
@@ -35,6 +36,9 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+/**
+ * @author <a href="https://github.com/ialdaiaxiariyay/BetterGregTechAndAppliedEnergistics">ialdaiaxiariyay</a>
+ * */
 public class StructureWriteBehavior implements IItemUIFactory {
 
     public static final StructureWriteBehavior INSTANCE = new StructureWriteBehavior();
@@ -109,6 +113,8 @@ public class StructureWriteBehavior implements IItemUIFactory {
 
     @SuppressWarnings("all")
     private void export(HeldItemUIFactory.HeldItemHolder playerInventoryHolder) {
+        // 配置里关掉导出模式时，导出按钮直接不做事
+        if (!GTETConfig.exportModeEnabled()) return;
         if (getPos(playerInventoryHolder.getHeld()) != null &&
                 playerInventoryHolder.getPlayer() instanceof ServerPlayer) {
             BlockPos[] blockPos = getPos(playerInventoryHolder.getHeld());
@@ -147,7 +153,7 @@ public class StructureWriteBehavior implements IItemUIFactory {
             LocalDateTime now = LocalDateTime.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
             String fileName = now.format(formatter) + ".kt";
-            File logDir = new File("logs/bp");
+            File logDir = new File(GTETConfig.exportDirectory());
             if (!logDir.exists()) {
                 logDir.mkdirs();
             }
@@ -197,7 +203,7 @@ public class StructureWriteBehavior implements IItemUIFactory {
         // 引用比对（最快）
         if (STRUCTURE_TOOLS_ITEM != null && item == STRUCTURE_TOOLS_ITEM) return true;
         // registry 名比对（最可靠）
-        var key = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item);
+        var key = net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(item);
         if (key != null && "gtetcore".equals(key.getNamespace()) && "structure_tools".equals(key.getPath())) return true;
         // components 回退
         if (item instanceof ComponentItem ci) return ci.getComponents().contains(INSTANCE);

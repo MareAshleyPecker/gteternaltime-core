@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.common.item.StructureDetectBehavior
 import rain.gtetcore.gtet.common.item.StructureWriteBehavior
 import rain.gtetcore.gtet.common.item.TerminalBehavior
+import rain.gtetcore.gtet.common.item.tool.StructureToolBehavior
 import rain.gtetcore.gtet.api.registrate.OnlyETreg
 import rain.gtetcore.gtet.util.tooltips
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs
@@ -51,5 +52,20 @@ object ETItems {
         .properties { p -> p.stacksTo(1) }
         .model { ctx, prov -> prov.generated(ctx, ResourceLocation.withDefaultNamespace("item/stick")) }
         .onRegister { it.attachComponents(StructureDetectBehavior) }
+        .register()
+
+    /** 结构工具（合并版） — 一个物品三种工作模式，对着空气 Shift+滚轮切换 */
+    val STRUCTURE_TOOL: ItemEntry<ComponentItem> = OnlyETreg.ETRegistrate
+        .itemAndLang("structure_tool", "结构工具（合并版）", ComponentItem::create)
+        .tooltips("structure_tool",
+            "Aim at air + Shift + scroll to switch work mode" to "对着空气 Shift+滚轮 切换工作模式",
+            "Modes: area export / recheck / detect / advanced terminal" to
+                "模式：选区导出 / 结构重检 / 结构检测 / 高级终端",
+            "Shift+right-click a controller: acts per current mode" to
+                "Shift+右键控制器：按当前模式生效",
+        )
+        .properties { p -> p.stacksTo(1) }
+        .model { ctx, prov -> prov.generated(ctx, ResourceLocation.withDefaultNamespace("item/stick")) }
+        .onRegister { it.attachComponents(StructureToolBehavior.INSTANCE) }
         .register()
 }

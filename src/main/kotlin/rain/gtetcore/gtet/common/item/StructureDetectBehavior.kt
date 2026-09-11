@@ -6,7 +6,6 @@ import com.gregtechceu.gtceu.api.machine.MetaMachine
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController
 import net.minecraft.ChatFormatting
 import net.minecraft.core.BlockPos
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
 import net.minecraft.nbt.Tag
@@ -14,6 +13,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.world.InteractionResult
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.context.UseOnContext
+import net.minecraftforge.registries.ForgeRegistries
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 object StructureDetectBehavior : IInteractionItem {
@@ -40,8 +40,9 @@ object StructureDetectBehavior : IInteractionItem {
         val item = stack.item
         // 三层回退：引用 → 组件 → 注册名
         if (item is ComponentItem && item.components.contains(this)) return true
-        @Suppress("DEPRECATION") val key = BuiltInRegistries.ITEM.getKey(item)
-        return !(key == null || "gtetcore" != key.namespace || "structure_detect" != key.path)
+        // ForgeRegistries 是 BuiltInRegistries 那批已弃用字段的替代品；道具没注册时取不到 key
+        val key = ForgeRegistries.ITEMS.getKey(item) ?: return false
+        return "gtetcore" == key.namespace && "structure_detect" == key.path
     }
 
     private fun addPos(stack: ItemStack, pos: BlockPos) {

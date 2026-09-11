@@ -1,0 +1,185 @@
+package rain.gtetcore.gtet;
+
+import dev.toma.configuration.Configuration;
+import dev.toma.configuration.config.Config;
+import dev.toma.configuration.config.ConfigHolder;
+import dev.toma.configuration.config.Configurable;
+import dev.toma.configuration.config.format.ConfigFormats;
+import rain.gtetcore.gtet.util.lang.ConfigLangRegistry;
+
+/**
+ * GTETCore 配置 —— 走 {@code dev.toma.configuration}（GTCEu 自己也在用的那套库）。
+ *
+ * <p>生成 {@code config/gtetcore.yaml}；读写、热重载，以及 Mods 列表里 Config 按钮的界面
+ * 改完文件即时生效，无需重启。
+ *
+ * <p>注册入口是 {@link #init()}，在 {@link rain.gtetcore.gtet.init.CommonProxy} 构造阶段调用一次，
+ * 与 GTCEu 调 {@code ConfigHolder.init()} 的时机一致。
+ *
+ * @author rain fox
+ */
+@Config(id = Gtetcore.MODID)
+public class GTETConfig {
+
+    /** 注册后的配置实例；未注册前为 {@code null}，读取请走下面的静态方法。 */
+    public static GTETConfig INSTANCE;
+
+    private static final Object LOCK = new Object();
+
+    /** 把配置注册进 configuration 库；重复调用无副作用。 */
+    public static void init() {
+        synchronized (LOCK) {
+            if (INSTANCE == null) {
+                ConfigHolder<GTETConfig> holder = Configuration.registerConfig(GTETConfig.class, ConfigFormats.yaml());
+                INSTANCE = holder.getConfigInstance();
+                // 顺手把每个选项的翻译键（config.gtetcore.option.*）登记进语言文件
+                ConfigLangRegistry.register(holder);
+            }
+        }
+    }
+
+    // ================================================================
+    //  默认值 —— 与 GTM 补丁中反射失败时的回退值保持一致
+    // ================================================================
+
+    /** 结构检测失败后的重试间隔默认值（tick）。 */
+    public static final int DEFAULT_CHECK_FAILED_WAITING_TIME = 10;
+
+    /** 放置后首次结构检测的延迟默认值（tick）。 */
+    public static final int DEFAULT_PLACEMENT_CHECK_DELAY = 20;
+
+    /** 控制器卸载后的等待默认值（tick）。 */
+    public static final int DEFAULT_UNLOAD_WAITING_TIME = 1;
+
+    /** 异步检测线程调度间隔默认值（毫秒）。 */
+    public static final int DEFAULT_ASYNC_CHECK_INTERVAL = 250;
+
+    /** 是否发送成型失败信息的默认值。 */
+    public static final boolean DEFAULT_SEND_FORM_ERROR_MESSAGE = true;
+
+    // ================================================================
+    //  配置条目
+    // ================================================================
+
+    /** 多方块结构检测相关。 */
+    @Configurable
+    @Configurable.Comment({ "多方块结构检测相关（时间单位：tick）",
+            "Multiblock pattern checking (time unit: ticks)" })
+    public Multiblock multiblock = new Multiblock();
+
+    /** 开发者选项。 */
+    @Configurable
+    @Configurable.Comment({ "开发者选项（一般玩家不用改）", "Developer options" })
+    public Dev dev = new Dev();
+
+    public static class Dev {
+
+        /** 是否启用「结构导出」工作模式（配置为主，关掉后工具循环里就没有这一档）。 */
+        @Configurable
+        @Configurable.Comment({ "是否启用结构导出工作模式；关闭后结构工具的循环里不再出现这一档。",
+                "Whether the area-export work mode is available in the structure tool." })
+        public boolean exportModeEnabled = true;
+
+        /** 导出文件的输出目录（相对游戏目录）。 */
+        @Configurable
+        @Configurable.Comment({ "结构导出文件的输出目录（相对游戏目录）。",
+                "Output directory for exported block patterns (relative to the game directory)." })
+        public String exportDirectory = "logs/bp";
+
+        /** 高级终端里是否显示「分级方块」选择栏（GTMThings 终端扩展）。 */
+        @Configurable
+        @Configurable.Comment({ "是否在高级终端（GTMThings）里显示分级方块选择栏；关闭后只保留原版那几项设置。",
+                "Whether to show the tiered-block selector in the GTMThings advanced terminal." })
+        public boolean tierSelectEnabled = true;
+    }
+
+    public static class Multiblock {
+
+        /** 结构检测失败后，控制器再次尝试检测前的等待 tick 数。 */
+        @Configurable
+        @Configurable.Comment({ "结构检测失败后，控制器再次尝试检测前的等待 tick 数。",
+                "Ticks a controller waits before retrying a failed pattern check." })
+        @Configurable.Range(min = 1, max = 1200)
+        public int checkFailedWaitingTime = DEFAULT_CHECK_FAILED_WAITING_TIME;
+
+        /** 多方块放置 / 加载后，首次结构检测的延迟 tick 数。 */
+        @Configurable
+        @Configurable.Comment({ "多方块放置或区块加载后，首次结构检测的延迟 tick 数。",
+                "Ticks to delay the first pattern check after a multiblock is placed or loaded." })
+        @Configurable.Range(min = 0, max = 1200)
+        public int placementCheckDelay = DEFAULT_PLACEMENT_CHECK_DELAY;
+
+        /** 控制器卸载（区块卸载 / 机器被移除）时的等待 tick 数。 */
+        @Configurable
+        @Configurable.Comment({ "控制器卸载时的等待 tick 数，用于避免区块反复加载导致的抖动。",
+                "Ticks to wait while unloading a controller, avoids thrashing on chunk reload." })
+        @Configurable.Range(min = 1, max = 1200)
+        public int unloadWaitingTime = DEFAULT_UNLOAD_WAITING_TIME;
+
+        /** 异步结构检测线程的调度间隔（毫秒）。 */
+        @Configurable
+        @Configurable.Comment({ "异步结构检测线程的调度间隔（毫秒）。数值越小检测越及时，但越吃 CPU。",
+                "Interval in milliseconds between async multiblock check runs.",
+                "Smaller values react faster but cost more CPU." })
+        @Configurable.Range(min = 1, max = 10000)
+        public int asyncCheckInterval = DEFAULT_ASYNC_CHECK_INTERVAL;
+
+        /** 成型失败时是否把错误信息发送给玩家。 */
+        @Configurable
+        @Configurable.Comment({ "多方块成型失败时，是否把错误信息发送给玩家。",
+                "Whether to send pattern failure messages to players." })
+        public boolean sendFormErrorMessage = DEFAULT_SEND_FORM_ERROR_MESSAGE;
+    }
+
+    // ================================================================
+    //  静态读取入口 —— 配置未注册时回退到默认值，永不抛异常
+    // ================================================================
+
+    /** 结构检测失败后的重试间隔（tick）。 */
+    public static int checkFailedWaitingTime() {
+        GTETConfig instance = INSTANCE;
+        return instance != null ? instance.multiblock.checkFailedWaitingTime : DEFAULT_CHECK_FAILED_WAITING_TIME;
+    }
+
+    /** 放置后首次结构检测的延迟（tick）。 */
+    public static int placementCheckDelay() {
+        GTETConfig instance = INSTANCE;
+        return instance != null ? instance.multiblock.placementCheckDelay : DEFAULT_PLACEMENT_CHECK_DELAY;
+    }
+
+    /** 卸载等待（tick）。 */
+    public static int unloadWaitingTime() {
+        GTETConfig instance = INSTANCE;
+        return instance != null ? instance.multiblock.unloadWaitingTime : DEFAULT_UNLOAD_WAITING_TIME;
+    }
+
+    /** 异步检测调度间隔（毫秒）。 */
+    public static int asyncCheckInterval() {
+        GTETConfig instance = INSTANCE;
+        return instance != null ? instance.multiblock.asyncCheckInterval : DEFAULT_ASYNC_CHECK_INTERVAL;
+    }
+
+    /** 是否发送成型失败信息。 */
+    public static boolean sendFormErrorMessage() {
+        GTETConfig instance = INSTANCE;
+        return instance != null ? instance.multiblock.sendFormErrorMessage : DEFAULT_SEND_FORM_ERROR_MESSAGE;
+    }
+
+    /** 结构导出工作模式是否启用（以 dev 配置块里的开关为准）。 */
+    public static boolean exportModeEnabled() {
+        GTETConfig instance = INSTANCE;
+        return instance == null || instance.dev.exportModeEnabled;
+    }
+
+    /** 结构导出的输出目录。 */
+    public static String exportDirectory() {
+        GTETConfig instance = INSTANCE;
+        return instance != null ? instance.dev.exportDirectory : "logs/bp";
+    }
+
+    /** 高级终端是否显示分级方块选择栏。 */
+    public static boolean tierSelectEnabled() {
+        GTETConfig instance = INSTANCE;
+        return instance == null || instance.dev.tierSelectEnabled;
+    }
+}
