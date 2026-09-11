@@ -16,52 +16,7 @@ import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.machine.multiblock.TestMultiblockMachine
 import rain.gtetcore.gtet.util.lang.LangUtil
 
-/**
- * GTET 多方块机器的注册入口（本文件目前只有一台：`test_multiblock`）。
- *
- * 注册链与 `ETOverclockHatches` 保持同一套写法：一个 `register(registrate)` +
- * 内部一条 `registrate.multiblock(id, ::Machine)` 链，由 `ALLMmchine.init()`
- * 在「解冻机器表」的窗口里调用。
- *
- * ## 结构：3×3×3，控制器在**正面正中**
- * ```
- *   第 1 层(后)      第 2 层(中)      第 3 层(前)
- *    X X X            X X X            X X X
- *    X X X            X   X            X S X     ← S = 控制器
- *    X X X            X X X            X X X
- * ```
- * 即「3 aisles × 每 aisle 3 行 × 每行 3 字 = 3×3×3」；除控制器外共 **25 个机壳位**，
- * 唯一的空位是几何正中心那 1 格空气（`' '` → [Predicates.air]）。
- *
- * ## 能插什么（四类槽位）
- * 机壳谓词上挂了四条 `.or(...)`：
- * 1. `Predicates.autoAbilities(definition.recipeTypes)` —— 按研磨配方的 IO 自动开槽：
- *    能源仓（`INPUT_ENERGY`，最少 1 最多 2）、输入仓（`IMPORT_ITEMS`）、输出仓（`EXPORT_ITEMS`）。
- *    `MACERATOR_RECIPES` 是 `setMaxIOSize(1, 4, 0, 0)` + `setEUIO(IO.IN)`，所以**不会有流体仓槽位**。
- * 2. `Predicates.autoAbilities(true, false, true)` —— 维护仓（`MAINTENANCE`，最多 1）与
- *    并行仓（`PARALLEL_HATCH`，最多 1）。
- * 3. 同一条 `autoAbilities(true, false, true)` 还被 GTET 的 `MixinPredicatesAutoAbilities` 在
- *    `checkParallel == true` 时追加了一条 **超频仓**能力（`ETPartAbility.OVERCLOCK_HATCH`，全局最多 1），
- *    所以这里传 `true` 就等于「同时接受并行仓与超频仓」。**这条能力不是本文件写的**，本文件只是用对了参数。
- * 4. 本文件**自己显式**加的 **线程仓**槽位（`ETPartAbility.THREAD_HATCH`，全局最多 1）。
- *    线程仓**不**走上面那条 mixin —— 走它会让线程仓在 GTM / GCYM 的多方块上也「能插但不生效」
- *    （那些控制器不实现 `IThreadedRecipeMachine`），所以范围限定在 GTET 自己的多方块上，由本机自己开槽。
- *
- * ## 为什么 minGlobalLimited 取 15 而不是 25
- * 除控制器外 25 个位置既可放机壳也可放部件；若写 `setMinGlobalLimited(25)`，
- * 只要插一个仓（位置被仓占掉）就永远无法成型。最坏情况需要的部件位是
- * 能源仓 ×2 + 输入仓 + 输出仓 + 维护仓 + 并行仓 + 超频仓 + 线程仓 = 8，故留 10 个空位（15 机壳）足够
- * （25 − 8 = 17 ≥ 15，余量 2）；
- * 15 这个下限同时还能挡住「随便搭个壳就成型」的情况。
- *
- * ## 配方修改器：这里**故意没有**并行
- * `.recipeModifiers(...)` 只留 `OC_NON_PERFECT_SUBTICK`（超频）与 `BATCH_MODE`（批处理），
- * **不含** `GTRecipeModifiers.PARALLEL_HATCH`。原因是 [TestMultiblockMachine] 用的是
- * [rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic]，并行由它**逐线程**按并行仓的
- * `getCurrentParallel()` 施加（见 `ThreadedRecipeLogic#applyThreadParallel`）；
- * 若这里再挂一条并行修改器，同一份配方就会先被套一次并行、又被套一次，变成「并行²」。
- * 所以并行仓照旧要装（线程逻辑从控制器上读它），但**不能**再挂并行修改器。
- *
+/*
  * ## 思路来源
  * - 【自研】`test_multiblock` 这个 id、双语名与两条 tooltip 文案、`minGlobalLimited = 15` 的取值推导（上面那段「25 个位置 vs 最坏 8 个部件位」的算术），以及「这台机器只作为线程仓试验台」的定位 —— GTM 里没有对应物。
  * - 【自研】`.tier(GTValues.IV)` 这一行 —— GTM 的多方块全部**不**设 tier（`GTMultiMachines` / `GCYMMachines` 里一处 `.tier(` 都没有），因为多方块的配方等级由插进去的能源仓在运行时决定（`WorkableElectricMultiblockMachine#onStructureFormed` 里的 `GTUtil.getFloorTierByVoltage(getMaxVoltage())`）。这里按任务要求钉成 IV，含义是「注册/铭牌等级」（`MachineDefinition#setTier`，用于物品 tier 染色），**不**限制实际配方等级。
@@ -135,8 +90,7 @@ object ETTestMultiblocks {
                             .or(Predicates.autoAbilities(*definition.recipeTypes))
                             // 维护仓 + 并行仓 + GTET 超频仓（后两条里：并行仓来自 GTM 原文，
                             // 超频仓由 GTET 的 MixinPredicatesAutoAbilities 在 checkParallel=true 时追加）
-                            .or(Predicates.autoAbilities(true, false, true))
-                            // 线程仓槽位 —— **只**加在 GTET 自己的多方块上，这是有意的范围限制：
+                            .or(Predicates.autoAbilities(true, false, true)) // 线程仓槽位 —— **只**加在 GTET 自己的多方块上，这是有意的范围限制：
                             // THREAD_HATCH 不走 autoAbilities 那条 mixin（那会让它在 GTM / GCYM 的
                             // 多方块上也「能插但不生效」），而是由本机在这里显式加一条。
                             // 规格与并行仓/超频仓一致：全局最多 1 个、JEI 预览 1 个。
