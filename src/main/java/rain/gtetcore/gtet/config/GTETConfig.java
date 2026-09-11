@@ -59,8 +59,11 @@ public final class GTETConfig {
     /** 是否启用结构导出模式的默认值。 */
     public static final boolean DEFAULT_EXPORT_MODE_ENABLED = true;
 
-    /** 结构导出目录的默认值（相对游戏目录）。 */
-    public static final String DEFAULT_EXPORT_DIRECTORY = "muiltblockexport";
+    /** 结构导出目录的默认值（相对游戏目录）；两类导出统一收在 GtetExport/ 下。 */
+    public static final String DEFAULT_EXPORT_DIRECTORY = "GtetExport/multiblock";
+
+    /** 配方代码导出目录的默认值（相对游戏目录）。 */
+    public static final String DEFAULT_RECIPE_EXPORT_DIRECTORY = "GtetExport/recipes";
 
     /** 高级终端里是否显示分级方块选择栏的默认值。 */
     public static final boolean DEFAULT_TIER_SELECT_ENABLED = true;
@@ -70,6 +73,9 @@ public final class GTETConfig {
 
     /** 结构工具「结构检测」错误位置颜色默认值：蓝色线框（{@code R;G;B;透明度}）。 */
     public static final String DEFAULT_DETECT_OVERLAY_COLOR = "0.2;0.4;1.0;1.0";
+
+    /** 结构检测错误框的停留时间默认值（秒）；{@code 0} 表示不自动消失。 */
+    public static final int DEFAULT_DETECT_BOX_LIFETIME = 10;
 
     // ================================================================
     //  配置定义
@@ -109,6 +115,10 @@ public final class GTETConfig {
     @Bilingual(en = "Export Directory", cn = "结构导出目录")
     public static final ForgeConfigSpec.ConfigValue<String> EXPORT_DIRECTORY;
 
+    /** 配方编辑器导出代码的目录（相对游戏目录）。 */
+    @Bilingual(en = "Recipe Export Directory", cn = "配方导出目录")
+    public static final ForgeConfigSpec.ConfigValue<String> RECIPE_EXPORT_DIRECTORY;
+
     /** 高级终端里是否显示「分级方块」选择栏（GTMThings 终端扩展）。 */
     @Bilingual(en = "Tiered Block Selector", cn = "分级方块选择栏")
     public static final ForgeConfigSpec.BooleanValue TIER_SELECT_ENABLED;
@@ -122,6 +132,10 @@ public final class GTETConfig {
     /** 结构检测错误位置颜色：{@code R;G;B}，可再跟透明度。 */
     @Bilingual(en = "Detect Overlay Color", cn = "检测错误颜色")
     public static final ForgeConfigSpec.ConfigValue<String> DETECT_OVERLAY_COLOR;
+
+    /** 结构检测标出的错误框显示多少秒后自动消失（{@code 0} = 不自动消失）。 */
+    @Bilingual(en = "Detect Box Lifetime", cn = "检测框停留时间")
+    public static final ForgeConfigSpec.IntValue DETECT_BOX_LIFETIME;
 
     /** 配置规格；Forge 用它读写 {@code config/gtetcore/gtetcore-common.toml}。 */
     public static final ForgeConfigSpec SPEC;
@@ -171,6 +185,12 @@ public final class GTETConfig {
                         "Output directory for exported block patterns (relative to the game directory).")
                 .define("exportDirectory", DEFAULT_EXPORT_DIRECTORY);
 
+        RECIPE_EXPORT_DIRECTORY = BUILDER
+                .comment("配方编辑器导出代码的目录（相对游戏目录）；每个配方一个 .kt 片段，重复导出直接覆盖。",
+                        "Output directory for exported recipe code (relative to the game directory).",
+                        "One .kt snippet per recipe; re-exporting overwrites it.")
+                .define("recipeExportDirectory", DEFAULT_RECIPE_EXPORT_DIRECTORY);
+
         TIER_SELECT_ENABLED = BUILDER
                 .comment("是否在高级终端（GTMThings）里显示分级方块选择栏；关闭后只保留原版那几项设置。",
                         "Whether to show the tiered-block selector in the GTMThings advanced terminal.")
@@ -178,8 +198,8 @@ public final class GTETConfig {
 
         BUILDER.pop();
 
-        BUILDER.comment("结构工具覆盖层颜色（只在客户端渲染时用）",
-                        "Structure tool overlay colors (client-side rendering only)")
+        BUILDER.comment("结构工具覆盖层：颜色与检测框停留时间（只在客户端渲染时用）",
+                        "Structure tool overlay: colors and detect box lifetime (client-side rendering only)")
                 .push("overlay");
 
         WRITE_OVERLAY_COLOR = BUILDER
@@ -196,6 +216,13 @@ public final class GTETConfig {
                         "Failed pattern positions: wireframe color, one line as R;G;B",
                         "optionally followed by alpha (e.g. 0.2;0.4;1.0;1.0).")
                 .define("detectColor", DEFAULT_DETECT_OVERLAY_COLOR);
+
+        DETECT_BOX_LIFETIME = BUILDER
+                .comment("结构检测标出的错误位置：线框显示多少秒后自动消失（单位：秒）。",
+                        "填 0 表示不自动消失，一直留到下一次检测为止。",
+                        "Seconds the detected error boxes stay visible before disappearing.",
+                        "0 keeps them until the next check.")
+                .defineInRange("detectBoxLifetime", DEFAULT_DETECT_BOX_LIFETIME, 0, 3600);
 
         BUILDER.pop();
 
@@ -287,6 +314,16 @@ public final class GTETConfig {
     /** 结构工具「结构检测」错误位置颜色串（{@code R;G;B[;透明度]}）。 */
     public static String detectOverlayColor() {
         return stringValue(DETECT_OVERLAY_COLOR, DEFAULT_DETECT_OVERLAY_COLOR);
+    }
+
+    /** 结构检测错误框的停留时间（秒）；{@code 0} 表示不自动消失。 */
+    public static int detectBoxLifetime() {
+        return intValue(DETECT_BOX_LIFETIME, DEFAULT_DETECT_BOX_LIFETIME);
+    }
+
+    /** 配方编辑器导出代码的目录。 */
+    public static String recipeExportDirectory() {
+        return stringValue(RECIPE_EXPORT_DIRECTORY, DEFAULT_RECIPE_EXPORT_DIRECTORY);
     }
 
     // ================================================================

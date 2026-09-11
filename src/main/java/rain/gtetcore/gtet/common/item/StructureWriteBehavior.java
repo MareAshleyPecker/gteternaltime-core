@@ -235,28 +235,47 @@ public class StructureWriteBehavior implements IItemUIFactory {
         };
     }
 
+    /**
+     * 把点击位置并入选区 —— <b>既能扩大，也能缩小</b>。
+     *
+     * <p>选区始终由一对对角（min 角 / max 角）确定。右键时比较点击点到这两个角的距离，
+     * 把<b>更近的那个角挪到点击处</b>，再按两个角重新取包围盒：
+     *
+     * <ul>
+     *   <li>还没有选区：两个角都落在点击处（零体积），第二下自然拉出矩形；</li>
+     *   <li>点在选区外面：近角被拉出去 → 选区变大（就是以前那种"加"）；</li>
+     *   <li>点在选区里面 / 贴着某条边：近角被收回来 → 选区变小（以前只有"加"、没法"减"）；</li>
+     *   <li>想推倒重来：Shift+右键方块（或 Shift+右键空气）清空选区。</li>
+     * </ul>
+     *
+     * <p>NBT 结构没变（还是 min/max 六个整数），旧选区照旧读得出来。
+     */
     public static void addPos(ItemStack stack, BlockPos pos) {
         CompoundTag tag = stack.getOrCreateTagElement("structure_writer");
-        if (!tag.contains("minX") || tag.getInt("minX") > pos.getX()) {
-            tag.putInt("minX", pos.getX());
-        }
-        if (!tag.contains("maxX") || tag.getInt("maxX") < pos.getX()) {
-            tag.putInt("maxX", pos.getX());
+
+        // 还没有选区：两个角都放在这里
+        if (!tag.contains("minX")) {
+            writeCorners(tag, pos, pos);
+            return;
         }
 
-        if (!tag.contains("minY") || tag.getInt("minY") > pos.getY()) {
-            tag.putInt("minY", pos.getY());
-        }
-        if (!tag.contains("maxY") || tag.getInt("maxY") < pos.getY()) {
-            tag.putInt("maxY", pos.getY());
-        }
+        BlockPos min = new BlockPos(tag.getInt("minX"), tag.getInt("minY"), tag.getInt("minZ"));
+        BlockPos max = new BlockPos(tag.getInt("maxX"), tag.getInt("maxY"), tag.getInt("maxZ"));
 
-        if (!tag.contains("minZ") || tag.getInt("minZ") > pos.getZ()) {
-            tag.putInt("minZ", pos.getZ());
-        }
-        if (!tag.contains("maxZ") || tag.getInt("maxZ") < pos.getZ()) {
-            tag.putInt("maxZ", pos.getZ());
-        }
+        // 距离一样时（例如刚点完第一下，两个角重合）动 min 角，
+        // 这样"第一下 → 第二下"正好形成两个对角，和直觉一致
+        boolean moveMin = pos.distSqr(min) <= pos.distSqr(max);
+        writeCorners(tag, moveMin ? pos : min, moveMin ? max : pos);
+    }
+
+    /** 用两个角（先后顺序无所谓）写出选区的 min / max 六个整数。 */
+    private static void writeCorners(CompoundTag tag, BlockPos a, BlockPos b) {
+        tag.putInt("minX", Math.min(a.getX(), b.getX()));
+        tag.putInt("maxX", Math.max(a.getX(), b.getX()));
+        tag.putInt("minY", Math.min(a.getY(), b.getY()));
+        tag.putInt("maxY", Math.max(a.getY(), b.getY()));
+        tag.putInt("minZ", Math.min(a.getZ(), b.getZ()));
+        tag.putInt("maxZ", Math.max(a.getZ(), b.getZ()));
     }
 
     public static void removePos(ItemStack stack) {

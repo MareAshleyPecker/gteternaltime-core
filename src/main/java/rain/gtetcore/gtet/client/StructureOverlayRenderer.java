@@ -129,8 +129,10 @@ public final class StructureOverlayRenderer {
                 color.r(), color.g(), color.b(), color.lineAlpha());
     }
 
-    /** 结构检测工具：逐个错误位置的线框（颜色走配置）。 */
+    /** 结构检测工具：逐个错误位置的线框（颜色走配置；超过配置的停留时间就不再画）。 */
     private void renderDetectBoxes(PoseStack poseStack, MultiBufferSource buffers, ItemStack stack) {
+        if (detectOverlayExpired(stack)) return;
+
         BlockPos[] errors = StructureDetectBehavior.getPos(stack);
         if (errors == null || errors.length == 0) return;
 
@@ -141,6 +143,29 @@ public final class StructureOverlayRenderer {
             LevelRenderer.renderLineBox(poseStack, lines, new AABB(p),
                     color.r(), color.g(), color.b(), color.lineAlpha());
         }
+    }
+
+    /**
+     * 错误框是不是已经超过停留时间。
+     *
+     * <p>停留时长配在 {@code overlay.detectBoxLifetime}（秒，{@code 0} = 不自动消失）。
+     * 时间戳是检测那一刻由服务端写进物品 NBT 的<b>游戏刻</b>（
+     * {@link StructureDetectBehavior#getTime}），这里拿客户端自己的游戏刻相减：
+     * 两边的游戏刻同步推进、暂停时都不走，所以"停留 N 秒"和玩家直觉一致。
+     *
+     * <p>物品上没有时间戳（老存档里的旧物品、或者手改的 NBT）按"早过期"处理，
+     * 免得残留的框一直挂在世界上。
+     */
+    private static boolean detectOverlayExpired(ItemStack stack) {
+        int seconds = GTETConfig.detectBoxLifetime();
+        if (seconds <= 0) return false; // 0 = 不自动消失
+
+        long written = StructureDetectBehavior.getTime(stack);
+        if (written < 0) return true;
+
+        var level = Minecraft.getInstance().level;
+        if (level == null) return true;
+        return level.getGameTime() - written > seconds * 20L;
     }
 
     // ── 颜色解析 ──

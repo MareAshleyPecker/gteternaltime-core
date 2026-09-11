@@ -1,3 +1,4 @@
+@file:Suppress("UNCHECKED_CAST", "DEPRECATION","unused")
 package rain.gtetcore.gtet.init
 
 import com.gregtechceu.gtceu.api.GTCEuAPI

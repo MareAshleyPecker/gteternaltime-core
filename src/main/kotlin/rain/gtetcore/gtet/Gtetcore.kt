@@ -1,3 +1,4 @@
+@file:Suppress("DEPRECATION","unused")
 package rain.gtetcore.gtet
 
 import com.mojang.logging.LogUtils

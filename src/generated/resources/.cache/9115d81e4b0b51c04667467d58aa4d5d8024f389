@@ -1,9 +1,10 @@
-// 1.20.1	2026-09-11T19:35:31.3840838	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+// 1.20.1	2026-09-12T01:41:15.4455325	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
 a7dcf5c825b57e02bd9804e9b0c9fe62dbab5c6b assets/gtetcore/blockstates/cupronickel_coil_block.json
-61ae2148cf5a090142d4bed1c3a70131a11fef81 assets/gtetcore/lang/en_ud.json
-e57957f20e62b67ca4aac2d2a583caaa51fefc46 assets/gtetcore/lang/en_us.json
+c1c6ef49f8aed89912f7132f7362289c8e886348 assets/gtetcore/lang/en_ud.json
+b51cedea619c9d765b1b1e456b23809094cb1882 assets/gtetcore/lang/en_us.json
 ddc420c21556153569bb22b6c3827212af9b9b86 assets/gtetcore/models/block/cupronickel_coil_block.json
 76f2fef0482ca185107c86d7dbe87c80ff877b6d assets/gtetcore/models/item/cupronickel_coil_block.json
+9186aec3aa11a45a2b24103e84126c200f2ac5c2 assets/gtetcore/models/item/recipe_editor.json
 744fcbaebd95fae62e2d4cbe57af5eecf8d92c98 assets/gtetcore/models/item/structure_checker.json
 744fcbaebd95fae62e2d4cbe57af5eecf8d92c98 assets/gtetcore/models/item/structure_detect.json
 744fcbaebd95fae62e2d4cbe57af5eecf8d92c98 assets/gtetcore/models/item/structure_tool.json

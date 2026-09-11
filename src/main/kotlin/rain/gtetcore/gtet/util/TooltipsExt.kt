@@ -55,7 +55,7 @@ fun <T : Item, R> ItemBuilder<T, R>.tooltips(
     val cnLines = lines.take(half)
     val enLines = lines.takeLast(half)
 
-    val langKeys = cnLines.indices.map { i ->
+    val langKeys = cnLines.indices.map { i -> //idea犯病了
         val langKey = "item.gtetcore.$name.tooltip.$i"
         LangUtil.add(langKey, enLines[i], cnLines[i])
         langKey
