@@ -52,6 +52,25 @@ minecraft {
 
             // 指定 data generation 的 modid、资源输出位置、以及现有资源查找位置
             args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+
+            // 让 GTET 的数据生成能引用 **gtceu 的资源包**。
+            // 为什么必须加：GTET 的超频仓复用 GTM 的机器模型
+            // （GTMachineModels.createWorkableTieredHullMachineModel），它会用
+            // ModelProvider#getExistingFile 校验 gtceu:block/casings/voltage/<tier> 这类模型是否存在，
+            // 不存在就直接 IllegalStateException 让 runData 失败；同样，机器贴图（overlay_front 等）
+            // 也要靠 ExistingFileHelper#exists 才找得到。
+            // Forge 的 datagen 本来就支持 --existing-mod（「现有 mod 的资源包可供生成数据引用」），
+            // 官方自己也用它把 forge 自动加成 existing —— 效果等同于 GTM 自己开数据生成时的可见性。
+            args '--existing-mod', 'gtceu'
+
+            // 单独压一下数据生成进程的堆上限。
+            // configureEach 里给的是 -Xmx6G，而 Gradle 守护进程（-Dorg.gradle.jvmargs=-Xmx3G）是同时活着的，
+            // 16G 机器上经常凑不出 9G，runData 会以
+            // "There is insufficient memory for the Java Runtime Environment to continue"（mmap 失败）直接崩掉；
+            // 机器上还开着 IDE / 浏览器等常驻程序时，系统的「提交限制」比物理内存更早见底。
+            // 数据生成本身只需要 1~2G，所以这里给 3G 足够，同时把 -Xms 压到 256M 减少一次性提交。
+            // JVM 对重复的 -Xmx 取**最后一个**，所以写在 data 块里就能覆盖上面的 6G（实测 MaxHeapSize=3G）。
+            jvmArgs '-Xms256M', '-Xmx3G'
         }
     }
 }

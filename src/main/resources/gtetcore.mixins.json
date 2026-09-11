@@ -7,6 +7,8 @@
     "mixins": [
       "GTM.MixinFixGTBlocksNpe",
       "GTM.MixinGTFluids",
+      "GTM.MixinOverclockingLogic",
+      "GTM.MixinPredicatesAutoAbilities",
       "GTM.MixinGTMaterialBlocks",
       "GTM.MixinGTMaterialItems",
       "GTM.MixinGTMaterialOreBlocks",

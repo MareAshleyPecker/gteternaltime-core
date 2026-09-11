@@ -54,6 +54,10 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         GTETCreativeModeTabs.init()
         ETItems.init()
         ETBlock.init()
+        // 注意：机器注册（ALLMmchine.init / ALLSmahine.init）不在这里，也不靠下面的
+        // registerMachines 事件 —— 那个 GTCEu 事件是 GTM 在自己 mod 构造期间发的，本 mod 的
+        // CommonProxy 当时还不存在，监听器永远收不到。机器注册放在 GTCEu 官方的 addon 回调
+        // [rain.gtetcore.gtet.ETGTAddon.initializeAddon] 里（GTM 的材料/机器/模型那时都已就绪）。
     }
 
     /** Forge 通用设置阶段回调。 */
@@ -78,6 +82,15 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         ETElementMaterials.register()
     }
 
+    /**
+     * GTCEu 的机器注册事件。
+     *
+     * 注意：这个监听器**不一定收得到** —— GTM 是在它自己的 mod 构造期间
+     * （`GTMachines.init()` 里 `ModLoader.postEvent`）发出该事件的，而 Forge 是并行构造 mod 的，
+     * 本 mod 的 CommonProxy 有可能还没构造完（竞态，实测经常收不到）。
+     * 所以机器注册的真正入口是 [rain.gtetcore.gtet.ETGTAddon.initializeAddon]（一定会被 GTCEu 回调），
+     * 这里保留只是为了「万一赶上了就先注册」，[ALLMmchine.init] / [ALLSmahine.init] 自身有幂等保护。
+     */
     @SubscribeEvent
     fun registerMachines(event: GTCEuAPI.RegisterEvent<ResourceLocation, MachineDefinition>) {
         ALLMmchine.init()
