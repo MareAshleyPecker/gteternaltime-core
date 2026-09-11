@@ -48,25 +48,15 @@ data class OverclockHatchVariant(
  * 分级 part 的模型用 `createWorkableTieredHullMachineModel(...)`，
  * 能力由 `MachineBuilder.abilities(...)` 登记。
  *
- * 与 GTM 原写法的两点差异：
- * 1. 用 **GTET 自己的** `ETRegistrate`（`OnlyETreg.ETRegistrate`）而不是 GTM 的
- *    `GTRegistration.REGISTRATE`，否则方块会注册进 `gtceu:` 命名空间；
- * 2. 变体表里每个变体自带唯一 tier，所以注册名不再像 `registerTieredMachines` 那样
+ * 1. 变体表里每个变体自带唯一 tier，所以注册名不再像 `registerTieredMachines` 那样
  *    在前面拼 `GTValues.VN[tier].toLowerCase() + "_"`，直接用变体 id，
  *    这样 id 与 tier 是一对一、语言键也不会带额外前缀。
  *
  * ## 显示只保留「电压等级 + 名称」
  * 本部件**只**生成名字语言键 `block.gtetcore.<id>`，中文名里直接带上电压等级与规格
  * （例如「UV 超频仓（8×/×4）」），英文名走 `.langValue(...)`。
- * 说明性的多行 tooltip（`gtetcore.machine.<id>.tooltip.0` / `.tooltip.1`）与面板规格行
- * （`gtetcore.machine.<id>.info`）**已全部删除**：速度与能效本来就写在名字里，
  * 再挂两行解释只会把提示撑长。tooltip 只剩 GTM 自带的那条 `gtceu.part_sharing.disabled`
  * （所有 GTM 多方块部件都有，用来告诉玩家部件不可共享）。
- *
- * ## 思路来源
- * - 【自研】变体表（S / E / tier 共七档，见 `VARIANTS` 与 `eutPerLevel = E × S` 的定义）—— GTM 没有「速度倍率 × 能效系数 × 电压等级」这种变体概念。
- * - 【自研】用 GTET 自己的 `ETRegistrate`（为了不把方块注册进 `gtceu:` 命名空间）与「变体 id 不再拼 `VN[tier]` 前缀」这两点偏离 —— 由 GTET 的注册约定决定。
- * - 【自研】「规格只写在名字里、不再单独生成说明性键」这条显示约定 —— 由玩家反馈「面板/提示太啰嗦」直接决定，GTM 侧没有这种「名字自带规格」的部件写法可参照。
  *
  * @author rain fox
  */
@@ -83,15 +73,14 @@ object ETOverclockHatches {
      * 必须靠后缀区分（`_max` 的写法与 [ETThreadHatches] 的 `thread_hatch_max` 一致）。
      */
     val VARIANTS: List<OverclockHatchVariant> = listOf(
-        // ── 8× 家族：每级耗时 ÷8（相当于原版 3 级 perfect 超频的提速）──
-        // E=4.0：越级提速的代价最高档，每级电 ×4×8=32
-        OverclockHatchVariant("overclock_hatch_8x_lossy4"       , 8 , 4.0, GTValues.LuV  ),
-        OverclockHatchVariant("overclock_hatch_8x_lossy2"       , 8 , 2.0, GTValues.ZPM ),
-        OverclockHatchVariant("overclock_hatch_8x_perfect"      , 8 , 1.0, GTValues.UV ),
-        OverclockHatchVariant("overclock_hatch_8x_saving"       , 8 , 0.5, GTValues.UHV ),
+        OverclockHatchVariant("overclock_hatch_8x_lossy4"       , 8 , 4.0, GTValues.ZPM),
+        OverclockHatchVariant("overclock_hatch_8x_lossy2"       , 8 , 2.0, GTValues.UV ),
+        OverclockHatchVariant("overclock_hatch_8x_perfect"      , 8 , 1.0, GTValues.UHV),
+        OverclockHatchVariant("overclock_hatch_8x_saving"       , 8 , 0.5, GTValues.UEV),
+
         OverclockHatchVariant("overclock_hatch_16x_lossy4"      , 16, 4.0, GTValues.UIV ),
         OverclockHatchVariant("overclock_hatch_16x_lossy2"      , 16, 2.0, GTValues.UXV ),
-        OverclockHatchVariant("overclock_hatch_16x_perfect"     , 16, 1.0, GTValues.UEV ),
+        OverclockHatchVariant("overclock_hatch_16x_perfect"     , 16, 1.0, GTValues.OpV ),
         OverclockHatchVariant("overclock_hatch_16x_saving_max"  , 16, 0.5, GTValues.MAX ),
 
 
@@ -129,7 +118,7 @@ object ETOverclockHatches {
         val tierName = GTValues.VN[v.tier]
 
         // 中文名按「电压等级 + 名称（规格）」写：例如 UV 超频仓（8×/×4）
-        LangUtil.BLOCK_LANG[v.id] = "$tierName 超频仓（${v.speed}×/×$eut）"
+        LangUtil.BLOCK_LANG[v.id] = "$tierName 超频仓（${v.speed}×/EUt×$eut）"
 
         return registrate
             .machine(v.id) { holder -> OverclockHatchPartMachine(holder, v.tier, v.speed, v.energyFactor) }
