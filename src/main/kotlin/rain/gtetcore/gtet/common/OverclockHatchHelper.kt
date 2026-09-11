@@ -13,13 +13,13 @@ import com.gregtechceu.gtceu.utils.GTUtil
 import java.math.RoundingMode
 
 /**
- * 「超频仓」替代超频的静态入口 —— 复刻 `OverclockingLogic#getModifier(...)` 的前置逻辑。
+ * 「超频仓」替代超频的静态入口 —— 自己算出 `OCs` 与 `OCParams`，再交给超频算法。
  *
- * ## 为什么要单独抄一遍这段前置逻辑
+ * ## 为什么这里要自己算一遍这段前置逻辑
  * `OverclockingLogic#getModifier(...)` 是被 [rain.gtetcore.gtet.mixin.GTM.MixinOverclockingLogic]
  * 注入（`@At("HEAD")` + `setReturnValue`）的**同一个方法**。如果本 helper 里再去调
  * `logic.getModifier(...)`，就会立刻重新进入注入点 → 无限递归。所以这里只把
- * 「算 OCs → 组 `OCParams`」这一段原样抄过来，最后直接调 `logic.runOverclockingLogic(...)`。
+ * 「算 OCs → 组 `OCParams`」这一段自己算一遍，最后直接调 `logic.runOverclockingLogic(...)`。
  *
  * ## 与 GTM 原版的唯一一处（有意）差异
  * GTM 7.5.3 写的是 `if (OCs == 0) return ModifierFunction.IDENTITY;`（只挡 0，不挡负数）。
@@ -28,9 +28,8 @@ import java.math.RoundingMode
  * `ModifierFunction`，语义上更糟。对 `OCs == 0` 两种写法完全等价。
  *
  * ## 思路来源
- * - 【照抄】GTCEu `OverclockingLogic#getModifier(MetaMachine, GTRecipe, long, boolean)` 的前置逻辑逐行对应 —— `RecipeHelper.getRealEUt(recipe).getTotalEU()`、`GTUtil.getTierByVoltage(...)`、`GTUtil.getOCTierByVoltage(...)`、`OCs = maximumTier - recipeTier`（配方为 ULV 时再 −1），以及 `IntMath.log2(duration)/2` + `ParallelLogic.getParallelAmount(...)` 的并行预算段，写法与顺序都照搬原文。
  * - 【自研】唯一一处有意偏离 —— 这里写 `OCs <= 0`，而 GTM 原文是 `if (OCs == 0) return ModifierFunction.IDENTITY;`（`OCs < 0` 的语义差异见上文）。
- * - 【自研】「为什么不能直接调 `getModifier`」的判断与绕法 —— `OverclockingLogic#getModifier(...)` 正是本 mod 注入的那个方法，直接调会立刻递归，所以只能把前置段抄出来、末尾改调 `logic.runOverclockingLogic(...)`；GTM 没有提供可复用的拆分点，这一段无处可抄。
+ * - 【自研】「为什么不能直接调 `getModifier`」的判断与绕法 —— `OverclockingLogic#getModifier(...)` 正是本 mod 注入的那个方法，直接调会立刻递归，所以只能自己把前置段算出来、末尾改调 `logic.runOverclockingLogic(...)`；GTM 没有提供可复用的拆分点。
  *
  * @author rain fox
  */
@@ -67,7 +66,7 @@ object OverclockHatchHelper {
         if (recipeTier == GTValues.ULV) OCs--
         if (OCs <= 0) return ModifierFunction.IDENTITY
 
-        // ── 下面这段与 GTM `OverclockingLogic#getModifier` 逐行对应 ──
+        // ── 下面这段是并行预算：剩余 OC 能换多少并行 ──
         // 它只被 GTM 的 subtick 类算法用来算「剩余 OC 换成的并行数」；
         // 超频仓的算法（OverclockingLogics）固定返回 parallels = 1，因此这里算出来的值暂时用不上，
         // 但保留下来可以让以后新增「会吃并行」的仓体算法直接复用，也保证 OCParams 的语义与 GTM 一致。

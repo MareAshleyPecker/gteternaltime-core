@@ -70,8 +70,6 @@ import rain.gtetcore.gtet.common.OverclockingLogics;
  *
  * ## 思路来源
  * - 【自研】挂钩点的选择与「5 处 {@code @Redirect}」这套方案 —— 原本打算注入 {@link OverclockingLogic} 接口的 default 方法（所有超频的唯一汇合点），被 Mixin 0.8.5 的注解处理器硬拒（{@code Injector in interface is unsupported}，见上文），于是改成重定向调用点；这个改道方案与「哪 5 处、以及为什么必须 5 处全部重定向」的判断都是本次自己定的。
- * - 【照抄】5 个调用点清单（{@code lambda$static$0}、{@code crackerOverclock}、{@code ebfOverclock}、{@code pyrolyseOvenOverclock}、{@code multiSmelterParallel}）来自对 GTCEu 7.5.3 `com.gregtechceu.gtceu.common.data.GTRecipeModifiers` 做 `javap -p -c` 反汇编后逐处核对的结果，不是猜的。
- * - 【照抄】被重定向的目标方法本身 —— {@code getModifier(machine, recipe, maxVoltage)} 是 GTCEu `OverclockingLogic` 的方法，其 3 参数版内部以 {@code shouldParallel = true} 转发到 4 参数版，回退分支照此传 {@code true}。
  *
  * @author rain fox
  */

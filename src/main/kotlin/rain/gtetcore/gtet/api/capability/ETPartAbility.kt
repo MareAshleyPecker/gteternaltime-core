@@ -8,15 +8,15 @@ import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility
  * ## 为什么能直接 new
  * 查过 GTM 7.5.3 源码：`PartAbility` 的构造函数就是普通的
  * `public PartAbility(String name)`，内部只持有一个 `name` 与一个「tier → 方块集合」的注册表，
- * 没有全局注册表、也没有单例限制。所以 GTET 侧直接 `PartAbility("gtet_overclock_hatch")`
+ * 没有全局注册表、也没有单例限制。所以 GTET 侧直接 `PartAbility("gtet_thread_hatch")`
  * 即可新增能力，**不需要**用 mixin 往 `PartAbility` 里塞静态字段，也不需要借用 GTM 的注册方式。
  *
  * 真正把这批方块登记进能力表的是 `MachineBuilder.abilities(...)`：
  * 它在方块注册回调里执行 `ability.register(tier, block)`。
  *
  * ## 思路来源
- * - 【照抄】GTCEu `com.gregtechceu.gtceu.api.machine.multiblock.PartAbility` 的用法 —— 构造函数就是 `public PartAbility(String)`（内部只持有 `name` 与「tier → 方块集合」的注册表，没有全局注册表、也没有单例限制），能力表由 `MachineBuilder.abilities(...)` 在方块注册回调里 `ability.register(tier, block)` 填。本对象完全沿用这套用法，只换了一个 `gtet_` 前缀的名字。
- * - 【借鉴形状】GTCEu `GCYMMachines#PARALLEL_HATCH` —— 借「一个专用能力 + 一个与之配对的分级 part machine」的书写形状；这里只保留能力声明那半边，配对的分级部件换成 GTET 自己的 `OverclockHatchPartMachine`。
+ * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）`api/machine/part/GTOPartAbility.java:20` 的 `THREAD_HATCH` —— 借「线程能力必须自成一格、不能挂在 `PARALLEL_HATCH` 上」这个形状；GTO 的能力对象在加密 native 库里，拿不到其实现，GTET 侧只是同形另写一个 `PartAbility`。
+ * - 【自研】新增 `THREAD_HATCH` 而不是复用 `OVERCLOCK_HATCH` / `PARALLEL_HATCH` 的取舍 —— 「超频」与「线程」是两件正交的事（可以只装其一、也可以都装），复用一个能力会让它们在结构里互斥；GTM 里没有这种「同一台机器叠两层独立仓」的现成写法。
  *
  * @author rain fox
  */
@@ -30,4 +30,14 @@ object ETPartAbility {
      */
     @JvmField
     val OVERCLOCK_HATCH: PartAbility = PartAbility("gtet_overclock_hatch")
+
+    /**
+     * 线程仓专用能力。
+     *
+     * **必须是独立能力**，不得复用 [com.gregtechceu.gtceu.api.machine.multiblock.PartAbility.PARALLEL_HATCH]：
+     * 复用会让线程仓和并行仓在结构里互斥，而线程仓的语义恰恰是「**在并行仓之上**再叠一层线程」。
+     * 名称同样带 `gtet_` 前缀。
+     */
+    @JvmField
+    val THREAD_HATCH: PartAbility = PartAbility("gtet_thread_hatch")
 }

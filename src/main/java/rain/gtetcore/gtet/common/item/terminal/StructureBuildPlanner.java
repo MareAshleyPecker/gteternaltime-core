@@ -259,8 +259,8 @@ public final class StructureBuildPlanner {
     }
 
     /**
-     * 坐标换算 —— 逐行照搬 GTCEu {@code BlockPattern#setActualRelativeOffset}（枚举版），
-     * 保证算出来的世界坐标和结构检测完全一致。
+     * 坐标换算 —— 与结构检测使用的 {@code setActualRelativeOffset}（枚举版）算法保持一致，
+     * 这样算出来的世界坐标才能和结构检测完全对得上。
      */
     private static BlockPos setActualRelativeOffset(int x, int y, int z, Direction facing,
                                                     Direction upwardsFacing, boolean isFlipped,

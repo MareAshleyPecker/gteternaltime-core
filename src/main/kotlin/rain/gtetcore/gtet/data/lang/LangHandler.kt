@@ -13,7 +13,7 @@ import rain.gtetcore.gtet.util.lang.LangUtil
 import java.lang.reflect.Field
 
 /**
- * 集中式语言数据生成器，参照 GTCEu [com.gregtechceu.gtceu.data.lang.LangHandler]。
+ * 集中式语言数据生成器：本 mod 的全部语言键在这里集中登记，再统一写进数据生成器。
  *
  * 材料物品翻译由 `material.<name>` + `tagprefix.<name>` 运行时组合，无需逐个前缀生成。
  */

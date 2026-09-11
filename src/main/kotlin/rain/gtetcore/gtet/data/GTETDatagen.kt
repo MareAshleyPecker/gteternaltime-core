@@ -8,7 +8,7 @@ import rain.gtetcore.gtet.data.lang.LangHandler
 /** 数据生成入口。 */
 object GTETDatagen {
 
-    /** mod 构造阶段调用，挂载 en_us 到 Registrate LANG provider。参照 GTCEu GregTechDatagen.initPost()。 */
+    /** mod 构造阶段调用，挂载 en_us 到 Registrate LANG provider。 */
     fun initRegistrate() {
         OnlyETreg.ETRegistrate.addDataGenerator(ProviderType.LANG) { LangHandler.init(it) }
     }

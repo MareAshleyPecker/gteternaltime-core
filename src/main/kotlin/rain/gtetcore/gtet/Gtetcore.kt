@@ -50,7 +50,6 @@ class Gtetcore(context: FMLJavaModLoadingContext) {
     init {
         // 在 mod 构造阶段挂载 LangHandler 到 Registrate LANG provider（en_us）
         // 必须先 registerRegistrate 注册事件监听器（含 GatherDataEvent），再 addDataGenerator
-        // 参照 GTCEu CommonProxy.init()：registerRegistrate() → initPost()
         ETRegistrate.registerRegistrate()
         GTETDatagen.initRegistrate()
         // 注入进来的 context 一路带到代理：配置注册、mod 事件总线都不再走已弃用的 Xxx.get()

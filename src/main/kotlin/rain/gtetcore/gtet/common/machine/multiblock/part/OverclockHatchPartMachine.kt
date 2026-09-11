@@ -13,7 +13,7 @@ import rain.gtetcore.gtet.api.capability.IOverclockHatch
 /**
  * 「超频仓」多方块部件。
  *
- * 结构整块照抄 GTM 的 `ParallelHatchPartMachine`（方块本体只是一个分级 part machine）：
+ * 一个分级多方块部件（方块本体只是一个分级 part machine）：
  * - 实现 [IFancyUIMachine] 给一个只读信息面板；
  * - 实现 [IOverclockHatch] 让超频逻辑能认出它；
  * - `canShared() = false`，禁止多方块部件共享。
@@ -27,8 +27,6 @@ import rain.gtetcore.gtet.api.capability.IOverclockHatch
  * `MANAGED_FIELD_HOLDER` 只是为了让 ldlib 把父类那些 `@DescSynced` 字段（控制器坐标等）串起来。
  *
  * ## 思路来源
- * - 【照抄】GTCEu `com.gregtechceu.gtceu.common.machine.multiblock.part.ParallelHatchPartMachine` 的整块结构 —— `TieredPartMachine` + `IFancyUIMachine` 的继承组合、`MANAGED_FIELD_HOLDER` 串接 `MultiblockPartMachine.MANAGED_FIELD_HOLDER`、`canShared() = false` 这三点都照它写。
- * - 【借鉴形状】`ParallelHatchPartMachine` 用 `IntInputWidget` 让玩家配置并行数 —— 这里借「部件自带一个 `createUIWidget()` 面板」的形状，但把可编辑输入换成只读信息面板（S / E 由注册表在构造时钉死，玩家不该改）。
  * - 【自研】不实现 `IParallelHatch` 的决定 —— 实现它会顶掉控制器缓存的真正并行仓（`getParallelHatch()` 只取一个实例），因此改用 GTET 自己的 `IOverclockHatch`；这个取舍在 GTM 里没有对应物。
  *
  * @param holder       方块实体持有者

@@ -21,7 +21,7 @@ import kotlin.math.pow
  * 这里每级一次就吃掉 S 倍时间、`E × S` 倍电 —— 也就是说**1 级超频 = 原本 log₂(S) 级的收益**，
  * 但只占用 1 级超频额度（`OCs = 机器等级 - 配方等级`），这正是「超频仓」的卖点。
  *
- * ## 循环终止条件（照抄 GTM `standardOC` 的顺序，先判电再判时间）
+ * ## 循环终止条件（先判电再判时间）
  * 1. `eut × (E × S) > maxVoltage` → 停（不许超出机器可承受电压）；
  * 2. `duration × (1 / S) < 1` → 停（耗时不许低于 1 tick，且**这一级整体不生效**）。
  *
@@ -30,8 +30,7 @@ import kotlin.math.pow
  * 第四个 parallels 恒为 1 —— 超频仓只改速度，不碰并行（并行仍然交给并行仓 / `PARALLEL_HATCH`）。
  *
  * ## 思路来源
- * - 【照抄】GTCEu `OverclockingLogic#standardOC` —— 每级循环的边界处理顺序照抄原文：先判 `eut × factor > maxVoltage` 再判 `duration × factor < 1`，任一条不满足就整级作废（`break`）；`OCParams` / `OCResult` 的字段语义与 `OCResult#toModifier()` 的用法也全部沿用 GTCEu，没有自造。
- * - 【自研】每级 `duration ÷S`、`EUt ×(E×S)` 的倍率公式与 `S` / `E` 两个参数化旋钮 —— GTM 只有写死的 ÷2 / ÷4 与 ×4 这两档，没有「速度倍率 × 能效系数」这种可配置组合，抄不到现成写法；`OCResult(..., parallels = 1)` 取 1 也是本算法的决定（超频仓只改速度，不碰并行）。
+ * - 【自研】每级 `duration ÷S`、`EUt ×(E×S)` 的倍率公式与 `S` / `E` 两个参数化旋钮 —— GTM 只有写死的 ÷2 / ÷4 与 ×4 这两档，没有「速度倍率 × 能效系数」这种可配置组合；`OCResult(..., parallels = 1)` 取 1 也是本算法的决定（超频仓只改速度，不碰并行）。
  *
  * @author rain fox
  */

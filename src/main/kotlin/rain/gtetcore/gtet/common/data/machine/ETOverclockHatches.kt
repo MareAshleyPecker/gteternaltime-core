@@ -44,8 +44,9 @@ data class OverclockHatchVariant(
  * 「超频仓」注册入口。
  *
  * 一个注册函数 + 一张变体表：遍历 [OverclockHatchVariant] 表逐个注册，
- * 注册链照抄 GTM 的 `GTMachineUtils.registerTieredMachines`（`.tier(...)` 打头、
- * 然后是能力/模型/提示）与 `GCYMMachines.PARALLEL_HATCH`（分级 part 的模型与能力写法）。
+ * 注册链顺序：`.tier(...)` 打头 → 能力 → 模型 → 提示 → `register()`；
+ * 分级 part 的模型用 `createWorkableTieredHullMachineModel(...)`，
+ * 能力由 `MachineBuilder.abilities(...)` 登记。
  *
  * 与 GTM 原写法的两点差异：
  * 1. 用 **GTET 自己的** `ETRegistrate`（`OnlyETreg.ETRegistrate`）而不是 GTM 的
@@ -55,9 +56,8 @@ data class OverclockHatchVariant(
  *    这样 id 与 tier 是一对一、语言键也不会带额外前缀。
  *
  * ## 思路来源
- * - 【照抄】GTCEu `GTMachineUtils#registerTieredMachines` 的注册链顺序 —— `.tier(...)` 打头 → 能力 → 模型 → 提示 → `register()`；以及 `GCYMMachines#PARALLEL_HATCH` 的分级 part 模型/能力写法与 `createWorkableTieredHullMachineModel(...)` 的用法，都是照原文搬过来的。
- * - 【自研】变体表（S / E / tier 共六档，见 `VARIANTS` 与 `eutPerLevel = E × S` 的定义）—— GTM 没有「速度倍率 × 能效系数 × 电压等级」这种变体概念，也没有对应的表可抄。
- * - 【自研】用 GTET 自己的 `ETRegistrate`（为了不把方块注册进 `gtceu:` 命名空间）与「变体 id 不再拼 `VN[tier]` 前缀」这两点偏离 —— 由 GTET 的注册约定决定，不是照抄来的。
+ * - 【自研】变体表（S / E / tier 共六档，见 `VARIANTS` 与 `eutPerLevel = E × S` 的定义）—— GTM 没有「速度倍率 × 能效系数 × 电压等级」这种变体概念。
+ * - 【自研】用 GTET 自己的 `ETRegistrate`（为了不把方块注册进 `gtceu:` 命名空间）与「变体 id 不再拼 `VN[tier]` 前缀」这两点偏离 —— 由 GTET 的注册约定决定。
  *
  * @author rain fox
  */
