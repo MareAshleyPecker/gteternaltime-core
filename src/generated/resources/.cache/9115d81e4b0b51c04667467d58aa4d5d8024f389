@@ -1,4 +1,4 @@
-// 1.20.1	2026-09-12T05:36:03.60407	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+// 1.20.1	2026-09-12T05:54:37.1330306	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
 a7dcf5c825b57e02bd9804e9b0c9fe62dbab5c6b assets/gtetcore/blockstates/cupronickel_coil_block.json
 e940bcbfa275b3b46d881db21cdd3645c3f5d938 assets/gtetcore/blockstates/overclock_hatch_16x_lossy2.json
 688ff403c3fcdb9deea45c943827111610d57ec3 assets/gtetcore/blockstates/overclock_hatch_16x_lossy4.json
@@ -16,8 +16,8 @@ abf60a0bd6239376d5c3d616d7a287da72190950 assets/gtetcore/blockstates/overclock_h
 530cc6bd21b237706c5e289c32b2b99752ee3b6c assets/gtetcore/blockstates/thread_hatch_uiv.json
 377a90cb887f99f54cef50bd6b33be9f0302a409 assets/gtetcore/blockstates/thread_hatch_uv.json
 760989def8536bc1d5508f04c9325b3ca93a30da assets/gtetcore/blockstates/thread_hatch_uxv.json
-640320267ffaf8c851fc4e0bc8297eb9beb11cac assets/gtetcore/lang/en_ud.json
-cf536393acb7d531268446e88d2140c4559c52bd assets/gtetcore/lang/en_us.json
+b49e165ac3004f2fa09afa08f3d1355430dc3d7c assets/gtetcore/lang/en_ud.json
+023c89106a7250986a9e3e39412d6452df69aec0 assets/gtetcore/lang/en_us.json
 ddc420c21556153569bb22b6c3827212af9b9b86 assets/gtetcore/models/block/cupronickel_coil_block.json
 92acf844dee56a30ccc38a353bc7228b2a60b160 assets/gtetcore/models/block/machine/overclock_hatch_16x_lossy2.json
 d96be59952a950e82c3dad6fc06078d6f8a77e19 assets/gtetcore/models/block/machine/overclock_hatch_16x_lossy4.json

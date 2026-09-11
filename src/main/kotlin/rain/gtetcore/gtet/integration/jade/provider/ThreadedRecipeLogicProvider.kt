@@ -22,8 +22,9 @@ import snownee.jade.api.ui.BoxStyle
 /**
  * GTET 自己的 Jade provider：把**多线程配方逻辑**的整机线程状态摆到提示里。
  *
- * 显示：`线程 256（在用 5）` + 整机「同时处理 N 次配方运行」+ 逐**配方组**一行
- * （绿色进度条 + 该组所有线程加起来的产出物与数量）。组的定义与合并规则见 [ThreadedRecipeStatus]。
+ * 显示：`线程 256（在用 5）` + 整机「同时处理 N 次配方运行」+ 整机「耗电 Σ EU/t」+ 逐**配方组**两行
+ * （第一行绿色进度条 + 该组所有线程加起来的产出物与数量，
+ * 第二行是配方名 / 线程条数 / **该组 EU/t**）。组的定义与合并规则见 [ThreadedRecipeStatus]。
  *
  * ## 为什么必须自己写一个 provider
  * GTM 的 `ParallelProvider` / `RecipeOutputProvider` 读的都是 `recipeLogic.getLastRecipe()` —— **单个配方对象**，
@@ -47,8 +48,10 @@ import snownee.jade.api.ui.BoxStyle
  * - 【借鉴形状】GTM 7.5.3 的 `ParallelProvider` / `RecipeLogicProvider` / `WorkableBlockProvider`：
  *   借「`IBlockComponentProvider` + `IServerDataProvider` 双接口一个类」、「服务端写 NBT、客户端读 NBT」、
  *   以及 `IElementHelper#progress(...)` 画进度条的用法。
- * - 【自研】NBT 键名与「上限 / 在用 / 合计 / 逐组明细 + 每组产物」这套字段取舍，以及
- *   [ThreadedRecipeStatus.OutputSnapshot] 那种「只传物品翻译键、名字交给客户端解析」的做法。
+ * - 【自研】NBT 键名与「上限 / 在用 / 合计运行次数 / 合计 EU/t / 逐组明细（含每组 EU/t）+ 每组产物」
+ *   这套字段取舍，以及
+ *   [ThreadedRecipeStatus.OutputSnapshot] 那种「服务端把产物名解析成组件、序列化后交给客户端」的做法
+ *   （只传物品翻译键会翻出 `%s粉` 那种模板本体，理由见 [ThreadedRecipeStatus.OutputSnapshot.name]）。
  *
  * @author rain fox
  */
@@ -63,6 +66,7 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         data.putInt(NBT_LIMIT, limit)
         data.putInt(TAG_RUNNING, logic.runningThreadCount)
         data.putLong(TAG_TOTAL_RUNS, logic.runningTotalRuns)
+        data.putLong(TAG_TOTAL_EUT, ThreadedRecipeStatus.totalEutPerTick(logic))
 
         val page = ThreadedRecipeStatus.groupSnapshots(logic, GROUP_LIMIT)
         data.putInt(TAG_GROUPS, page.totalGroups)
@@ -72,6 +76,7 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
             val entry = CompoundTag()
             entry.putInt(TAG_SLOT, group.slot)
             entry.putInt(TAG_GROUP_THREADS, group.threadCount)
+            entry.putLong(TAG_GROUP_EUT, group.eutPerTick)
             entry.putInt(TAG_PROGRESS, group.progress)
             entry.putInt(TAG_DURATION, group.duration)
             entry.putString(TAG_RECIPE, group.recipeLabel)
@@ -79,7 +84,8 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
             val outputs = ListTag()
             for (output in group.outputs) {
                 val outputTag = CompoundTag()
-                outputTag.putString(TAG_OUT_ITEM, output.descId)
+                // 名字以**组件 JSON** 过 NBT：里面还是可翻译的键 + 参数，客户端用自己的语言解析
+                outputTag.putString(TAG_OUT_NAME, Component.Serializer.toJson(output.name))
                 outputTag.putLong(TAG_OUT_MIN, output.min)
                 outputTag.putLong(TAG_OUT_MAX, output.max)
                 outputTag.putBoolean(TAG_OUT_CHANCED, output.chanced)
@@ -106,6 +112,12 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
                 FormattingUtil.formatNumbers(data.getLong(TAG_TOTAL_RUNS))
             )
         )
+        tooltip.add(
+            Component.translatable(
+                ThreadedRecipeStatus.LANG_TOTAL_EUT,
+                FormattingUtil.formatNumbers(data.getLong(TAG_TOTAL_EUT))
+            )
+        )
 
         val helper = tooltip.elementHelper
         val list = data.getList(TAG_THREADS, Tag.TAG_COMPOUND.toInt())
@@ -113,7 +125,7 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
             val entry = list.getCompound(i)
             val progress = entry.getInt(TAG_PROGRESS)
             val duration = entry.getInt(TAG_DURATION)
-            // 组行 = 绿色进度条（条内文字沿用 GTM 的白字，绿底绿字看不清）+ 紧跟其后的绿字产出
+            // 组行第一行 = 绿色进度条（条内文字沿用 GTM 的白字，绿底绿字看不清）+ 同一行紧跟其后的绿字产出
             tooltip.add(
                 helper.progress(
                     if (duration <= 0) 0f else (progress.toFloat() / duration).coerceIn(0f, 1f),
@@ -128,13 +140,17 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
                     ThreadedRecipeStatus.LANG_OUTPUTS,
                     entry.getInt(TAG_SLOT),
                     ThreadedRecipeStatus.outputsText(readOutputs(entry), entry.getInt(TAG_HIDDEN_KINDS))
-                ).withStyle(ChatFormatting.GREEN).append(
-                    Component.translatable(
-                        ThreadedRecipeStatus.LANG_GROUP_META,
-                        entry.getString(TAG_RECIPE),
-                        entry.getInt(TAG_GROUP_THREADS)
-                    ).withStyle(ChatFormatting.GREEN)
-                )
+                ).withStyle(ChatFormatting.GREEN)
+            )
+            // 组行第二行 = 配方名 / 线程条数 / 该组 EU/t：另起一行放在进度条下方，
+            // 不再挤在产出后面（add 一定会新开一行），也不会把产出名挤掉
+            tooltip.add(
+                Component.translatable(
+                    ThreadedRecipeStatus.LANG_GROUP_META,
+                    entry.getString(TAG_RECIPE),
+                    entry.getInt(TAG_GROUP_THREADS),
+                    FormattingUtil.formatNumbers(entry.getLong(TAG_GROUP_EUT))
+                ).withStyle(ChatFormatting.GREEN)
             )
         }
 
@@ -145,7 +161,7 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         }
     }
 
-    /** 客户端按 NBT 重建产物条目（只带物品翻译键与数量，名字由客户端按自己的语言解析）。 */
+    /** 客户端按 NBT 重建产物条目（NBT 里存的是组件 JSON，键与参数照旧可翻译，由客户端按自己的语言解析）。 */
     private fun readOutputs(entry: CompoundTag): List<ThreadedRecipeStatus.OutputSnapshot> {
         val list = entry.getList(TAG_OUTPUTS, Tag.TAG_COMPOUND.toInt())
         if (list.isEmpty()) return emptyList()
@@ -154,7 +170,7 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
             val output = list.getCompound(i)
             outputs.add(
                 ThreadedRecipeStatus.OutputSnapshot(
-                    output.getString(TAG_OUT_ITEM),
+                    parseName(output.getString(TAG_OUT_NAME)),
                     output.getLong(TAG_OUT_MIN),
                     output.getLong(TAG_OUT_MAX),
                     output.getBoolean(TAG_OUT_CHANCED)
@@ -163,6 +179,15 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         }
         return outputs
     }
+
+    /**
+     * 组件 JSON → 组件。
+     *
+     * 载荷是自己写的，正常情况不会解析失败；失败时退回字面量而不是抛出去 ——
+     * 这里在 Jade 的提示渲染路径上，为了一个产物名把整条提示炸掉不划算。
+     */
+    private fun parseName(json: String): Component =
+        runCatching { Component.Serializer.fromJson(json) }.getOrNull() ?: Component.literal(json)
 
     override fun getUid(): ResourceLocation = Gtetcore.id(UID_PATH)
 
@@ -212,16 +237,18 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
 
         private const val TAG_RUNNING: String = "gtet_thread_running"
         private const val TAG_TOTAL_RUNS: String = "gtet_thread_total_runs"
+        private const val TAG_TOTAL_EUT: String = "gtet_thread_total_eut"
         private const val TAG_GROUPS: String = "gtet_thread_groups"
         private const val TAG_THREADS: String = "gtet_thread_list"
         private const val TAG_SLOT: String = "slot"
         private const val TAG_GROUP_THREADS: String = "threads"
+        private const val TAG_GROUP_EUT: String = "eut"
         private const val TAG_PROGRESS: String = "progress"
         private const val TAG_DURATION: String = "duration"
         private const val TAG_RECIPE: String = "recipe"
         private const val TAG_HIDDEN_KINDS: String = "hidden_kinds"
         private const val TAG_OUTPUTS: String = "outputs"
-        private const val TAG_OUT_ITEM: String = "item"
+        private const val TAG_OUT_NAME: String = "name"
         private const val TAG_OUT_MIN: String = "min"
         private const val TAG_OUT_MAX: String = "max"
         private const val TAG_OUT_CHANCED: String = "chanced"
