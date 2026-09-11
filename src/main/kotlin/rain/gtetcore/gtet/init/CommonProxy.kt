@@ -45,6 +45,10 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         GTETConfig.init(context)
         // 高级终端扩展用到的双语条目（必须在数据生成前注册）
         rain.gtetcore.gtet.common.item.terminal.TerminalLang.init()
+        // 多线程内核的线程状态文本（机器 UI 与 GTET 自己的 Jade provider 共用同一批语言键）。
+        // 同样必须在数据生成**之前**登记：Jade 插件类要等加载末尾被注解扫描到才会加载，
+        // 把语言键挂在那个类里会赶不上 GatherDataEvent。
+        rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus.initLang()
         // 结构工具的网络包（客户端滚轮切模式 → 服务端改 NBT）
         rain.gtetcore.gtet.common.item.tool.ToolNetwork.register()
         GTETCreativeModeTabs.init()

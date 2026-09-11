@@ -48,4 +48,8 @@ dependencies {
     runtimeOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}"))
     compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}:api")
     runtimeOnly fg.deobf("dev.emi:emi-forge:${emi_version}")
+    //jade
+    implementation fg.deobf("curse.maven:jade-324717:8479276")
+    implementation fg.deobf("curse.maven:jade-addons-583345:8203724")
+
 }

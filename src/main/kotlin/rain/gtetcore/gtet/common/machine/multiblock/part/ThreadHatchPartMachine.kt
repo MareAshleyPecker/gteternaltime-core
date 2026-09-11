@@ -71,15 +71,21 @@ class ThreadHatchPartMachine(
     override val threadCount: Int get() = currentThread
 
     /**
-     * 面板：方块名 + 线程数输入框 + 一行说明。
+     * 面板：方块名（第一行）+ 线程数输入框（第二行）。
      *
-     * 第 1、3 行传的是 **lang key**：ldlib 的 `LabelWidget` 在客户端用 `I18n` 解析，
-     * 所以两种语言各显示各的。中间那行是 GTCEu 的 `IntInputWidget`
+     * 第 1 行传的是 **lang key**：ldlib 的 `LabelWidget` 在客户端用 `I18n` 解析，
+     * 所以两种语言各显示各的 —— 名字里已经带齐「电压等级 + 线程数」
+     * （中文「MAX 线程仓（256 线程）」/ 英文「MAX Thread Hatch (256 Threads)」）。
+     * 第 2 行是 GTCEu 的 `IntInputWidget`
      * （`Supplier` 读值、`Consumer` 写值，`setMin`/`setMax` 卡范围）。
+     *
+     * 原先输入框下面那行说明（`gtetcore.machine.<id>.config`，形如「线程数（1 - 256），每条线程各跑一种配方」）
+     * 已随显示简化删除：范围由 `setMin` / `setMax` 自己卡住，含义由名字给出，
+     * 不再为它生成语言键（`runData` 后该键不再出现在语言文件里）。
      */
     override fun createUIWidget(): Widget {
         val id = definition.name
-        val group = WidgetGroup(0, 0, 150, 58)
+        val group = WidgetGroup(0, 0, 150, 44)
         // 用 setColor(-1)（白字）而不是已弃用的 setTextColor —— 两者等价，后者只是 ldlib 的老 API
         group.addWidget(LabelWidget(5, 5, "block.gtetcore.$id").apply { setColor(-1) })
         // 位置走构造函数而不是 `setSelfPosition(...)`：后者返回 Unit，链式调用就接不回 Widget 了
@@ -87,9 +93,6 @@ class ThreadHatchPartMachine(
             IntInputWidget(5, 19, 100, 20, { currentThread }, { setThreadAmount(it) })
                 .setMin(MIN_THREAD)
                 .setMax(maxThreads)
-        )
-        group.addWidget(
-            LabelWidget(5, 42, "gtetcore.machine.$id.config").apply { setColor(-1) }
         )
         return group
     }

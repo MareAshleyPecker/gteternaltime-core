@@ -21,8 +21,8 @@ import kotlin.math.floor
  *
  * 一个变体 = 一个方块。所有数值都只在这一张表里出现，加档只需要往下加一行。
  *
- * @param id           注册名（同时决定方块 id、lang 键 `block.gtetcore.<id>` 与
- *                     `gtetcore.machine.<id>.tooltip.<i>` / `gtetcore.machine.<id>.info`）
+ * @param id           注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`；
+ *                     本 mod **不再**为超频仓生成说明性 tooltip / 面板键，见 [ETOverclockHatches.VARIANTS] 的说明）
  * @param speed        速度倍率 S：每消耗 1 级超频，配方耗时 ÷S
  * @param energyFactor 能效系数 E：每消耗 1 级超频，EUt × `E × S`
  * @param tier         默认（也是唯一）电压等级，决定外壳贴图与配方等级上限
@@ -55,9 +55,18 @@ data class OverclockHatchVariant(
  *    在前面拼 `GTValues.VN[tier].toLowerCase() + "_"`，直接用变体 id，
  *    这样 id 与 tier 是一对一、语言键也不会带额外前缀。
  *
+ * ## 显示只保留「电压等级 + 名称」
+ * 本部件**只**生成名字语言键 `block.gtetcore.<id>`，中文名里直接带上电压等级与规格
+ * （例如「UV 超频仓（8×/×4）」），英文名走 `.langValue(...)`。
+ * 说明性的多行 tooltip（`gtetcore.machine.<id>.tooltip.0` / `.tooltip.1`）与面板规格行
+ * （`gtetcore.machine.<id>.info`）**已全部删除**：速度与能效本来就写在名字里，
+ * 再挂两行解释只会把提示撑长。tooltip 只剩 GTM 自带的那条 `gtceu.part_sharing.disabled`
+ * （所有 GTM 多方块部件都有，用来告诉玩家部件不可共享）。
+ *
  * ## 思路来源
- * - 【自研】变体表（S / E / tier 共六档，见 `VARIANTS` 与 `eutPerLevel = E × S` 的定义）—— GTM 没有「速度倍率 × 能效系数 × 电压等级」这种变体概念。
+ * - 【自研】变体表（S / E / tier 共七档，见 `VARIANTS` 与 `eutPerLevel = E × S` 的定义）—— GTM 没有「速度倍率 × 能效系数 × 电压等级」这种变体概念。
  * - 【自研】用 GTET 自己的 `ETRegistrate`（为了不把方块注册进 `gtceu:` 命名空间）与「变体 id 不再拼 `VN[tier]` 前缀」这两点偏离 —— 由 GTET 的注册约定决定。
+ * - 【自研】「规格只写在名字里、不再单独生成说明性键」这条显示约定 —— 由玩家反馈「面板/提示太啰嗦」直接决定，GTM 侧没有这种「名字自带规格」的部件写法可参照。
  *
  * @author rain fox
  */
@@ -76,8 +85,15 @@ object ETOverclockHatches {
      * | `overclock_hatch_8x_saving`  | 8  | 0.5 | ÷8  | ×4  | UV  | 又提速又省电 |
      * | `overclock_hatch_16x_perfect`| 16 | 1.0 | ÷16 | ×16 | UEV | 不吃亏的 16 倍速 |
      * | `overclock_hatch_16x_saving` | 16 | 0.5 | ÷16 | ×8  | UIV | 16 倍速还省电 |
+     * | `overclock_hatch_16x_saving_max` | 16 | 0.5 | ÷16 | ×8 | MAX | 顶档：16 倍速还省电 |
      *
      * 注意 UHV(9) 故意跳过：UHV 留给以后可能加的 8x/16x 中间档。
+     *
+     * 最后一行（MAX 档）的数值与 `overclock_hatch_16x_saving` **完全相同**（16× / E=0.5），
+     * 差的只是铭牌等级（`GTValues.MAX`）与外壳贴图 —— 有意如此：MAX 档在这个表里是
+     * 「量级上的终点」，不是又一次数值跃迁；真要更激进（例如 S=32），改这一行的第一、二个参数即可。
+     * id 里 `_max` 后缀是**tier 判别位**：前六档一个 tier 一档，只有这一档与 `16x_saving` 撞数，
+     * 必须靠后缀区分（`_max` 的写法与 [ETThreadHatches] 的 `thread_hatch_max` 一致）。
      */
     val VARIANTS: List<OverclockHatchVariant> = listOf(
         // ── 8× 家族：每级耗时 ÷8（相当于原版 3 级 perfect 超频的提速）──
@@ -94,6 +110,8 @@ object ETOverclockHatches {
         OverclockHatchVariant("overclock_hatch_16x_perfect", 16, 1.0, GTValues.UEV),
         // E=0.5：saving，每级电 ×0.5×16=8（比 8x_perfect 更快且同耗电）
         OverclockHatchVariant("overclock_hatch_16x_saving", 16, 0.5, GTValues.UIV),
+        // MAX 档：数值与上一条一致，只换铭牌等级（见 KDoc 里那段说明）
+        OverclockHatchVariant("overclock_hatch_16x_saving_max", 16, 0.5, GTValues.MAX),
     )
 
     /**
@@ -118,32 +136,17 @@ object ETOverclockHatches {
     /**
      * 注册单个变体 —— 链条结构与 `GTMachineUtils.registerTieredMachines` 一致。
      *
-     * 中英双语走 GTET 现有机制：
+     * 中英双语走 GTET 现有机制，**只登记名字这一条键**（见类 KDoc「显示只保留电压等级 + 名称」）：
      * - 英文名 → `.langValue(...)`，由 Registrate 写进 `en_us` 的 `block.gtetcore.<id>`；
-     * - 中文名 → [LangUtil.BLOCK_LANG]，由 `LangHandler` 写进 `zh_cn` 的同名键；
-     * - 提示/面板文字 → [LangUtil.add]，同时写进 `en_us` 与 `zh_cn`。
+     * - 中文名 → [LangUtil.BLOCK_LANG]，由 `LangHandler` 写进 `zh_cn` 的同名键。
+     * 两个名字里都带「电压等级 + 速度 + 能效」，玩家不用看 tooltip 也能分清七档。
      */
     private fun registerOne(registrate: GTRegistrate, v: OverclockHatchVariant): MachineDefinition {
         val eut = num(v.eutPerLevel)
         val tierName = GTValues.VN[v.tier]
 
-        LangUtil.BLOCK_LANG[v.id] = "超频仓（${v.speed}× / 能耗 ×$eut）"
-        LangUtil.add(
-            "gtetcore.machine.${v.id}.tooltip.0",
-            "Each overclock level: duration ÷${v.speed}, total energy ×$eut",
-            "每消耗 1 级超频：耗时 ÷${v.speed}，总能耗 ×$eut"
-        )
-        LangUtil.add(
-            "gtetcore.machine.${v.id}.tooltip.1",
-            "Replaces the multiblock's normal overclock while installed",
-            "装在多方块上时，替换该多方块的普通超频"
-        )
-        // 机器 UI 的规格行（`LabelWidget` 传 lang 键，客户端按语言解析）
-        LangUtil.add(
-            "gtetcore.machine.${v.id}.info",
-            "${v.speed}× Speed / ×$eut Energy per level",
-            "${v.speed}× 速度 / 每级能耗 ×$eut"
-        )
+        // 中文名按「电压等级 + 名称（规格）」写：例如 UV 超频仓（8×/×4）
+        LangUtil.BLOCK_LANG[v.id] = "$tierName 超频仓（${v.speed}×/×$eut）"
 
         return registrate
             .machine(v.id) { holder -> OverclockHatchPartMachine(holder, v.tier, v.speed, v.energyFactor) }
@@ -167,9 +170,8 @@ object ETOverclockHatches {
                         }
                     )
             )
+            // 提示只剩 GTM 自带的那条：部件的说明性文字已经并进名字，不再单独生成 tooltip 键
             .tooltips(
-                Component.translatable("gtetcore.machine.${v.id}.tooltip.0"),
-                Component.translatable("gtetcore.machine.${v.id}.tooltip.1"),
                 Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()

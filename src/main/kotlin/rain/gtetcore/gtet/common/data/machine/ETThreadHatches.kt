@@ -22,8 +22,8 @@ import rain.gtetcore.gtet.util.lang.LangUtil
  * 从 tier 直接算出来（`1 shl (tier - GTValues.LuV)`），所以这里只放 id 与 tier，
  * 避免「表里的数字」和「部件算出来的数字」两处打架。
  *
- * @param id   注册名（同时决定方块 id、lang 键 `block.gtetcore.<id>` 与
- *             `gtetcore.machine.<id>.tooltip.<i>` / `gtetcore.machine.<id>.config`）
+ * @param id   注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`；
+ *             本 mod **不再**为线程仓生成 tooltip / 面板说明键，见 [ETThreadHatches.registerOne]）
  * @param tier 电压等级，决定外壳贴图与线程数上限
  *
  * @author rain fox
@@ -48,15 +48,21 @@ data class ThreadHatchVariant(
  * 2. 变体自带唯一 tier，所以注册名不再拼 `VN[tier]` 前缀，直接用变体 id
  *    （id 与 tier 一对一，语言键也不会带额外前缀）。
  *
+ * ## 显示只保留「电压等级 + 名称」
+ * 与 [ETOverclockHatches] 同一套约定：每个变体**只**生成名字语言键 `block.gtetcore.<id>`，
+ * 中文名里直接带上电压等级与线程数（例如「MAX 线程仓（256 线程）」），英文名走 `.langValue(...)`。
+ * 说明性的多行 tooltip 与部件面板的说明行都已删除（清单见 [registerOne] 的注释）。
+ *
  * ## 接线位置
  * 本文件的 [register] 由 `rain.gtetcore.gtet.common.data.machine.muiltmachine.ALLMmchine.init()`
  * 调用一次（结果存进 `ALLMmchine.THREAD_HATCHES`），走的是与 [ETOverclockHatches] 完全相同的那条路径
  * —— 那里也是机器表 `unfreeze()` / `freeze()` 的窗口所在，不要另找入口重复注册。
  *
  * ## 思路来源
- * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）`common/data/GTOMachines.java:250-258` —— 借「`registerTieredMachines("thread_hatch", …)` 从 UV 一路分级到 MAX + 能力 `GTOPartAbility.THREAD_HATCH` + tooltip 里报出线程数」的形状；GTET 侧因为变体表自带唯一 tier，做成「变体表 + 逐个 register」而不是 GTM 那种「传 tier 数组」。
- * - 【借鉴形状】GTOCore `data/lang/MachineLang.java:26-28` 的文案「同时处理至多 %1$s 种不同配方，每种配方至多 %2$s 个」—— 借的是**文案口径**（先说能同时跑几种配方、再说每种能并行多少）；GTET 侧的 tooltip 直接把两个数字写死进各自变体的语言键里（线程数由 tier 定，注册时就已知），运行期不再做字符串插值。⚠️ GTO 的线程调度实现在加密 native 里（`libs/gtolib-1.0.jar` 里 `native0/native/` 那一堆 `.bin`），本文件不涉及它。
+ * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）`common/data/GTOMachines.java:250-258` —— 借「`registerTieredMachines("thread_hatch", …)` 从 UV 一路分级到 MAX + 能力 `GTOPartAbility.THREAD_HATCH` + 提示里报出线程数」的形状；GTET 侧因为变体表自带唯一 tier，做成「变体表 + 逐个 register」而不是 GTM 那种「传 tier 数组」。
+ * - 【借鉴形状】GTOCore `data/lang/MachineLang.java:26-28` 的文案「同时处理至多 %1$s 种不同配方，每种配方至多 %2$s 个」—— 借的是**文案口径**（先说能同时跑几种配方、再说每种能并行多少）；GTET 侧把「线程数」直接写进方块**名字**（线程数由 tier 定，注册时就已知），运行期不做字符串插值。⚠️ GTO 的线程调度实现在加密 native 里（`libs/gtolib-1.0.jar` 里 `native0/native/` 那一堆 `.bin`），本文件不涉及它。
  * - 【自研】`ThreadHatchVariant` 只存 `id` + `tier`、线程数**由函数算**的决定 —— 变体表里再写一遍数字就会出现「表里写 4、部件算出 8」这种不一致；只留 tier，数字就只有一个来源。
+ * - 【自研】「规格并进名字、不再单独生成 tooltip / 面板说明键」这条显示约定 —— 由玩家反馈「这些仓的面板/提示太啰嗦」直接决定。
  *
  * @author rain fox
  */
@@ -110,37 +116,22 @@ object ETThreadHatches {
     /**
      * 注册单个变体。
      *
-     * 中英双语走 GTET 现有机制：
+     * 中英双语走 GTET 现有机制，**只登记名字这一条键**（与 [ETOverclockHatches] 同一套显示约定）：
      * - 英文名 → `.langValue(...)`，由 Registrate 写进 `en_us` 的 `block.gtetcore.<id>`；
-     * - 中文名 → [LangUtil.BLOCK_LANG]，由 `LangHandler` 写进 `zh_cn` 的同名键；
-     * - 提示/面板文字 → [LangUtil.add]，同时写进 `en_us` 与 `zh_cn`。
+     * - 中文名 → [LangUtil.BLOCK_LANG]，由 `LangHandler` 写进 `zh_cn` 的同名键。
+     * 两个名字里都带「电压等级 + 线程数」，一眼就能分出七档，不需要额外的说明行。
+     *
+     * 删掉的键（原设计有、现已随显示简化一并移除，`runData` 后不再出现在 `src/generated` 里）：
+     * `gtetcore.machine.<id>.tooltip.0` / `.tooltip.1` / `.tooltip.2`（三条说明性提示）与
+     * `gtetcore.machine.<id>.config`（部件面板输入框下面那行「线程数（1 - N）…」）。
+     * 面板现在是「名字 + 数值输入框」，线程数范围由输入框自己的 min/max 卡住（见 `ThreadHatchPartMachine`）。
      */
     private fun registerOne(registrate: GTRegistrate, v: ThreadHatchVariant): MachineDefinition {
         val threads = v.threads
         val tierName = GTValues.VN[v.tier]
 
-        LangUtil.BLOCK_LANG[v.id] = "线程仓（$threads 线程）"
-        LangUtil.add(
-            "gtetcore.machine.${v.id}.tooltip.0",
-            "Processing up to $threads different recipes simultaneously",
-            "同时处理至多 $threads 种不同配方"
-        )
-        LangUtil.add(
-            "gtetcore.machine.${v.id}.tooltip.1",
-            "Each thread keeps its own timer and gets the parallel hatch's multiplier",
-            "每条线程独立计时，各自吃并行仓的并行倍率"
-        )
-        LangUtil.add(
-            "gtetcore.machine.${v.id}.tooltip.2",
-            "The same recipe never takes a second thread",
-            "同一种配方不会重复开线程"
-        )
-        // 机器 UI 面板里输入框下面那行（`LabelWidget` 传 lang 键，客户端按语言解析）
-        LangUtil.add(
-            "gtetcore.machine.${v.id}.config",
-            "Threads (1 - $threads); each thread runs its own recipe",
-            "线程数（1 - $threads），每条线程各跑一种配方"
-        )
+        // 中文名按「电压等级 + 名称（线程数）」写：例如 MAX 线程仓（256 线程）
+        LangUtil.BLOCK_LANG[v.id] = "$tierName 线程仓（$threads 线程）"
 
         return registrate
             .machine(v.id) { holder -> ThreadHatchPartMachine(holder, v.tier) }
@@ -163,10 +154,8 @@ object ETThreadHatches {
                         }
                     )
             )
+            // 提示只剩 GTM 自带的那条：部件的说明性文字已经并进名字，不再单独生成 tooltip 键
             .tooltips(
-                Component.translatable("gtetcore.machine.${v.id}.tooltip.0"),
-                Component.translatable("gtetcore.machine.${v.id}.tooltip.1"),
-                Component.translatable("gtetcore.machine.${v.id}.tooltip.2"),
                 Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()

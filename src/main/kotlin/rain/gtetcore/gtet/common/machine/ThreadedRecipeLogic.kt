@@ -68,11 +68,18 @@ import rain.gtetcore.gtet.Gtetcore
  * - 服务器主线程上按槽位顺序串行处理，不存在两个线程同时改同一批库存的交错。
  *
  * ## v1 已知简化（**诚实标注**）
- * 1. **客户端只有一个进度条**：线程表**没有**同步到客户端（不是 `@DescSynced`）。为了让
- *    Jade / TOP / 机器 UI 不至于显示空白，本类把「下标最小的那条在跑线程」镜像进基类的
- *    `lastRecipe` / `progress` / `duration` / `isActive` 四个**已同步**字段，
+ * 1. **客户端只有一个进度条，但「同时跑了几条」现在能看见了**：线程表仍然**没有**同步到客户端
+ *    （不是 `@DescSynced`）。为了让 Jade / TOP / 机器 UI 不至于显示空白，本类把「下标最小的那条在跑线程」
+ *    镜像进基类的 `lastRecipe` / `progress` / `duration` / `isActive` 四个**已同步**字段，
  *    也就是「基类那套单进度」照旧能用，但只反映**一条**线程。
- *    多线程进度条 UI（把整张线程表 DescSync 出去）留到下一步。
+ *    整机线程状态另外走两条**服务端求值**的路子，都不需要同步字段：
+ *    - 机器自身 UI：`TestMultiblockMachine#addDisplayText` 把线程行写进
+ *      `ComponentPanelWidget` 的文本表（该 widget 的 `textSupplier` 是在**服务端**
+ *      `detectAndSendChanges` 里求值后再把组件同步给客户端的）；
+ *    - Jade：GTET 自己的 `ThreadedRecipeLogicProvider` 在 `appendServerData`（服务端）里读本类，
+ *      写成 NBT 交给客户端渲染。
+ *    线程表本身仍然没有 `@DescSynced`，所以 `runningThreadSlots` / `runningTotalRuns` 这些
+ *    快照**只能在服务端读**（客户端读到的永远是空表）。
  * 2. **没有「缺电 5 次自动 SUSPEND」**：基类缺 EUt 时会累加 `runAttempt`、`runDelay = runAttempt * 60`
  *    并在第 5 次 SUSPEND 整台机器；本内核 v1 统一处理成「该线程等待 + 回退进度」，
  *    不自动挂起、也不加 `runDelay` 重试间隔。
@@ -99,6 +106,15 @@ import rain.gtetcore.gtet.Gtetcore
  * `.recipeModifiers(OC_NON_PERFECT_SUBTICK, BATCH_MODE)` —— **只做超频与批处理、不做并行**，
  * 并行全部交给本内核按线程施加（并行仓本身照旧要装，本内核就是从它身上读 `getCurrentParallel()`）。
  *
+ * ## 与 GTM 自带 Jade 提示的口径差异（为什么那串数字里没有线程数）
+ * GTM 的 `ParallelProvider` 报的是**单个配方对象**的运行次数
+ * `getTotalRuns() = parallels × subtickParallels × batchParallels`，而它读的是
+ * `recipeLogic.getLastRecipe()` —— 在本内核里这个字段被镜像成「下标最小的那条在跑线程」。
+ * 也就是说那串数字描述的是**一条线程**，而线程数是**机器级**的量（同时跑几种不同配方），
+ * 两者是相乘关系、不在同一个口径里：GTM 那个提示结构上就装不下线程数。
+ * 整机口径由本类的 [runningTotalRuns]（= Σ 各线程 `getTotalRuns()`）给出，
+ * 显示在机器 UI 与 GTET 自己的 Jade provider 里。
+ *
  * ## 思路来源
  * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）的线程记录结构 `ICrossRecipeMachine$Thread { progress, recipe, duration, use }` 与 `ICrossRecipeMachine$Logic`（`updateTickSubscription` / `findAndHandleRecipe` / `serverTick` / `onRecipeFinish` / `saveCustomPersistedData` / `loadCustomPersistedData` 一整套 `native` 覆盖）—— 借的只是「每条线程一条记录（配方 + 进度 + 时长）」和「线程逻辑要自己接管 tick / 存档」这两个形状。
  *   ⚠️ **必须注明**：GTO 的**调度与记账算法一行都拿不到** —— `libs/gtolib-1.0.jar` 里 `ICrossRecipeMachine`、`ICrossRecipeMachine$Thread`、`ICrossRecipeMachine$Logic`、`ThreadPartMachine` 的方法体全是 `native`（`javap` 只能看到签名，实现被抽到 `native0/native/` 那堆 `.bin` 的加密库里）。所以**线程表调度、动态开线程策略、每线程独立 IO 记账、线程数上限来源，全部是 GTET 自研**（见下面的【自研】条）。
@@ -118,7 +134,16 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
      * @param duration 开线程时钉下来的耗时（tick）—— 钉死而不是每 tick 读 `recipe.duration`，
      *                 免得中途有东西改了配方对象导致进度条乱跳
      */
-    data class ThreadRec(val recipe: GTRecipe, var progress: Int, val duration: Int)
+    data class ThreadRec(val recipe: GTRecipe, var progress: Int, val duration: Int) {
+
+        /**
+         * 这条线程的进度百分比（0~100）。
+         *
+         * 时长为 0 时返回 0：`duration` 是开线程时从配方钉下来的，理论上 ≥1，
+         * 但这里不假设上游——除零比显示个 0% 糟糕得多。
+         */
+        val percent: Int get() = if (duration <= 0) 0 else progress * 100 / duration
+    }
 
     /** 提供线程仓的机器；拿不到就退化成单线程。 */
     private val threadedMachine: IThreadedRecipeMachine? = machine as? IThreadedRecipeMachine
@@ -159,6 +184,66 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
 
     /** 正在跑的线程们（只读快照，给 UI / 调试用）。 */
     val runningThreads: List<ThreadRec> get() = threads.filterNotNull()
+
+    /**
+     * 正在跑的线程的「槽位 + 记录」快照（只读）。
+     *
+     * 与 [runningThreads] 的区别只有一个：带上槽位下标，玩家/UI 才能对上「第几条线程」。
+     * **不做任何同步**：本快照是服务端状态，UI 侧靠 `ComponentPanelWidget` 的
+     * `textSupplier`（服务端 `detectAndSendChanges` 时求值）与 Jade 的 `appendServerData`
+     * 把它变成文本/组件送出去 —— 线程表本身仍然不是 `@DescSynced`（见类 KDoc「v1 已知简化」第 1 条）。
+     */
+    val runningThreadSlots: List<Pair<Int, ThreadRec>>
+        get() = threads.withIndex().filter { it.value != null }.map { it.index to it.value!! }
+
+    /**
+     * 所有在跑线程的「运行次数」之和 —— 每线程取 `GTRecipe#getTotalRuns()`
+     * （`parallels × subtickParallels × batchParallels`）。
+     *
+     * 这个数字才是「这台机器此刻同时在处理多少次配方」的**整机口径**：
+     * GTM 自己的 Jade 提示只报 [runningThreads] 里某**一条**配方的 `getTotalRuns()`，
+     * 天然不含线程数，所以两者要相乘着看（见类 KDoc 末尾「与 GTM 提示的口径差异」）。
+     */
+    val runningTotalRuns: Long get() = runningThreads.sumOf { it.recipe.totalRuns.toLong() }
+
+    // ────────────────────────────────────────────────
+    //  诊断（临时）
+    // ────────────────────────────────────────────────
+
+    /**
+     * 【临时诊断】线程数变化时往日志里打一行整机快照。
+     *
+     * 为什么要有它：线程表不进同步字段，光靠「机器在跑」看不出**开了几条**线程。
+     * `logs/latest.log` 里搜 `[GTET][线程诊断]` 就能拿到「在用 N/上限 M + 样本配方 id 与进度 + 合计运行次数」，
+     * 这是「线程到底有没有真的开」最直接的证据。
+     *
+     * 节流：[DIAG_INTERVAL] tick 之内最多一行，且只在「在用线程数」变化时打，
+     * 所以 256 线程也不会刷屏（每次变化一行）。
+     * **验证完线程行为后可以整段删掉**（本字段 + [diagnose] + `serverTick` 里的调用 + 常量）。
+     */
+    private var diagCooldown: Int = 0
+    private var diagLastRunning: Int = -1
+
+    private fun diagnose() {
+        if (diagCooldown > 0) {
+            diagCooldown--
+            return
+        }
+        val running = runningThreadCount
+        if (running == diagLastRunning) return
+        diagLastRunning = running
+        diagCooldown = DIAG_INTERVAL
+        // 样本只取前几条：256 线程全打出来会让一行日志有上万字符
+        val sample = runningThreadSlots.take(DIAG_SAMPLE)
+            .joinToString(", ") { (slot, rec) -> "#$slot ${rec.recipe.id ?: "?"} ${rec.percent}%" }
+        Gtetcore.LOGGER.info(
+            "[GTET][线程诊断] 在跑线程 {}/{}；同时处理次数合计 {}；样本：[{}]",
+            running,
+            threadLimit,
+            runningTotalRuns,
+            sample
+        )
+    }
 
     // ────────────────────────────────────────────────
     //  主循环
@@ -210,6 +295,8 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
 
         mirrorToBaseFields()
         syncStatus(progressed, waitingNow, waitReason)
+        // 【临时诊断】线程数一变就在日志里留一行快照（见 diagnose() 的说明，验证完可整段删）
+        diagnose()
 
         // 一条线程都没在跑、这一轮也搜不到活干 → 退订，等部件内容变化时被 updateTickSubscription() 唤醒。
         // 这与基类在多方块上（keepSubscribing() == false）的退订行为一致。
@@ -550,6 +637,12 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
 
         /** 空闲槽位找配方的节流间隔（tick）。 */
         const val SEARCH_INTERVAL: Int = 5
+
+        /** 【临时诊断】两条诊断日志之间至少间隔的 tick 数（20 tick = 1 秒）。 */
+        private const val DIAG_INTERVAL: Int = 20
+
+        /** 【临时诊断】一行日志里最多列几条线程做样本。 */
+        private const val DIAG_SAMPLE: Int = 8
 
         /** 存档里线程表的 NBT 键。 */
         private const val TAG_THREADS: String = "gtet_threads"

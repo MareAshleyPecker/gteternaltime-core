@@ -3,8 +3,10 @@ package rain.gtetcore.gtet.common.machine.multiblock
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
+import net.minecraft.network.chat.Component
 import rain.gtetcore.gtet.common.machine.IThreadedRecipeMachine
 import rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic
+import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
 
 /**
  * GTET 的**第一台多方块机器** —— 「多方块测试机」。
@@ -21,6 +23,10 @@ import rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic
  *   没装仓时退化成原版「一台机器一条配方」（`threadCount` 默认 1）；
  * - 每条线程各扣各的料、各自计时、各自出料，并**各自吃一遍并行仓的并行倍率**
  *   （见 [ThreadedRecipeLogic] 的「每线程并行怎么套」一节）。
+ * - **线程状态可见**：机器面板里（[addDisplayText] 追加的行）与 Jade 提示里
+ *   （`rain.gtetcore.gtet.integration.jade.provider.ThreadedRecipeLogicProvider`）都会报
+ *   「线程 256（在用 k）」+ 整机同时处理次数 + 每条在跑线程的配方 id 与进度百分比 ——
+ *   这是「线程真的开了」在游戏里唯一能直接看到的地方（线程表本身不同步到客户端）。
  *
  * ## 为什么重写 `createRecipeLogic` 就够了（不需要 mixin）
  * [com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine] 的构造函数里有一句
@@ -58,4 +64,26 @@ class TestMultiblockMachine(holder: IMachineBlockEntity) : WorkableElectricMulti
      * （Kotlin 侧就是 `vararg args: Any?`）；[args] 本类用不到，透传语义由父类保留。
      */
     override fun createRecipeLogic(vararg args: Any?): RecipeLogic = ThreadedRecipeLogic(this)
+
+    /**
+     * 往机器面板里追加「线程状态」。
+     *
+     * ## 为什么重写这个方法是「免费」的
+     * `addDisplayText` 是 GTM 现成的扩展点（[com.gregtechceu.gtceu.api.machine.feature.multiblock.IDisplayUIMachine]），
+     * `WorkableElectricMultiblockMachine` 自己那份实现负责「能量 / 并行 / 批处理 / 进度」那一套；
+     * 本类只负责在它后面**追加**几行线程信息，其余一行都不动。
+     *
+     * ## 数据从哪来（为什么不需要把线程表同步到客户端）
+     * 这段文本由 `ComponentPanelWidget` 在**服务端**求值（它的 `textSupplier` 只在
+     * `detectAndSendChanges` 里跑），组件再同步给客户端渲染 —— 所以这里读到的是服务端那份真的线程表。
+     * 客户端侧的 `textSupplier` 被 GTM 设成 `null`（`createUIWidget` 里的
+     * `this.getLevel().isClientSide ? null : this::addDisplayText`），不会走到这里；
+     * 万一别处复用 `IDisplayUIMachine#createUI` 在客户端调到，
+     * [ThreadedRecipeStatus.appendDisplayLines] 里那道「客户端直接收手」的闸会挡掉误报。
+     */
+    override fun addDisplayText(textList: MutableList<Component>) {
+        super.addDisplayText(textList)
+        val logic = recipeLogic as? ThreadedRecipeLogic ?: return
+        ThreadedRecipeStatus.appendDisplayLines(textList, logic)
+    }
 }

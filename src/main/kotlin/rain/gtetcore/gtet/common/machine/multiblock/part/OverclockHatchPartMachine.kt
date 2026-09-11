@@ -48,19 +48,21 @@ class OverclockHatchPartMachine(
     override val overclockEnergyFactor: Double get() = energyFactor
 
     /**
-     * 只显示两行信息的简单面板（不需要任何输入控件）：
-     * 1. 方块名 —— `block.gtetcore.<id>`，客户端按当前语言解析；
-     * 2. 规格 —— `gtetcore.machine.<id>.info`，例如「8× 速度 / 总能耗 ×32」。
+     * 面板里**只有名字一行**（不需要任何输入控件，也不再单独显示规格）。
+     *
+     * 名字键 `block.gtetcore.<id>` 本身已经带齐信息 —— 中文「UV 超频仓（8×/×4）」、
+     * 英文「UV Overclock Hatch (8× Speed / ×4 Energy)」，也就是「电压等级 + 速度 + 能效」；
+     * 原先那行 `gtetcore.machine.<id>.info`（以及物品提示里的 `tooltip.0` / `tooltip.1`）
+     * 已随显示简化一并删除，`runData` 后不再出现在语言文件里。
      *
      * 这里传的是 **lang key**：ldlib 的 `LabelWidget` 在客户端用
      * `LocalizationUtils.format(...)` → `I18n` 解析，所以两种语言各显示各的。
      */
     override fun createUIWidget(): Widget {
         val id = definition.name
-        val group = WidgetGroup(0, 0, 140, 32)
+        val group = WidgetGroup(0, 0, 140, 20)
         // 用 setColor(-1)（白字）而不是已弃用的 setTextColor —— 两者等价，后者只是 ldlib 的老 API
         group.addWidget(LabelWidget(5, 5, "block.gtetcore.$id").apply { setColor(-1) })
-        group.addWidget(LabelWidget(5, 19, "gtetcore.machine.$id.info").apply { setColor(-1) })
         return group
     }
 

@@ -3,6 +3,7 @@ package rain.gtetcore.gtet.common.item.recipe
 
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType
+import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient
 import com.gregtechceu.gtceu.api.registry.GTRegistries
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes
 
@@ -10,6 +11,7 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraftforge.fluids.FluidStack
 import net.minecraftforge.registries.ForgeRegistries
 
 import rain.gtetcore.gtet.Gtetcore
@@ -191,7 +193,14 @@ object RecipeCodeWriter {
     private fun gt(draft: RecipeDraft): String {
         val inputs = (0 until RecipeDraft.MAX_INPUTS).map { draft.input(it) }.filter { !it.isEmpty }
         val outputs = (0 until RecipeDraft.MAX_OUTPUTS).map { draft.output(it) }.filter { !it.isEmpty }
-        if (inputs.isEmpty() && outputs.isEmpty()) return "// 至少填一个输入或输出槽。\n"
+        // 流体槽只有 GT 种类才有（原版配方模型里没有流体这一说），所以原版那些分支完全不用管。
+        // 这里遍历到容量上限而不是"当前类型用几个"：换过类型后残留在槽里的东西不该被悄悄丢掉，
+        // 用户能在预览里看到多出来的那几行，自己决定删不删。
+        val fluidInputs = (0 until RecipeDraft.MAX_FLUID_INPUTS).map { draft.fluidInput(it) }.filter { !it.isEmpty }
+        val fluidOutputs = (0 until RecipeDraft.MAX_FLUID_OUTPUTS).map { draft.fluidOutput(it) }.filter { !it.isEmpty }
+        if (inputs.isEmpty() && outputs.isEmpty() && fluidInputs.isEmpty() && fluidOutputs.isEmpty()) {
+            return "// 至少填一个输入或输出槽。\n"
+        }
 
         return buildString {
             append(typeExpr(draft.gtType)).append(".recipeBuilder(\"").append(effectiveId(draft)).append("\")\n")
@@ -200,10 +209,16 @@ object RecipeCodeWriter {
                 if (stack.count > 1) append(", ").append(stack.count)
                 append(")\n")
             }
+            fluidInputs.forEach { stack ->
+                append("        .inputFluids(").append(fluidExpr(stack)).append(")\n")
+            }
             outputs.forEach { stack ->
                 append("        .outputItems(").append(itemExpr(stack))
                 if (stack.count > 1) append(", ").append(stack.count)
                 append(")\n")
+            }
+            fluidOutputs.forEach { stack ->
+                append("        .outputFluids(").append(fluidExpr(stack)).append(")\n")
             }
             // 幽灵电路：设置过才写（0 也是合法配置，所以用 -1 表示"不用"）
             if (draft.circuit >= 0) append("        .circuitMeta(").append(draft.circuit).append(")\n")
@@ -265,6 +280,24 @@ object RecipeCodeWriter {
         val key = ForgeRegistries.ITEMS.getKey(stack.item) ?: return "Items.AIR /* 未注册物品 */"
         ITEM_CONSTANTS[key]?.let { return "Items.$it" }
         return "ForgeRegistries.ITEMS.getValue(new ResourceLocation(\"${key.namespace}\", \"${key.path}\"))"
+    }
+
+    /**
+     * 流体表达式：`FluidIngredient.of(<流体>, <mB>)`。
+     *
+     * 用 [FluidIngredient.of] 而不是 `.inputFluids(new FluidStack(...))`：
+     * 后者的重载会把流体转成**流体标签**（内部走 `TagUtil.createFluidTag`），
+     * 对 GT 自己的材料流体没问题，但对整合包里任意一个流体就可能生成一个根本不存在的标签；
+     * `of(Fluid, int)` 建的是精确流体条件，导出成 datagen 代码后语义最直白。
+     *
+     * 流体照样用注册表查（和 [itemExpr] 的兜底分支同一个套路），
+     * 拿不到 id 说明草稿里那个 FluidStack 已经失效，给个显眼的占位而不是写出崩不掉的假代码。
+     */
+    private fun fluidExpr(stack: FluidStack): String {
+        val key = ForgeRegistries.FLUIDS.getKey(stack.fluid)
+            ?: return "FluidIngredient.EMPTY /* 未注册流体 */"
+        return "FluidIngredient.of(ForgeRegistries.FLUIDS.getValue(new ResourceLocation(\"" +
+            "${key.namespace}\", \"${key.path}\")), ${stack.amount})"
     }
 
     /** define(...) 的第二个参数（既可以是物品也可以是标签，这里统一给物品常量）。 */
