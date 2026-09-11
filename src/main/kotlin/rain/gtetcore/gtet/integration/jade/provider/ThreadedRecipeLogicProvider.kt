@@ -38,6 +38,8 @@ import snownee.jade.api.config.IPluginConfig
  * - [appendTooltip] 在**客户端**跑：只读 NBT 拼文本，所以这里**不碰**任何服务端对象。
  *
  * 两边的语言键都取自 [ThreadedRecipeStatus]（UI 与 Jade 共用同一批键，改文案只改一处）。
+ * 另外，**本 provider 自己还额外需要一条 Jade 的配置键**（`config.jade.plugin_gtetcore.threaded_recipe_logic`，
+ * Jade 在 dev 环境缺它会直接断言崩溃）—— 登记在 [rain.gtetcore.gtet.integration.jade.GTETJadeLang] 里。
  *
  * ## 没有线程仓的机器不显示
  * `线程上限 ≤ 1` 直接返回：那种机器（所有 GTM 原版机器 + 没装线程仓的 GTET 多方块）
@@ -111,7 +113,7 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         }
     }
 
-    override fun getUid(): ResourceLocation = Gtetcore.id("threaded_recipe_logic")
+    override fun getUid(): ResourceLocation = Gtetcore.id(UID_PATH)
 
     /** 从被看的方块实体上取多线程配方逻辑；不是（或不是这台机器）就返回 null。 */
     private fun threadLogic(accessor: BlockAccessor): ThreadedRecipeLogic? {
@@ -120,6 +122,17 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
     }
 
     companion object {
+
+        /**
+         * provider 的 uid 路径（与 [Gtetcore.MODID] 一起构成 uid `gtetcore:threaded_recipe_logic`）。
+         *
+         * 抽成 `const` 不是洁癖：Jade 要求每个 provider 都有一条 `config.jade.plugin_<命名空间>.<uid 路径>`
+         * 的翻译键，且**在 dev 环境缺键会用 `AssertionError` 把客户端崩掉**
+         * （校验点在 `snownee.jade.JadeClient#onGui`，键名拼法与「哪些键必填」见 [GTETJadeLang] 的类注释）。
+         * 键由 [GTETJadeLang] 用本常量拼出，`const` 是编译期内联，所以这样引用**不会**让
+         * [GTETJadeLang] 反过来提前加载本类（本类带 Jade API 接口）。
+         */
+        const val UID_PATH: String = "threaded_recipe_logic"
 
         /**
          * 明细最多列几条线程。

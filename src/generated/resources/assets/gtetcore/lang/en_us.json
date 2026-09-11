@@ -1,7 +1,7 @@
 {
   "block.gtetcore.cupronickel_coil_block": "Cupronickel",
-  "block.gtetcore.overclock_hatch_16x_perfect": "UEV Overclock Hatch (16× Speed / ×16 Energy)",
-  "block.gtetcore.overclock_hatch_16x_saving": "UIV Overclock Hatch (16× Speed / ×8 Energy)",
+  "block.gtetcore.overclock_hatch_16x_perfect": "UEV Overclock Hatch (16× Speed / ×32 Energy)",
+  "block.gtetcore.overclock_hatch_16x_saving": "UIV Overclock Hatch (16× Speed / ×16 Energy)",
   "block.gtetcore.overclock_hatch_16x_saving_max": "MAX Overclock Hatch (16× Speed / ×8 Energy)",
   "block.gtetcore.overclock_hatch_8x_lossy2": "LuV Overclock Hatch (8× Speed / ×16 Energy)",
   "block.gtetcore.overclock_hatch_8x_lossy4": "IV Overclock Hatch (8× Speed / ×32 Energy)",
@@ -15,6 +15,8 @@
   "block.gtetcore.thread_hatch_uiv": "UIV Thread Hatch (32 Threads)",
   "block.gtetcore.thread_hatch_uv": "UV Thread Hatch (4 Threads)",
   "block.gtetcore.thread_hatch_uxv": "UXV Thread Hatch (64 Threads)",
+  "config.jade.plugin_gtetcore.threaded_recipe_logic": "Threaded Recipe Status",
+  "config.jade.plugin_gtetcore.threaded_recipe_logic_desc": "Show a machine's thread usage: how many threads are running and which recipe each one is processing. Machines without a thread rack (thread limit <= 1) are skipped.",
   "gtetcore.configuration.dev.exportDirectory": "Export Directory",
   "gtetcore.configuration.dev.exportDirectory.tooltip": "Output directory for exported block patterns (relative to the game directory).",
   "gtetcore.configuration.dev.exportModeEnabled": "Export Mode",

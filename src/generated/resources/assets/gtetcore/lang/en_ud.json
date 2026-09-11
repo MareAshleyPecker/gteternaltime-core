@@ -1,7 +1,7 @@
 {
   "block.gtetcore.cupronickel_coil_block": "ןǝʞɔıuoɹdnƆ",
-  "block.gtetcore.overclock_hatch_16x_perfect": ")ʎbɹǝuƎ 9Ɩ× / pǝǝdS ×9Ɩ( ɥɔʇɐH ʞɔoןɔɹǝʌO ΛƎ∩",
-  "block.gtetcore.overclock_hatch_16x_saving": ")ʎbɹǝuƎ 8× / pǝǝdS ×9Ɩ( ɥɔʇɐH ʞɔoןɔɹǝʌO ΛI∩",
+  "block.gtetcore.overclock_hatch_16x_perfect": ")ʎbɹǝuƎ ᄅƐ× / pǝǝdS ×9Ɩ( ɥɔʇɐH ʞɔoןɔɹǝʌO ΛƎ∩",
+  "block.gtetcore.overclock_hatch_16x_saving": ")ʎbɹǝuƎ 9Ɩ× / pǝǝdS ×9Ɩ( ɥɔʇɐH ʞɔoןɔɹǝʌO ΛI∩",
   "block.gtetcore.overclock_hatch_16x_saving_max": ")ʎbɹǝuƎ 8× / pǝǝdS ×9Ɩ( ɥɔʇɐH ʞɔoןɔɹǝʌO XⱯW",
   "block.gtetcore.overclock_hatch_8x_lossy2": ")ʎbɹǝuƎ 9Ɩ× / pǝǝdS ×8( ɥɔʇɐH ʞɔoןɔɹǝʌO ΛnꞀ",
   "block.gtetcore.overclock_hatch_8x_lossy4": ")ʎbɹǝuƎ ᄅƐ× / pǝǝdS ×8( ɥɔʇɐH ʞɔoןɔɹǝʌO ΛI",
@@ -15,6 +15,8 @@
   "block.gtetcore.thread_hatch_uiv": ")spɐǝɹɥ⟘ ᄅƐ( ɥɔʇɐH pɐǝɹɥ⟘ ΛI∩",
   "block.gtetcore.thread_hatch_uv": ")spɐǝɹɥ⟘ ㄣ( ɥɔʇɐH pɐǝɹɥ⟘ Λ∩",
   "block.gtetcore.thread_hatch_uxv": ")spɐǝɹɥ⟘ ㄣ9( ɥɔʇɐH pɐǝɹɥ⟘ ΛX∩",
+  "config.jade.plugin_gtetcore.threaded_recipe_logic": "snʇɐʇS ǝdıɔǝᴚ pǝpɐǝɹɥ⟘",
+  "config.jade.plugin_gtetcore.threaded_recipe_logic_desc": "˙pǝddıʞs ǝɹɐ )Ɩ =< ʇıɯıן pɐǝɹɥʇ( ʞɔɐɹ pɐǝɹɥʇ ɐ ʇnoɥʇıʍ sǝuıɥɔɐW ˙buıssǝɔoɹd sı ǝuo ɥɔɐǝ ǝdıɔǝɹ ɥɔıɥʍ puɐ buıuunɹ ǝɹɐ spɐǝɹɥʇ ʎuɐɯ ʍoɥ :ǝbɐsn pɐǝɹɥʇ s,ǝuıɥɔɐɯ ɐ ʍoɥS",
   "gtetcore.configuration.dev.exportDirectory": "ʎɹoʇɔǝɹıᗡ ʇɹodxƎ",
   "gtetcore.configuration.dev.exportDirectory.tooltip": "˙)ʎɹoʇɔǝɹıp ǝɯɐb ǝɥʇ oʇ ǝʌıʇɐןǝɹ( suɹǝʇʇɐd ʞɔoןq pǝʇɹodxǝ ɹoɟ ʎɹoʇɔǝɹıp ʇndʇnO",
   "gtetcore.configuration.dev.exportModeEnabled": "ǝpoW ʇɹodxƎ",

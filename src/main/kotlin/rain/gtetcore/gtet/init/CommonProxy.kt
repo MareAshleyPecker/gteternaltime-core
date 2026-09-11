@@ -49,6 +49,12 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         // 同样必须在数据生成**之前**登记：Jade 插件类要等加载末尾被注解扫描到才会加载，
         // 把语言键挂在那个类里会赶不上 GatherDataEvent。
         rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus.initLang()
+        // GTET 自己的 Jade provider 在 Jade 的插件配置界面里也要有翻译键：Jade 会遍历所有 provider 的 uid，
+        // 断言 `config.jade.plugin_<命名空间>.<uid 路径>` 这条键必须存在，缺一条就在标题界面抛
+        // AssertionError 把客户端崩掉（校验点是 snownee.jade.JadeClient#onGui，第三方 mod 的原话见
+        // GTETJadeLang 的类注释）。这里必须和上面两处一样在**数据生成之前**登记：
+        // Jade 插件类要等加载末尾的注解扫描才会被加载，把键挂在那个类里赶不上 GatherDataEvent。
+        rain.gtetcore.gtet.integration.jade.GTETJadeLang.initLang()
         // 结构工具的网络包（客户端滚轮切模式 → 服务端改 NBT）
         rain.gtetcore.gtet.common.item.tool.ToolNetwork.register()
         GTETCreativeModeTabs.init()
