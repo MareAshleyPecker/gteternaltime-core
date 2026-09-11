@@ -21,7 +21,7 @@ package rain.gtetcore.gtet.api.capability
  *
  * ## 思路来源
  * - 【借鉴形状】GTCEu `com.gregtechceu.gtceu.api.capability.IParallelHatch` —— 只借了「用一个部件接口向控制器暴露一个数值 getter，供超频/并行逻辑读取」这个形状；它的方法签名与实现一行都没照抄。
- * - 【自研】接口本身与 `overclockSpeed` / `overclockEnergyFactor` 两个字段的语义 —— GTM 的 `IParallelHatch` 只有 `getParallel()` 一个 int，没有「速度倍率 / 能效系数」这种二维描述，也就没有能抄的东西。
+ * - 【自研】接口本身与 `overclockSpeed` / `overclockEnergyFactor` 两个字段的语义 —— GTM 的 `IParallelHatch` 只有一个 `int getCurrentParallel()`，没有「速度倍率 / 能效系数」这种二维描述，也就没有能抄的东西。
  *
  * @author rain fox
  */
