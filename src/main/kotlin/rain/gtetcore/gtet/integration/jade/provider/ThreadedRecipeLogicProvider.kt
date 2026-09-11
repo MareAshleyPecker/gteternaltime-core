@@ -23,8 +23,8 @@ import snownee.jade.api.ui.BoxStyle
  * GTET 自己的 Jade provider：把**多线程配方逻辑**的整机线程状态摆到提示里。
  *
  * 显示：`线程 256（在用 5）` + 整机「同时处理 N 次配方运行」+ 整机「耗电 Σ EU/t」+ 逐**配方组**两行
- * （第一行绿色进度条 + 该组所有线程加起来的产出物与数量，
- * 第二行是配方名 / 线程条数 / **该组 EU/t**）。组的定义与合并规则见 [ThreadedRecipeStatus]。
+ * （第一行是整条绿色进度条，条内 `#槽位  进度/时长 t`，独占一行；
+ * 第二行只放产出物与数量 / 线程条数 / **该组 EU/t**，配方 id 不上屏）。组的定义与合并规则见 [ThreadedRecipeStatus]。
  *
  * ## 为什么必须自己写一个 provider
  * GTM 的 `ParallelProvider` / `RecipeOutputProvider` 读的都是 `recipeLogic.getLastRecipe()` —— **单个配方对象**，
@@ -79,7 +79,6 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
             entry.putLong(TAG_GROUP_EUT, group.eutPerTick)
             entry.putInt(TAG_PROGRESS, group.progress)
             entry.putInt(TAG_DURATION, group.duration)
-            entry.putString(TAG_RECIPE, group.recipeLabel)
             entry.putInt(TAG_HIDDEN_KINDS, group.hiddenKinds)
             val outputs = ListTag()
             for (output in group.outputs) {
@@ -125,29 +124,27 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
             val entry = list.getCompound(i)
             val progress = entry.getInt(TAG_PROGRESS)
             val duration = entry.getInt(TAG_DURATION)
-            // 组行第一行 = 绿色进度条（条内文字沿用 GTM 的白字，绿底绿字看不清）+ 同一行紧跟其后的绿字产出
+            // 组行第一行 = 整条进度条：条内是「槽位 + 进度」，后面不接任何文字，这条进度条就独占这一行
+            // （条内文字沿用 GTM 的白字，绿底绿字看不清）
             tooltip.add(
                 helper.progress(
                     if (duration <= 0) 0f else (progress.toFloat() / duration).coerceIn(0f, 1f),
-                    Component.translatable(ThreadedRecipeStatus.LANG_PROGRESS, progress, duration),
+                    Component.translatable(
+                        ThreadedRecipeStatus.LANG_PROGRESS,
+                        entry.getInt(TAG_SLOT),
+                        progress,
+                        duration
+                    ),
                     helper.progressStyle().color(PROGRESS_BAR_ARGB).textColor(-1),
                     BoxStyle.DEFAULT,
                     true
                 )
             )
-            tooltip.append(
-                Component.translatable(
-                    ThreadedRecipeStatus.LANG_OUTPUTS,
-                    entry.getInt(TAG_SLOT),
-                    ThreadedRecipeStatus.outputsText(readOutputs(entry), entry.getInt(TAG_HIDDEN_KINDS))
-                ).withStyle(ChatFormatting.GREEN)
-            )
-            // 组行第二行 = 配方名 / 线程条数 / 该组 EU/t：另起一行放在进度条下方，
-            // 不再挤在产出后面（add 一定会新开一行），也不会把产出名挤掉
+            // 组行第二行 = 只放产出 / 线程条数 / 该组 EU/t（配方 id 那一串不上屏）
             tooltip.add(
                 Component.translatable(
-                    ThreadedRecipeStatus.LANG_GROUP_META,
-                    entry.getString(TAG_RECIPE),
+                    ThreadedRecipeStatus.LANG_OUTPUTS,
+                    ThreadedRecipeStatus.outputsText(readOutputs(entry), entry.getInt(TAG_HIDDEN_KINDS)),
                     entry.getInt(TAG_GROUP_THREADS),
                     FormattingUtil.formatNumbers(entry.getLong(TAG_GROUP_EUT))
                 ).withStyle(ChatFormatting.GREEN)
@@ -245,7 +242,6 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         private const val TAG_GROUP_EUT: String = "eut"
         private const val TAG_PROGRESS: String = "progress"
         private const val TAG_DURATION: String = "duration"
-        private const val TAG_RECIPE: String = "recipe"
         private const val TAG_HIDDEN_KINDS: String = "hidden_kinds"
         private const val TAG_OUTPUTS: String = "outputs"
         private const val TAG_OUT_NAME: String = "name"

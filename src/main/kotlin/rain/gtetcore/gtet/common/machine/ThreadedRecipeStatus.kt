@@ -17,8 +17,8 @@ import kotlin.math.roundToLong
  * [ThreadedRecipeLogic] 的**线程状态快照与显示文本**：语言键 + 「同配方合并」后的配方组 + 机器 UI 的文本行。
  *
  * 显示口径：**一个配方组占两行**（同一种配方占用的全部线程合并成一条）。
- * 第一行是这一组的进度 + 这一组**所有线程加起来**的产出物与数量（一次机器周期的量）；
- * 第二行是配方名 / 线程条数 / 该组耗电（EU/t）那样的次要信息（见 [LANG_GROUP_META]），不跟主信息抢同一行。
+ * 第一行只放这一组的进度（Jade 那边这一行就是进度条本身，独占一行、后面不再接文字）；
+ * 第二行只放这一组**所有线程加起来**的产出物与数量（一次机器周期的量）+ 线程条数 + 该组耗电（[LANG_OUTPUTS]）。
  * 明细之前另有整机口径的合计两行：同时处理多少次配方运行 + 总耗电（[LANG_TOTAL_RUNS] / [LANG_TOTAL_EUT]）。
  *
  * 两条显示路径共用本文件：机器 UI 在服务端求值后把组件同步给客户端；Jade 那条不能直接读线程表
@@ -38,21 +38,18 @@ object ThreadedRecipeStatus {
     /** 语言键：整机口径的耗电 —— 单一参数，已格式化过的 EU/t 数字字符串。 */
     const val LANG_TOTAL_EUT: String = "gtetcore.threads.total_eut"
 
-    /** 语言键：**机器 UI** 里一条配方组行 —— 参数依次是「组内首个槽位」「进度」「总时长」「产出列表」。 */
-    const val LANG_LINE: String = "gtetcore.threads.line"
-
-    /** 语言键：Jade 进度条**条内**的文字 —— 参数是「进度」「总时长」。 */
+    /**
+     * 语言键：**进度条条内**的文字，面板那边第一行的进度也是它 ——
+     * 参数依次是「组内首个槽位」「进度」「总时长」。
+     */
     const val LANG_PROGRESS: String = "gtetcore.threads.progress"
 
-    /** 语言键：Jade 组行里进度条**同一行**之后的产出那段 —— 参数是「组内首个槽位」「产出列表」。 */
-    const val LANG_OUTPUTS: String = "gtetcore.threads.outputs"
-
     /**
-     * 语言键：组行**下方一行**的括注 —— 参数依次是「配方名（id 末段）」「组内线程条数」「该组 EU/t」。
+     * 语言键：组行的**第二行**（进度条那行的下面）—— 参数依次是「产出列表」「组内线程条数」「该组 EU/t」。
      *
-     * 值自带两个前导空格：面板那边 [LANG_LINE] 也是两空格起头，这样括注正好对齐到 `#` 下面。
+     * 配方名（id 那一串）**不上屏**：跟产出挤一行会把主信息推远，独占一行又只是噪音。
      */
-    const val LANG_GROUP_META: String = "gtetcore.threads.group_meta"
+    const val LANG_OUTPUTS: String = "gtetcore.threads.outputs"
 
     /** 语言键：明细被截断时的尾行 —— 参数是「没显示的组数」「显示的组数」。 */
     const val LANG_MORE: String = "gtetcore.threads.more"
@@ -94,7 +91,6 @@ object ThreadedRecipeStatus {
      * @param progress    组内最小槽位那条线程的进度（tick）
      * @param duration    同上那条线程的总时长（tick）
      * @param eutPerTick  这一组**实际吃的电**（EU/t）= 组内各线程 [eutPerTickOf] 之和
-     * @param recipeLabel 配方 id 的末段（id 形如 `<类型>/<名字>`，类型名对一台机器是常量，没必要重复显示）
      * @param outputs     合并后的物品产出（已按 [OUTPUTS_PER_LINE] 截断）
      * @param hiddenKinds 被截断掉的产物种数（0 = 没截断）
      */
@@ -104,7 +100,6 @@ object ThreadedRecipeStatus {
         val progress: Int,
         val duration: Int,
         val eutPerTick: Long,
-        val recipeLabel: String,
         val outputs: List<OutputSnapshot>,
         val hiddenKinds: Int
     )
@@ -145,24 +140,14 @@ object ThreadedRecipeStatus {
             "整机耗电 %s EU/t（各线程之和）"
         )
         LangUtil.add(
-            LANG_LINE,
-            "  #%s  %s/%s t  Output %s",
-            "  #%s  %s/%s t  产出 %s"
-        )
-        LangUtil.add(
             LANG_PROGRESS,
-            "%s/%s t",
-            "%s/%s t"
+            "#%s  %s/%s t",
+            "#%s  %s/%s t"
         )
         LangUtil.add(
             LANG_OUTPUTS,
-            "#%s  Output %s",
-            "#%s  产出 %s"
-        )
-        LangUtil.add(
-            LANG_GROUP_META,
-            "  (%s, %s threads, %s EU/t)",
-            "  （%s · %s 条线程 · %s EU/t）"
+            "Output %s · %s threads · %s EU/t",
+            "产出 %s · %s 条线程 · %s EU/t"
         )
         LangUtil.add(
             LANG_MORE,
@@ -232,7 +217,6 @@ object ThreadedRecipeStatus {
             progress = head.progress,
             duration = head.duration,
             eutPerTick = eut,
-            recipeLabel = head.recipe.id?.path?.substringAfterLast('/') ?: "?",
             outputs = outputs,
             hiddenKinds = hiddenKinds
         )
@@ -379,21 +363,14 @@ object ThreadedRecipeStatus {
 
         val page = groupSnapshots(logic, DISPLAY_LINES)
         for (group in page.groups) {
+            // 第一行只放进度（Jade 那边这一行就是进度条本身），第二行才是产出 / 线程数 / 耗电
             textList.add(
-                Component.translatable(
-                    LANG_LINE,
-                    group.slot,
-                    group.progress,
-                    group.duration,
-                    outputsText(group.outputs, group.hiddenKinds)
-                )
+                Component.translatable(LANG_PROGRESS, group.slot, group.progress, group.duration)
             )
-            // 元信息（配方名 · 线程条数 · EU/t）另起一行：跟产出挤一行会把主信息推得老远、括号还容易折行，
-            // 而耗电放这里也正好不占产出的位置
             textList.add(
                 Component.translatable(
-                    LANG_GROUP_META,
-                    group.recipeLabel,
+                    LANG_OUTPUTS,
+                    outputsText(group.outputs, group.hiddenKinds),
                     group.threadCount,
                     FormattingUtil.formatNumbers(group.eutPerTick)
                 )
