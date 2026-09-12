@@ -163,3 +163,27 @@ whether future versions of the GNU Lesser General Public License shall
 apply, that proxy's public statement of acceptance of any version is
 permanent authorization for you to choose that version for the
 Library.
+
+================================================================================
+仓库授权补充说明 / Licensing notice for this repository
+（以下内容不属于上方许可证正文，仅为本仓库的补充说明。
+  The section below is NOT part of the license text above.）
+================================================================================
+
+本仓库的代码与美术资源分开声明授权：
+
+- 代码：采用 LGPL-3.0（GNU 宽通用公共许可证第 3 版），即上方许可证正文。
+- 贴图 / 美术资源：采用 CC BY-NC-SA 4.0（署名—非商业性使用—相同方式共享 4.0 国际），
+  协议地址 https://creativecommons.org/licenses/by-nc-sa/4.0/ ，
+  详细说明见 src/main/resources/LICENSE.txt 。
+- 第三方素材：src/main/resources/assets/gtocore/ 下是 GTOCore 的贴图副本，
+  来源 https://github.com/GregTech-Odyssey/GTOCore-Main （其根 LICENSE 为 LGPL-3.0，
+  版权归 GTOCore 作者），**不适用**上面那款 CC BY-NC-SA，详见该目录下的 LICENSE.txt 。
+
+Assets (English): Textures and art assets are licensed under CC BY-NC-SA 4.0
+(https://creativecommons.org/licenses/by-nc-sa/4.0/). The code is licensed under
+LGPL-3.0 (GNU Lesser General Public License v3.0) — that is the license text above.
+Third-party material: `src/main/resources/assets/gtocore/` contains copies of GTOCore
+textures from https://github.com/GregTech-Odyssey/GTOCore-Main (root `LICENSE`:
+LGPL-3.0; copyright remains with the GTOCore authors). The CC BY-NC-SA license above
+does not apply to them; see the `LICENSE.txt` in that directory.

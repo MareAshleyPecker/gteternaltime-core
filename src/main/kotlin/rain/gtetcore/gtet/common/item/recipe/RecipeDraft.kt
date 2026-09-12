@@ -67,8 +67,17 @@ class RecipeDraft {
     /** 基础耗电 EU/t。 */
     var eut: Long = 30L
 
-    /** 要求电压等级：`GTValues.VN` 的下标（0=ULV，1=LV …）。 */
+    /**
+     * 要求电压等级：`0..MAX` 是 GTM 档（下标含义同 `GTValues.VN`，0=ULV、1=LV … 14=MAX），
+     * `MAX+1` 之后是 [VoltageTiers] 那 16 个特殊档（15=MAX+1 … 30=MAX+16）。
+     *
+     * 合法范围由 setter 统一夹紧（[VoltageTiers.coerce]）：存档里的脏值、界面上的越界点击
+     * 都进不来，[RecipeCodeWriter] 那边就不会去索引 `VA[MAX+1]` 这种不存在的常量。
+     */
     var tier: Int = 1
+        set(value) {
+            field = VoltageTiers.coerce(value)
+        }
 
     /** 幽灵电路配置号；`-1` 表示这个配方不用电路。 */
     var circuit: Int = -1

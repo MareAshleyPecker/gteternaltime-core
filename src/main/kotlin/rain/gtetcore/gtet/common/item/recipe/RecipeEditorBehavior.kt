@@ -1,6 +1,5 @@
 package rain.gtetcore.gtet.common.item.recipe
 
-import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity
 import com.gregtechceu.gtceu.api.gui.GuiTextures
 import com.gregtechceu.gtceu.api.gui.widget.IntInputWidget
@@ -93,6 +92,11 @@ object RecipeEditorBehavior : IItemUIFactory {
     private const val FLUID_PITCH = 20
     private const val FLUID_SLOT_SIZE = 18
 
+    /** 电压快捷弹层：一行 4 个档（横 4 × 46 = 184 ≤ 190），行距 14（见 createUI 里的排版注释）。 */
+    private const val TIER_COLS = 4
+    private const val TIER_PICKER_W = 190
+    private const val TIER_PICKER_H = 120
+
     /** 玩家物品栏（`PlayerInventoryWidget` 固有尺寸 172×86）的落点，避开槽区与按钮行。 */
     private const val PLAYER_INV_X = 186
     private const val PLAYER_INV_Y = 84
@@ -172,27 +176,30 @@ object RecipeEditorBehavior : IItemUIFactory {
             }),
         )
 
-        // 电压等级：点一下弹出 LV~MAX 的快捷选择
-        val tierPicker = WidgetGroup(64, 42, 190, 120)
+        // 电压等级：点一下弹出 LV~MAX 的快捷选择，后 4 行是 GTET 的特殊档 MAX+1~MAX+16（见 VoltageTiers）。
+        // GTM 档与特殊档**各自**按 4 个一行分块（`chunked` 天然断行），所以特殊档一定从新的一行开头，
+        // 不会和 OpV / MAX 挤在同一行里。总行数 = 4（LV..MAX 共 14 个）+ 4（特殊档 16 个）= 8，
+        // 8 × 14 = 112 ≤ 弹层高度 120，不用加滚动。
+        val tierPicker = WidgetGroup(64, 42, TIER_PICKER_W, TIER_PICKER_H)
         tierPicker.setBackground(GuiTextures.DISPLAY)
         tierPicker.isVisible = false
-        var tierIndex = 1 // GTValues.VN 里 0 是 ULV，快捷选择从 LV 开始
-        var row = 0
-        while (tierIndex < GTValues.VN.size) {
-            for (col in 0 until 4) {
-                if (tierIndex >= GTValues.VN.size) break
-                val tier = tierIndex
+        val tierRows = ((1 until VoltageTiers.GTM_TIERS).toList() + VoltageTiers.SPECIAL_RANGE.toList())
+            .chunked(TIER_COLS)
+        tierRows.forEachIndexed { row, tiersInRow ->
+            tiersInRow.forEachIndexed { col, tier ->
                 tierPicker.addWidget(
-                    button(col * 46, row * 14, 44, 12, { GTValues.VN[tier] }) {
+                    // 档名直接是 `ULV`…`MAX`（GTM 的 VN）与 `MAX+1`…`MAX+16`（VoltageTiers 拼的），
+                    // 不走翻译键 —— 和 GTM 自己 VNF 里那 16 个 "MAX+n" 是同一套写法。
+                    button(col * 46, row * 14, 44, 12, { VoltageTiers.name(tier) }) {
                         draft.tier = tier
-                        if (tier < GTValues.VA.size) draft.eut = GTValues.VA[tier].toLong()
+                        // 选档就把耗电摆到该档的默认值：GTM 档是 VA（= V × 30/32，原行为不变），
+                        // 特殊档是那档电压本身（VA 装不下 2^33 那种量级）。
+                        draft.eut = VoltageTiers.defaultEut(tier)
                         tierPicker.isVisible = false
                         touch()
                     },
                 )
-                tierIndex++
             }
-            row++
         }
 
         pageRecipe.addWidget(
@@ -425,7 +432,7 @@ object RecipeEditorBehavior : IItemUIFactory {
                 draft.kind = RecipeDraft.Kind.GT
                 draft.gtType = entry.id.toString()
                 if (draft.tier < 1) draft.tier = 2
-                if (draft.tier < GTValues.VA.size) draft.eut = GTValues.VA[draft.tier].toLong()
+                draft.eut = VoltageTiers.defaultEut(draft.tier)
                 syncCircuit(draft)
                 relayout()
                 touch()

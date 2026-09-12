@@ -2,9 +2,15 @@
 package rain.gtetcore.gtet.init
 
 import com.gregtechceu.gtceu.api.GTCEuAPI
+import com.gregtechceu.gtceu.api.addon.AddonFinder
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialEvent
 import com.gregtechceu.gtceu.api.data.chemical.material.event.MaterialRegistryEvent
 import com.gregtechceu.gtceu.api.data.chemical.material.registry.MaterialRegistry
+import com.gregtechceu.gtceu.api.machine.MachineDefinition
+import com.gregtechceu.gtceu.api.registry.GTRegistries
+import net.minecraftforge.common.MinecraftForge
+import rain.gtetcore.gtet.common.data.machine.muiltmachine.ALLMmchine
+import rain.gtetcore.gtet.common.data.machine.samplemachine.ALLSmahine
 import net.minecraftforge.data.event.GatherDataEvent
 import net.minecraftforge.eventbus.api.IEventBus
 import net.minecraftforge.eventbus.api.SubscribeEvent
@@ -15,8 +21,13 @@ import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.data.block.ETBlock
 import rain.gtetcore.gtet.common.data.item.ETItems
+import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget
+import rain.gtetcore.gtet.common.item.terminal.TerminalLang
+import rain.gtetcore.gtet.common.item.tool.ToolNetwork
+import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
 import rain.gtetcore.gtet.common.material.ETElementMaterials
 import rain.gtetcore.gtet.data.GTETDatagen
+import rain.gtetcore.gtet.integration.jade.GTETJadeLang
 
 /**
  * 通用代理 —— 客户端和服务端都需要加载的初始化逻辑。
@@ -30,7 +41,7 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
     init {
         val bus: IEventBus = context.modEventBus
         bus.register(this)
-        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this)
+        MinecraftForge.EVENT_BUS.register(this)
         kotlinInit()
     }
 
@@ -44,32 +55,27 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         // 用 [Gtetcore] 构造器注入进来的 context 注册 —— 不再走已弃用的 ModLoadingContext.get()
         GTETConfig.init(context)
         // 高级终端扩展用到的双语条目（必须在数据生成前注册）
-        rain.gtetcore.gtet.common.item.terminal.TerminalLang.init()
+        TerminalLang.init()
         // 多线程内核的线程状态文本（机器 UI 与 GTET 自己的 Jade provider 共用同一批语言键）。
         // 同样必须在数据生成**之前**登记：Jade 插件类要等加载末尾被注解扫描到才会加载，
         // 把语言键挂在那个类里会赶不上 GatherDataEvent。
-        rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus.initLang()
+        ThreadedRecipeStatus.initLang()
         // 配方编辑器「中键改数量」对话框的文案（同上：必须在数据生成之前登记）。
-        rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget.initLang()
+        PhantomCountSlotWidget.initLang()
         // GTET 自己的 Jade provider 在 Jade 的插件配置界面里也要有翻译键：Jade 会遍历所有 provider 的 uid，
         // 断言 `config.jade.plugin_<命名空间>.<uid 路径>` 这条键必须存在，缺一条就在标题界面抛
         // AssertionError 把客户端崩掉（校验点是 snownee.jade.JadeClient#onGui，第三方 mod 的原话见
         // GTETJadeLang 的类注释）。这里必须和上面两处一样在**数据生成之前**登记：
         // Jade 插件类要等加载末尾的注解扫描才会被加载，把键挂在那个类里赶不上 GatherDataEvent。
-        rain.gtetcore.gtet.integration.jade.GTETJadeLang.initLang()
+        GTETJadeLang.initLang()
         // 结构工具的网络包（客户端滚轮切模式 → 服务端改 NBT）
-        rain.gtetcore.gtet.common.item.tool.ToolNetwork.register()
+        ToolNetwork.register()
         GTETCreativeModeTabs.init()
         ETItems.init()
         ETBlock.init()
-        // 注意：机器注册（ALLMmchine.init / ALLSmahine.init）不在这里，而是放在 GTCEu 官方的
-        // addon 回调 [rain.gtetcore.gtet.ETGTAddon.initializeAddon] 里（GTM 的材料/机器/模型那时都已就绪）。
-        // 这里**不能**再挂 GTCEu 的 RegisterEvent 监听器：那个事件由 GTM 在自己的 mod 构造期间发出，
-        // 与本 mod 的构造是竞态，会让渲染态 id 的分配顺序在服务端/客户端之间错位
-        // —— 详细的「为什么」见本类末尾那段注释。
-        //
-        // 唯一入口 + 幂等保护：ALLMmchine.init() 内部有 `initialized` 标志（见 ALLMmchine 第 22-23 行声明、
-        // 第 112-113 行 `if (initialized) return`），即使将来某处再调一次也只是空转，不会重复注册。
+        // 机器（ALLMmchine / ALLSmahine）不在这里注册，而是由上面的 [registerMachines] 在
+        // GTM 的机器注册窗口里注册 —— 那里是 GTM 唯一允许往机器表里加东西的时刻。
+        // 幂等保护：ALLMmchine.init() 内部有 `initialized` 标志，重复调用只空转。
     }
 
     /** Forge 通用设置阶段回调。 */
@@ -78,13 +84,45 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         // 材料物品由 MixinGTMaterialItems @Overwrite 接管，此处无需额外生成
     }
 
+    // ===== 机器注册：GTM 的正门 =====
+
+    /**
+     * 在 GTM 打开机器注册窗口的**那一瞬间**注册 GTET 的全部机器。
+     *
+     * GTM 只在 `GTMachines.init()` 里发一次这个事件（`GTMachines` 第 1099 行），紧接着就
+     * `GTRegistries.MACHINES.freeze()`（第 1101 行）并遍历全表登记渲染态（第 1103-1107 行）。
+     * 所以在事件里注册 = **冻结之前入表** + **渲染态由 GTM 自己那次循环一起登记**，
+     * 两头都不需要 GTET 自己动手（不要再写 unfreeze()/freeze() 或补登记循环）。
+     *
+     * ⚠️ 参数必须写成 `RegisterEvent<*, *>`，**不要**写成 `RegisterEvent<ResourceLocation, MachineDefinition>`：
+     * `RegisterEvent<K, V> extends GenericEvent<V>`，而 Forge EventBus 解析监听器泛型时只认监听器
+     * 自己那层参数化类型的类型参数、不认父类 `GenericEvent<V>` 里的类型变量 —— 写成两个具体类型时
+     * 这条方法**一次都不会被调用**（实测：同一次加载里通配写法收到 11 次，具体写法 0 次，且不报错），
+     * 机器就会静默地一个都不注册。所以这里用通配写法 + [net.minecraftforge.eventbus.api.GenericEvent.getGenericType]
+     * 精确过滤出「机器表那一场」。
+     *
+     * 确定性：事件由 GTM 在主线程按固定顺序 `ModList.forEachModInOrder` 发给各 mod 的 mod 总线，
+     * 不依赖线程调度；各 mod 的注册顺序 = mod 加载顺序，机器表内容与插入顺序两端完全一致，
+     * 因此 GTM 那次渲染态循环推出来的数字 id（= 网络协议）也两端一致。
+     */
+    @SubscribeEvent
+    fun registerMachines(event: GTCEuAPI.RegisterEvent<*, *>) {
+        if (event.genericType != MachineDefinition::class.java) return
+        ALLMmchine.init()
+        ALLSmahine.init()
+        Gtetcore.LOGGER.info(
+            "GTET machines registered inside GTM's machine-registry window: total={}",
+            GTRegistries.MACHINES.registry().size
+        )
+    }
+
 
     /** 创建本模组专属的 [MaterialRegistry] 材料注册表。 */
     @SubscribeEvent
     fun registerMaterialRegistry(event: MaterialRegistryEvent?) {
         // 先强制填充 AddonFinder 缓存，确保 MaterialRegistry 构造时 getAddon(modId) 能找到我们的 addon
         // 从而 registry.getRegistrate() 返回 OnlyETreg.ETRegistrate 而非 standalone registrate
-        com.gregtechceu.gtceu.api.addon.AddonFinder.getAddons()
+        AddonFinder.getAddons()
         materialRegistry = GTCEuAPI.materialManager.createRegistry(Gtetcore.MODID)
     }
 
@@ -95,37 +133,18 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
     }
 
     /*
-     * ⚠️ 这里**曾经**有一个机器注册监听器，已刻意删除，不要加回来：
+     * ⚠️ 关于「机器注册路径」的踩坑记录，别再走回头路：
      *
-     *     @SubscribeEvent
-     *     fun registerMachines(event: GTCEuAPI.RegisterEvent<ResourceLocation, MachineDefinition>) {
-     *         ALLMmchine.init()
-     *         ALLSmahine.init()
-     *     }
-     *
-     * ## 为什么删
-     * GTCEu 的 `RegisterEvent<ResourceLocation, MachineDefinition>` 是 GTM 在**它自己的 mod 构造期间**
-     * （`GTMachines.init()` 里 `ModLoader.postEvent`）发出来的，而 Forge 是**并行构造 mod** 的 ——
-     * 本 mod 的 CommonProxy 与 GTM 谁先构造完，取决于线程调度，是竞态。
-     * 于是「GTET 的机器从哪条路径进 `GTRegistries.MACHINES`」变成了掷骰子：
-     * - 抢到了 → 机器在 RegisterEvent 窗口里进表，渲染态随后由 GTM 自己的遍历登记，
-     *   位置取决于 GTM 遍历机器表的顺序（HashMap 顺序），我们的机器被插在**中间**；
-     * - 没抢到（走 addon 回调）→ 机器在 GTM 冻结机器表之后才注册，渲染态由
-     *   `ALLMmchine.init()` 末尾的 `backfillRenderStates(...)` 按固定顺序**追加到末尾**。
-     *
-     * ## 为什么这很致命
-     * `MachineDefinition.RENDER_STATE_REGISTRY`（`IdMapper<MachineRenderState>`）的 id 是
-     * **按插入顺序**分配的，并且会经 `MachineRenderStatePayload` → `FriendlyByteBuf.writeId(...)`
-     * 当作网络数字 id 发给客户端。同一个 JVM 内哪条路径都自洽，但专职服务器与客户端是**两个 JVM**：
-     * 只要两边的竞态结果不同，id 就会整体错位 —— 不崩溃，但客户端会把机器解成错误的渲染态
-     * （成型 / 配方状态 / 喷漆全部对不上号）。
-     *
-     * ## 现在的约定
-     * 机器注册**永远**只走 [rain.gtetcore.gtet.ETGTAddon.initializeAddon] 这一条确定路径：
-     * 该回调由 GTCEu 在 GTM `CommonProxy.init()` 末尾按固定顺序调用，与线程调度无关，
-     * 因此渲染态 id 的分配顺序在两端必然一致（顺序 = 网络协议的一部分，
-     * 见 [rain.gtetcore.gtet.common.data.machine.muiltmachine.ALLMmchine.init] 的 ⚠️）。
-     * 删掉监听器后，本类不再调用 ALLMmchine.init() / ALLSmahine.init()，全仓也只有 ETGTAddon 在调。
+     * 1. `IGTAddon.initializeAddon()`（GTM `CommonProxy` 第 162 行）**在冻结之后**才被调用；
+     *    它之前的那些 addon 回调（registerCovers / collectMaterialCasings / …）又都跑在
+     *    `GTMachines` 类初始化之前 —— 实测那一刻 `GTRegistries.MACHINES.isFrozen == true`。
+     *    所以「在 addon 回调里注册机器」这条路根本不存在：唯一解是上面的 RegisterEvent。
+     * 2. 曾经删掉过这个监听器，理由是「GTM 在自己 mod 构造期发事件、Forge 并行构造 mod ⇒ 竞态」。
+     *    实测（datagen 一次加载，日志留在 run-data/logs）：
+     *    - 竞态不成立：`MaterialRegistryEvent`（GTM `CommonProxy` 第 213 行发，早于机器事件）每次都收到，
+     *      说明本 mod 的 mod 总线监听器在 GTM 跑到第 155 行 `GTMachines.init()` 之前就已就位；
+     *    - 真正让监听器「收不到」的是**泛型写法**：`RegisterEvent<ResourceLocation, MachineDefinition>`
+     *      这种具体化写法 EventBus 匹配不上（见 [registerMachines] 的 ⚠️），换成 `RegisterEvent<*, *>` 立刻正常。
      */
 
     /**

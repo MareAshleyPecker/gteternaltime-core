@@ -1,6 +1,5 @@
 package rain.gtetcore.gtet.common.data.machine
 
-import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.data.RotationState
 import com.gregtechceu.gtceu.api.machine.MachineDefinition
@@ -10,6 +9,7 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTieredHullMachineModel
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.api.capability.ETPartAbility
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.machine.multiblock.part.OverclockHatchPartMachine
@@ -39,6 +39,39 @@ data class OverclockHatchVariant(
     /** 每级超频实际的 EUt 倍率 = `E × S`。 */
     val eutPerLevel: Double get() = energyFactor * speed
 }
+
+/**
+ * 超频仓正面覆盖层的来源命名空间。
+ *
+ * ⚠️ 这批贴图是 **GTOCore 的素材**（版权归 GTOCore 作者所有，LGPL-3.0），
+ * 随本 mod 一起分发、只引用不修改；来源与授权原文见 `assets/gtocore/LICENSE.txt`。
+ */
+private const val GTOCORE_NS = "gtocore"
+
+/** GTOCore 超频仓覆盖层目录前缀：完整路径 = 本前缀 + mk 编号（`..._mk1` … `..._mk7`）。 */
+private const val OVERCLOCK_OVERLAY_ROOT = "block/machines/overclock_hatch/overclock_hatch_mk"
+
+/** GTOCore 的 mk 编号区间：`mk1` ↔ UV，`mk7` ↔ MAX。 */
+private const val OVERCLOCK_MK_MIN = 1
+private const val OVERCLOCK_MK_MAX = 7
+
+/**
+ * 变体对应的 GTOCore 覆盖层目录（`createWorkableTieredHullMachineModel` 的 `overlayDir` 参数）。
+ *
+ * GTOCore 自己的编号规则是 `mk = tier - ZPM`（`mk1` 就是 UV），只覆盖 UV..MAX 七档；
+ * 本族多出的 ZPM 档会算成 `mk0`（GTOCore 没有这一级），所以收进 `mk1`——
+ * 这样 UV..MAX 这七档与 GTOCore 的对应关系逐档一致，只有 ZPM 与 UV 共用正面贴图
+ * （两者的外壳本身还隔着电压等级 `gtceu:block/casings/voltage/<tier>`，不会认错）。
+ *
+ * GTOCore 这几套目录里**只有 `overlay_front`**，没有 back/top/bottom/side：
+ * `WorkableOverlays.get` 对缺失的面直接判空、不写键，所以六个面里只有正面有覆盖层，
+ * 与 GTOCore 原版表现一致，不需要硬凑别的面。
+ */
+private fun overlayFor(v: OverclockHatchVariant): ResourceLocation =
+    ResourceLocation.fromNamespaceAndPath(
+        GTOCORE_NS,
+        OVERCLOCK_OVERLAY_ROOT + (v.tier - GTValues.ZPM).coerceIn(OVERCLOCK_MK_MIN, OVERCLOCK_MK_MAX)
+    )
 
 /**
  * 「超频仓」注册入口。
@@ -99,9 +132,6 @@ object ETOverclockHatches {
         registrate: GTRegistrate,
         variants: List<OverclockHatchVariant> = VARIANTS
     ): List<MachineDefinition> {
-        // 超频仓是多方块部件（part），进「机器」页；这里显式设一次，
-        // 因为调用方 ALLMmchine 的 init 块把当前页设成了 MULTIBLOCK。
-        registrate.creativeModeTab(GTETCreativeModeTabs.MACHINE)
         return variants.map { registerOne(registrate, it) }
     }
 
@@ -118,7 +148,7 @@ object ETOverclockHatches {
         val tierName = GTValues.VN[v.tier]
 
         // 中文名按「电压等级 + 名称（规格）」写：例如 UV 超频仓（8×/×4）
-        LangUtil.BLOCK_LANG[v.id] = "$tierName 超频仓（RTime/${v.speed}|EUt×$eut）"
+        LangUtil.BLOCK_LANG[v.id] = "$tierName 超频仓（${v.speed}× Speed|×$eut Energy）"
 
         return registrate
             .machine(v.id) { holder -> OverclockHatchPartMachine(holder, v.tier, v.speed, v.energyFactor) }
@@ -129,13 +159,14 @@ object ETOverclockHatches {
             .abilities(ETPartAbility.OVERCLOCK_HATCH)
             .modelProperty(GTMachineModelProperties.IS_FORMED, false)
             .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
-            // 贴图暂时复用 GTM 的并行仓（mk4）：
-            // 即下面那行 `gtceu:block/machines/parallel_hatch_mk4`，这是**有意的临时占位**
-            // （已与用户确认「材质先用现成的」），不是漏掉或写错：
-            // 换美术时只需要改这一处 id，其它地方不含贴图路径。
-            // TODO 以后画 GTET 自己的超频仓贴图，把这里换成 block/machines/overclock_hatch_*
+            // 贴图用 GTOCore 的超频仓覆盖层（按 tier 取 mk 编号，规则见 [overlayFor]）。
+            // helper 内部把父模型定成 `gtceu:block/casings/voltage/<tier>`（电压等级外壳），
+            // 再把 overlayDir 下的 `overlay_front` 按 IDLE/WORKING/SUSPEND 叠在正面，
+            // 所以本仓外观与 GTOCore 自己的超频仓一致，不需要我们再画。
+            // ⚠️ 素材版权归 GTOCore 作者所有（LGPL-3.0），见 `assets/gtocore/LICENSE.txt`；只引用不修改。
+            // TODO 以后画 GTET 自己的超频仓贴图，把 [OVERCLOCK_OVERLAY_ROOT] 换成自己的目录即可
             .model(
-                createWorkableTieredHullMachineModel(GTCEu.id("block/machines/parallel_hatch_mk4"))
+                createWorkableTieredHullMachineModel(overlayFor(v))
                     .andThen(
                         MachineBuilder.ModelInitializer { _, _, model ->
                             model.addReplaceableTextures("bottom", "top", "side")

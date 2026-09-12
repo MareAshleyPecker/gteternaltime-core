@@ -4,6 +4,8 @@ import com.gregtechceu.gtceu.api.gui.widget.PhantomSlotWidget
 
 import com.lowdragmc.lowdraglib.gui.widget.DialogWidget
 
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
@@ -56,6 +58,25 @@ import java.util.function.Predicate
  * - 【自研】中键分发、「空槽不弹框」、以及把「对话框纯客户端 + 写值走槽自己的 client action」这条分工
  *   写清楚（LDLib 的对话框工厂只交代了它自己会 `setClientSideWidget`，没交代调用方该怎么把值同步回去）。
  *
+ * ## 数量显示（本控件接管绘制）
+ * 幽灵槽**默认也会画数量，但只在 `count != 1` 的时候** —— 这是查证出来的，不是猜的：
+ * LDLib 1.20.1-1.0.50 的 `SlotWidget#drawInBackground` 把画物品整个交给
+ * `DrawerHelper.drawItemStack(guiGraphics, stack, x+1, y+1, -1, null)`，而这个方法的最后一步是
+ * `GuiGraphics#renderItemDecorations(font, stack, x, y, text)`；原版那个方法里是
+ * `if (stack.getCount() != 1 || text != null)` 才画数量。`SlotWidget` 自己**没有**任何开关
+ * （`setShowAmount(...)` 是 `TankWidget` 独有的，物品槽这边不存在）。
+ *
+ * 配方编辑器里「1 个」也是实打实的配方数据，不能像物品栏那样省掉，所以这里自己画：
+ *  - 绘制期间 [getRealStack] 返回一份 `count = 1` 的副本，把 LDLib 那次隐式绘制掐掉（免得画两遍）；
+ *  - 画完物品后自己显式传数量字符串画一次（`text != null` 时原版**任何**数量都会画，包括 1）。
+ * 数量直接读槽里的真实 `ItemStack.count`，每帧现取，所以中键设完、拖入、右键清空都是立刻可见。
+ *
+ * ## 改动立刻落盘
+ * 原版/GTM 的幽灵槽改内容都是走 `Slot.set(...)` → `WidgetSlotItemHandler#setChanged()`，LDLib 在这里
+ * 会回调 `changeListener`，所以构造时把它接成 [onCountChanged]（= `touch()`）：
+ * 拖入、右键、左键调数量这些**原先不会** [RecipeDraft.save] 的动作，现在也会同步写回物品 NBT 并刷新代码预览。
+ * 中键那条路走的是 [setItem]（LDLib 会临时把 changeListener 摘掉），所以 [applyCount] 里另外显式调了一次。
+ *
  * @param handler        槽背后的物品容器（这里是 [RecipeDraft.inputs] / [RecipeDraft.outputs]）
  * @param slotIndex      槽下标
  * @param x              控件 x
@@ -71,6 +92,56 @@ class PhantomCountSlotWidget(
     y: Int,
     private val onCountChanged: () -> Unit,
 ) : PhantomSlotWidget(handler, slotIndex, x, y) {
+
+    /** 是否正处在「本控件自己画物品」的那一小段里（见 [getRealStack]）。 */
+    private var drawingItem: Boolean = false
+
+    init {
+        // 任何一次槽内容变更都会走这里（理由见类注释）：拖入 / 右键 / 左键调数量都要能立刻落盘。
+        setChangeListener(Runnable { onCountChanged() })
+    }
+
+    /**
+     * 画物品 + 数量。
+     *
+     * 先 `super`（画底纹与物品图标），再自己把数量画上去：数量文字必须和物品图标在**同一个 z**
+     * （LDLib 画物品时 `pose().translate(0, 0, 232)`），否则字会被图标盖住看不见。
+     */
+    override fun drawInBackground(graphics: GuiGraphics, mouseX: Int, mouseY: Int, partialTicks: Float) {
+        drawingItem = true
+        try {
+            super.drawInBackground(graphics, mouseX, mouseY, partialTicks)
+        } finally {
+            drawingItem = false
+        }
+
+        val stack = getItem()
+        if (stack.isEmpty) return
+
+        val pos = position
+        graphics.pose().pushPose()
+        graphics.pose().translate(0f, 0f, ITEM_Z)
+        graphics.renderItemDecorations(
+            Minecraft.getInstance().font,
+            stack,
+            pos.x + 1,
+            pos.y + 1,
+            stack.count.toString(),
+        )
+        graphics.pose().popPose()
+    }
+
+    /**
+     * 交给 LDLib 画的那份物品栈。
+     *
+     * ⚠️ 绘制期间把数量改成 1：LDLib 的 `drawInBackground` 就是拿这个栈去
+     * `DrawerHelper.drawItemStack(...)`，数量为 1 时原版不会画数字，正好把「LDLib 画一次 + 我们画一次」
+     * 变成只画我们这一次。图标本身与数量无关，改的只是副本，槽里的真值一点没动。
+     *
+     * 窗口之外（悬停提示、JEI 取样等）原样返回，别让那些地方看到假数量。
+     */
+    override fun getRealStack(stack: ItemStack): ItemStack =
+        if (drawingItem && !stack.isEmpty) stack.copy().also { it.count = 1 } else stack
 
     override fun mouseClicked(mouseX: Double, mouseY: Double, button: Int): Boolean {
         // 不是中键、或者鼠标不在这个槽上 → 全权交给父类（理由见类注释）
@@ -98,7 +169,9 @@ class PhantomCountSlotWidget(
             // —— 同一个字段，后设置的覆盖先设置的，两者不能共存。
             Predicate { text -> text.length <= 9 && text.all { it.isDigit() } },
         ) { text ->
-            val typed = text.toIntOrNull() ?: return@showStringEditorDialog
+            // ⚠️ 那个现成对话框的「取消」按钮是 `consumer.accept(null)`（和「确认」共用同一个 Consumer），
+            // 所以 text 可能是 null：先判空再转数字，否则按一次取消就是一次 NPE。
+            val typed = text?.toIntOrNull() ?: return@showStringEditorDialog
             val value = typed.coerceIn(1, cap)
             // 客户端先本地生效：迷你预览与 NBT 保存立刻跟上（服务端那份随后由 client action 写入）
             applyCount(value)
@@ -149,6 +222,16 @@ class PhantomCountSlotWidget(
 
         /** 中键。`0` = 左、`1` = 右、`2` = 中（与 GLFW 的 `GLFW_MOUSE_BUTTON_MIDDLE` 一致）。 */
         private const val MIDDLE_BUTTON: Int = 2
+
+        /**
+         * 画物品图标时用的 z 偏移。
+         *
+         * 数量文字必须跟图标同层再往上一点才看得见，而 LDLib 画物品走的是
+         * `DrawerHelper#drawItemStack`（内部 `pose().translate(0, 0, 232)`），所以这里对齐 `232`；
+         * `renderItemDecorations` 自己还会再 `translate(0, 0, 200)`，和原版槽位「图标 100 + 文字 200」
+         * 是同一个套路。
+         */
+        private const val ITEM_Z: Float = 232f
 
         /**
          * 本控件自己的 client action id。

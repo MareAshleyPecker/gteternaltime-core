@@ -36,9 +36,6 @@ object ETTestMultiblocks {
      */
     @JvmStatic
     fun register(registrate: GTRegistrate): MultiblockMachineDefinition {
-        // 多方块进「多方块」页。这里显式设一次：调用方 ALLMmchine.init 会先注册超频仓，
-        // 而 ETOverclockHatches.register 会把当前页切到 MACHINE，不设就会串页。
-        registrate.creativeModeTab(GTETCreativeModeTabs.MULTIBLOCK)
 
         // ── 双语 ──
         // 英文名走 .langValue(...)（Registrate 写进 en_us 的 block.gtetcore.<id>）；

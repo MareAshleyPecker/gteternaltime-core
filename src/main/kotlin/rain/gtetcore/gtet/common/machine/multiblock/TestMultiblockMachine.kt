@@ -56,8 +56,7 @@ import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
  *
  * @author rain fox
  */
-class TestMultiblockMachine(holder: IMachineBlockEntity) : WorkableElectricMultiblockMachine(holder),
-    IThreadedRecipeMachine {
+class TestMultiblockMachine(holder: IMachineBlockEntity) : WorkableElectricMultiblockMachine(holder), IThreadedRecipeMachine {
 
     /**
      * 换掉 GTM 默认的 `RecipeLogic`（单配方、单线程），改用多线程内核。

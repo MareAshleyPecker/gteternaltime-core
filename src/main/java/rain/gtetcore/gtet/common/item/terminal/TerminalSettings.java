@@ -12,10 +12,7 @@ import net.minecraft.world.item.ItemStack;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 高级终端的设置（存在物品 NBT 里）。
@@ -63,7 +60,7 @@ public final class TerminalSettings {
         link.putInt("x", pos.pos().getX());
         link.putInt("y", pos.pos().getY());
         link.putInt("z", pos.pos().getZ());
-        root(stack, true).put(AE_LINK, link);
+        Objects.requireNonNull(root(stack, true)).put(AE_LINK, link);
     }
 
     /** 解绑。 */
@@ -120,7 +117,7 @@ public final class TerminalSettings {
             entry.putString(PREF_ITEM, value);
             list.add(entry);
         });
-        root(stack, true).put(PREFS, list);
+        Objects.requireNonNull(root(stack, true)).put(PREFS, list);
     }
 
     /** 清空全部组偏好。 */
@@ -182,7 +179,7 @@ public final class TerminalSettings {
             list.add(entry);
         });
         plan.put(PLAN_GROUPS, list);
-        root(stack, true).put(PLAN, plan);
+        Objects.requireNonNull(root(stack, true)).put(PLAN, plan);
     }
 
     /** 上次规划涉及的控制器位置。 */

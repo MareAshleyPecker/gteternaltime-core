@@ -258,22 +258,31 @@ object RecipeCodeWriter {
         return sanitize(base)
     }
 
-    /** 电压等级名（越界就退回边界值）。 */
+    /**
+     * 电压等级名（越界先夹进合法范围）：GTM 档是 `ULV`…`MAX`，GTET 的特殊档是 `MAX+1`…`MAX+16`。
+     * 详细分工见 [VoltageTiers.name]。
+     */
     @JvmStatic
-    fun tierName(tier: Int): String = when {
-        tier < 0 -> "LV"
-        tier >= GTValues.VN.size -> GTValues.VN.last()
-        else -> GTValues.VN[tier]
-    }
+    fun tierName(tier: Int): String = VoltageTiers.name(tier)
 
-    /** `VA[LV]` 还是具体数字：耗电正好等于该等级的 VA 时用常量写法。 */
+    /**
+     * `VA[LV]` 还是具体数字。
+     *
+     * GTM 档位（`0..MAX`）行为不变：耗电正好等于该档的 `GTValues.VA[tier]` 时写成 `VA[档名]` 常量。
+     * 特殊档（`MAX+1` 之后）**没有**对应的 VA —— `VA` 是 `int[15]`，连 `2^33` 都装不下，
+     * 更没有 `VA[MAX+1]` 这种常量可写，所以一律输出数字字面量。
+     *
+     * ⚠️ 超过 int 的耗电必须带 `L`：特殊档从 `MAX+1`（8589934592）起就全在 int 之上，
+     * 写成裸整数的话，粘进 datagen 的 Java/Kotlin 会直接「整数字面量过大」编译不过。
+     */
     @Suppress
-    private fun eutExpr(draft: RecipeDraft): String =
-        if (draft.tier in GTValues.VA.indices && GTValues.VA[draft.tier].toLong() == draft.eut) {
-            "VA[${tierName(draft.tier)}]"
-        } else {
-            draft.eut.toString()
+    private fun eutExpr(draft: RecipeDraft): String {
+        val tier = VoltageTiers.coerce(draft.tier)
+        if (tier in GTValues.VA.indices && GTValues.VA[tier].toLong() == draft.eut) {
+            return "VA[${tierName(tier)}]"
         }
+        return if (draft.eut > Int.MAX_VALUE) "${draft.eut}L" else draft.eut.toString()
+    }
 
     /** 物品表达式：能对上 `Items` 常量就用常量，否则退回注册表查询。 */
     private fun itemExpr(stack: ItemStack): String {

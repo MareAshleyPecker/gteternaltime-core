@@ -1,0 +1,61 @@
+贴图 / 美术资源授权 — CC BY-NC-SA 4.0
+============================================================
+
+本目录（src/main/resources/assets/gtetcore/textures/）下的贴图与美术资源，
+采用「知识共享 署名—非商业性使用—相同方式共享 4.0 国际」
+(Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International)。
+
+协议地址：https://creativecommons.org/licenses/by-nc-sa/4.0/
+法律文本：https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+署名：rain fox / RainFoxStar（本仓库作者）
+
+简单说，你可以自由使用、修改、再分发本目录下的素材，但必须：
+
+  - 署名 (BY)          —— 注明作者与来源；
+  - 非商业性使用 (NC)  —— 不得用于商业目的；
+  - 相同方式共享 (SA)  —— 改编作品需以相同协议分发。
+
+代码的授权与这里无关，见仓库根目录 LICENSE。
+
+本目录以外的第三方素材，版权归各自作者所有，不适用本协议。例如机器模型在
+运行时直接引用的 GTCEu / GTM 贴图（如 gtceu:block/casings/voltage/*、
+gtceu:block/machines/parallel_hatch_mk4/*）—— 那些属于 GTM 项目，请不要把
+本协议套用到它们身上。
+同理，`src/main/resources/assets/gtocore/` 是 GTOCore 的
+贴图副本（来源 https://github.com/GregTech-Odyssey/GTOCore-Main ，该仓库根 LICENSE
+为 LGPL-3.0，版权归 GTOCore 作者），也不适用本协议，详见该目录下的 LICENSE.txt。
+
+------------------------------------------------------------
+English
+------------------------------------------------------------
+
+Textures / Art Assets License — CC BY-NC-SA 4.0
+
+All textures and art assets in this directory
+(src/main/resources/assets/gtetcore/textures/) are licensed under the
+Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+
+License: https://creativecommons.org/licenses/by-nc-sa/4.0/
+Legal code: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+Attribution: rain fox / RainFoxStar (author of this repository)
+
+You are free to share and adapt these assets, provided that you:
+
+  - give appropriate credit (BY);
+  - do not use them for commercial purposes (NC);
+  - distribute your adaptations under the same license (SA).
+
+This license covers only the assets in this directory. The code is licensed
+separately — see the LICENSE file in the repository root.
+
+Third-party assets outside this directory remain the property of their
+respective authors and are NOT covered by the license above — for example the
+GTCEu / GTM textures referenced at runtime by our machine models
+(e.g. gtceu:block/casings/voltage/*, gtceu:block/machines/parallel_hatch_mk4/*).
+Please do not apply this license to them. The same holds for
+`src/main/resources/assets/gtocore/`, which contains copies of GTOCore textures
+(source: https://github.com/GregTech-Odyssey/GTOCore-Main , root `LICENSE`
+LGPL-3.0, copyright with the GTOCore authors); see the `LICENSE.txt` in that
+directory.

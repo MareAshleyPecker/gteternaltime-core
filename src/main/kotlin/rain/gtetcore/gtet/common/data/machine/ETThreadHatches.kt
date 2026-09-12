@@ -1,6 +1,5 @@
 package rain.gtetcore.gtet.common.data.machine
 
-import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.data.RotationState
 import com.gregtechceu.gtceu.api.machine.MachineDefinition
@@ -10,6 +9,7 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTieredHullMachineModel
 import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.api.capability.ETPartAbility
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.machine.multiblock.part.ThreadHatchPartMachine
@@ -36,6 +36,30 @@ data class ThreadHatchVariant(
     /** 该变体的线程数上限，与部件构造时算出来的那份是**同一个函数**。 */
     val threads: Int get() = ThreadHatchPartMachine.maxThreadsForTier(tier)
 }
+
+/**
+ * 线程仓正面覆盖层的来源命名空间。
+ *
+ * ⚠️ 这批贴图是 **GTOCore 的素材**（版权归 GTOCore 作者所有，LGPL-3.0），
+ * 随本 mod 一起分发、只引用不修改；来源与授权原文见 `assets/gtocore/LICENSE.txt`。
+ */
+private const val GTOCORE_NS = "gtocore"
+
+/** GTOCore 线程仓覆盖层目录前缀：完整路径 = 本前缀 + mk 编号（`..._mk1` … `..._mk7`）。 */
+private const val THREAD_OVERLAY_ROOT = "block/machines/thread_hatch/thread_hatch_mk"
+
+/**
+ * 变体对应的 GTOCore 覆盖层目录（`createWorkableTieredHullMachineModel` 的 `overlayDir` 参数）。
+ *
+ * GTOCore 自己的编号规则是 `mk = tier - ZPM`，注册区间也是 UV..MAX，
+ * 与本族 [ThreadHatchVariant] 表**逐档一一对应**（`thread_hatch_uv` → `mk1` … `thread_hatch_max` → `mk7`），
+ * 所以这里不需要任何取整/夹取。
+ *
+ * 与超频仓那套相比：这几套目录里多了 `overlay_front_active`，运行时 IDLE 与 WORKING
+ * 会是两张不同的正面贴图（缺 back/top/bottom/side 覆盖层的情况两族一样，见 [ETOverclockHatches]）。
+ */
+private fun overlayFor(v: ThreadHatchVariant): ResourceLocation =
+    ResourceLocation.fromNamespaceAndPath(GTOCORE_NS, THREAD_OVERLAY_ROOT + (v.tier - GTValues.ZPM))
 
 /**
  * 「线程仓」注册入口。
@@ -107,9 +131,6 @@ object ETThreadHatches {
         registrate: GTRegistrate,
         variants: List<ThreadHatchVariant> = VARIANTS
     ): List<MachineDefinition> {
-        // 线程仓是多方块部件（part），进「机器」页；这里显式设一次，
-        // 因为调用方 ALLMmchine 的 init 块把当前页设成了 MULTIBLOCK。
-        registrate.creativeModeTab(GTETCreativeModeTabs.MACHINE)
         return variants.map { registerOne(registrate, it) }
     }
 
@@ -142,12 +163,14 @@ object ETThreadHatches {
             .abilities(ETPartAbility.THREAD_HATCH)
             .modelProperty(GTMachineModelProperties.IS_FORMED, false)
             .modelProperty(GTMachineModelProperties.RECIPE_LOGIC_STATUS, RecipeLogic.Status.IDLE)
-            // 贴图暂时复用 GTM 的并行仓（mk4）—— 与超频仓用的是同一张占位贴图，
-            // 这是**有意的临时占位**（用户已确认「材质先用现成的」），不是漏掉或写错：
-            // 换美术时只需要改这一处 id，其它地方不含贴图路径。
-            // TODO 以后画 GTET 自己的线程仓贴图，把这里换成 block/machines/thread_hatch_*
+            // 贴图用 GTOCore 的线程仓覆盖层（按 tier 取 mk 编号，规则见 [overlayFor]）。
+            // helper 内部把父模型定成 `gtceu:block/casings/voltage/<tier>`（电压等级外壳），
+            // 再把 overlayDir 下的 `overlay_front` / `overlay_front_active` 叠在正面，
+            // 所以本仓外观与 GTOCore 自己的线程仓一致，不需要我们再画。
+            // ⚠️ 素材版权归 GTOCore 作者所有（LGPL-3.0），见 `assets/gtocore/LICENSE.txt`；只引用不修改。
+            // TODO 以后画 GTET 自己的线程仓贴图，把 [THREAD_OVERLAY_ROOT] 换成自己的目录即可
             .model(
-                createWorkableTieredHullMachineModel(GTCEu.id("block/machines/parallel_hatch_mk4"))
+                createWorkableTieredHullMachineModel(overlayFor(v))
                     .andThen(
                         MachineBuilder.ModelInitializer { _, _, model ->
                             model.addReplaceableTextures("bottom", "top", "side")

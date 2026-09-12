@@ -33,3 +33,26 @@ ___
 - [Development Guide](README/en_US/Development.md)
 - [GTM Dev Tutorial (WIP)](README/en_US/GTM-Dev-Tutorial-(WIP).md)
 - [IDEA Guide](README/en_US/IDEA-Guide.md)
+
+---
+
+## 授权 / License
+
+- **代码**：[LGPL-3.0](LICENSE)（GNU 宽通用公共许可证第 3 版）。
+- **贴图 / 美术资源**：[CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+  （署名—非商业性使用—相同方式共享 4.0 国际，作者 rain fox / RainFoxStar），
+  详见 [src/main/resources/LICENSE.txt](src/main/resources/LICENSE.txt)。
+- **第三方素材（GTOCore 贴图副本）**：`src/main/resources/assets/gtocore/` 下是 GTOCore 的贴图副本，
+  来源 [GregTech-Odyssey/GTOCore-Main](https://github.com/GregTech-Odyssey/GTOCore-Main)，
+  该仓库根 `LICENSE` 为 **LGPL-3.0**（版权归 GTOCore 作者），**不适用**上面的 CC BY-NC-SA；
+  详见 [assets/gtocore/LICENSE.txt](src/main/resources/assets/gtocore/LICENSE.txt)。
+  - **Code**: [LGPL-3.0](LICENSE) (GNU Lesser General Public License v3.0).
+  - **Textures / art assets**: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+    (Attribution-NonCommercial-ShareAlike 4.0 International), see
+    [src/main/resources/LICENSE.txt](src/main/resources/LICENSE.txt).
+  - **Third-party assets (copies of GTOCore textures)**: `src/main/resources/assets/gtocore/`
+    holds copies of GTOCore textures, sourced from
+    [GregTech-Odyssey/GTOCore-Main](https://github.com/GregTech-Odyssey/GTOCore-Main), whose root
+    `LICENSE` is **LGPL-3.0** (copyright remains with the GTOCore authors). The CC BY-NC-SA
+    license above does **not** apply to them; see
+    [assets/gtocore/LICENSE.txt](src/main/resources/assets/gtocore/LICENSE.txt).
