@@ -9,6 +9,7 @@ import net.minecraft.nbt.ListTag
 import net.minecraft.nbt.Tag
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.item.ItemStack
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic
 import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
@@ -23,8 +24,11 @@ import snownee.jade.api.ui.BoxStyle
  * GTET 自己的 Jade provider：把**多线程配方逻辑**的整机线程状态摆到提示里。
  *
  * 显示：`线程 256（在用 5）` + 整机「同时处理 N 次配方运行」+ 整机「耗电 Σ EU/t」+ 逐**配方组**两行
- * （第一行是整条绿色进度条，条内 `#槽位  进度/时长 t`，独占一行；
- * 第二行只放产出物与数量 / 线程条数 / **该组 EU/t**，配方 id 不上屏）。组的定义与合并规则见 [ThreadedRecipeStatus]。
+ * （第一行是整条绿色进度条，条内 `#槽位  进度/时长 t`，独占一行；第二行是**产物图标 + 名字 + 数量**
+ * + 线程条数 + **该组 EU/t**，配方 id 不上屏）。组的定义与合并规则见 [ThreadedRecipeStatus]。
+ *
+ * 产物的画法照 GTM 的 `RecipeOutputProvider`（`add(helper.smallItem(stack))` 起行、`append(...)` 续同一行），
+ * 也就是 GTO 那套「图标 + `数量× 名字`」的多线程提示 —— 区别是 GTET 把一组挤在**一行**里（行数上限见 [GROUP_LIMIT]）。
  *
  * ## 为什么必须自己写一个 provider
  * GTM 的 `ParallelProvider` / `RecipeOutputProvider` 读的都是 `recipeLogic.getLastRecipe()` —— **单个配方对象**，
@@ -49,9 +53,8 @@ import snownee.jade.api.ui.BoxStyle
  *   借「`IBlockComponentProvider` + `IServerDataProvider` 双接口一个类」、「服务端写 NBT、客户端读 NBT」、
  *   以及 `IElementHelper#progress(...)` 画进度条的用法。
  * - 【自研】NBT 键名与「上限 / 在用 / 合计运行次数 / 合计 EU/t / 逐组明细（含每组 EU/t）+ 每组产物」
- *   这套字段取舍，以及
- *   [ThreadedRecipeStatus.OutputSnapshot] 那种「服务端把产物名解析成组件、序列化后交给客户端」的做法
- *   （只传物品翻译键会翻出 `%s粉` 那种模板本体，理由见 [ThreadedRecipeStatus.OutputSnapshot.name]）。
+ *   这套字段取舍；以及产物**传物品栈**而不是名字/翻译键 —— 客户端因此同时拿到图标与正确的材料名
+ *   （早期传组件 JSON 是为了绕开「材料物品的键是 `%s粉` 这种模板」的坑，传栈之后这个坑自然没了）。
  *
  * @author rain fox
  */
@@ -83,8 +86,8 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
             val outputs = ListTag()
             for (output in group.outputs) {
                 val outputTag = CompoundTag()
-                // 名字以**组件 JSON** 过 NBT：里面还是可翻译的键 + 参数，客户端用自己的语言解析
-                outputTag.putString(TAG_OUT_NAME, Component.Serializer.toJson(output.name))
+                // 产物物品（数量 1，只给客户端取**图标 + 名字**）+ 显示用的数量区间
+                outputTag.put(TAG_OUT_ITEM, output.stack.copyWithCount(1).save(CompoundTag()))
                 outputTag.putLong(TAG_OUT_MIN, output.min)
                 outputTag.putLong(TAG_OUT_MAX, output.max)
                 outputTag.putBoolean(TAG_OUT_CHANCED, output.chanced)
@@ -140,15 +143,8 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
                     true
                 )
             )
-            // 组行第二行 = 只放产出 / 线程条数 / 该组 EU/t（配方 id 那一串不上屏）
-            tooltip.add(
-                Component.translatable(
-                    ThreadedRecipeStatus.LANG_OUTPUTS,
-                    ThreadedRecipeStatus.outputsText(readOutputs(entry), entry.getInt(TAG_HIDDEN_KINDS)),
-                    entry.getInt(TAG_GROUP_THREADS),
-                    FormattingUtil.formatNumbers(entry.getLong(TAG_GROUP_EUT))
-                ).withStyle(ChatFormatting.GREEN)
-            )
+            // 组行第二行 = 产物（**图标 + 名字 + 数量**，照 GTM `RecipeOutputProvider` / GTO 的画法）+ 线程条数 + 该组 EU/t
+            appendOutputs(tooltip, entry)
         }
 
         // 明细只写到 GROUP_LIMIT 条组，多出来的组用一行交代过去（载荷大小见 GROUP_LIMIT 的说明）
@@ -158,16 +154,57 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         }
     }
 
-    /** 客户端按 NBT 重建产物条目（NBT 里存的是组件 JSON，键与参数照旧可翻译，由客户端按自己的语言解析）。 */
+    /**
+     * 把一组的产物画成「图标 + 名字 + 数量」的一行。
+     *
+     * 画法照 GTM 的 `RecipeOutputProvider`（GTO 的多线程版也是这么扩展的）：`add(helper.smallItem(stack))`
+     * 起一行、`append(...)` 把后续内容续在**同一行**。
+     *
+     * ⚠️ 只有**第一件**产物用 `add`（它开的那一行就是进度条下面那行），之后图标与文字全部用 `append` ——
+     * 否则一件产物一行，6 组 × 4 种就是 24 行，悬浮框会盖住半个屏幕（行数上限的理由见 [GROUP_LIMIT]）。
+     */
+    private fun appendOutputs(tooltip: ITooltip, entry: CompoundTag) {
+        val helper = tooltip.elementHelper
+        val outputs = readOutputs(entry)
+        val green = ChatFormatting.GREEN
+
+        if (outputs.isEmpty()) {
+            tooltip.add(Component.translatable(ThreadedRecipeStatus.LANG_NO_OUTPUT).withStyle(green))
+        }
+        outputs.forEachIndexed { index, output ->
+            val icon = helper.smallItem(output.stack)
+            if (index == 0) tooltip.add(icon) else tooltip.append(icon)
+            val text = Component.literal(" ")
+            if (index > 0) text.append(Component.translatable(ThreadedRecipeStatus.LANG_OUTPUT_SEP))
+            text.append(output.name).append(" ").append(ThreadedRecipeStatus.countText(output))
+            tooltip.append(text.withStyle(green))
+        }
+        val hidden = entry.getInt(TAG_HIDDEN_KINDS)
+        if (hidden > 0) {
+            tooltip.append(Component.translatable(ThreadedRecipeStatus.LANG_OUTPUT_MORE, hidden).withStyle(green))
+        }
+        tooltip.append(
+            Component.translatable(
+                ThreadedRecipeStatus.LANG_GROUP_TAIL,
+                entry.getInt(TAG_GROUP_THREADS),
+                FormattingUtil.formatNumbers(entry.getLong(TAG_GROUP_EUT))
+            ).withStyle(green)
+        )
+    }
+
+    /** 客户端按 NBT 重建产物条目（NBT 里存的就是物品栈，名字由客户端自己解析）。 */
     private fun readOutputs(entry: CompoundTag): List<ThreadedRecipeStatus.OutputSnapshot> {
         val list = entry.getList(TAG_OUTPUTS, Tag.TAG_COMPOUND.toInt())
         if (list.isEmpty()) return emptyList()
         val outputs = ArrayList<ThreadedRecipeStatus.OutputSnapshot>(list.size)
         for (i in 0 until list.size) {
             val output = list.getCompound(i)
+            // 物品没了（整合包换过料）就跳过，别画个空图标
+            val stack = ItemStack.of(output.getCompound(TAG_OUT_ITEM))
+            if (stack.isEmpty) continue
             outputs.add(
                 ThreadedRecipeStatus.OutputSnapshot(
-                    parseName(output.getString(TAG_OUT_NAME)),
+                    stack,
                     output.getLong(TAG_OUT_MIN),
                     output.getLong(TAG_OUT_MAX),
                     output.getBoolean(TAG_OUT_CHANCED)
@@ -176,15 +213,6 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         }
         return outputs
     }
-
-    /**
-     * 组件 JSON → 组件。
-     *
-     * 载荷是自己写的，正常情况不会解析失败；失败时退回字面量而不是抛出去 ——
-     * 这里在 Jade 的提示渲染路径上，为了一个产物名把整条提示炸掉不划算。
-     */
-    private fun parseName(json: String): Component =
-        runCatching { Component.Serializer.fromJson(json) }.getOrNull() ?: Component.literal(json)
 
     override fun getUid(): ResourceLocation = Gtetcore.id(UID_PATH)
 
@@ -244,7 +272,7 @@ class ThreadedRecipeLogicProvider : IBlockComponentProvider, IServerDataProvider
         private const val TAG_DURATION: String = "duration"
         private const val TAG_HIDDEN_KINDS: String = "hidden_kinds"
         private const val TAG_OUTPUTS: String = "outputs"
-        private const val TAG_OUT_NAME: String = "name"
+        private const val TAG_OUT_ITEM: String = "item"
         private const val TAG_OUT_MIN: String = "min"
         private const val TAG_OUT_MAX: String = "max"
         private const val TAG_OUT_CHANCED: String = "chanced"

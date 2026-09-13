@@ -1,6 +1,7 @@
 package rain.gtetcore.gtet.util
 
 import com.gregtechceu.gtceu.api.item.ComponentItem
+import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.common.item.TooltipBehavior
 import com.tterrag.registrate.builders.ItemBuilder
 import net.minecraft.network.chat.Component

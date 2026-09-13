@@ -2,15 +2,25 @@
 package rain.gtetcore.gtet.common.item.recipe
 
 import com.gregtechceu.gtceu.api.GTValues
+import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper
+import com.gregtechceu.gtceu.api.data.chemical.material.Material
+import com.gregtechceu.gtceu.api.data.tag.TagPrefix
+import com.gregtechceu.gtceu.api.fluids.store.FluidStorageKeys
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient
 import com.gregtechceu.gtceu.api.registry.GTRegistries
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes
+import com.tterrag.registrate.util.entry.RegistryEntry
 
 import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.level.material.Fluid
+import net.minecraft.world.level.material.Fluids
 import net.minecraftforge.fluids.FluidStack
 import net.minecraftforge.registries.ForgeRegistries
 
@@ -20,18 +30,12 @@ import rain.gtetcore.gtet.config.GTETConfig
 import java.io.File
 import java.lang.reflect.Modifier
 import java.nio.charset.StandardCharsets
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 /**
- * 把 [RecipeDraft] 翻译成"可以直接粘进 datagen 的代码文本"，并导出到磁盘。
- *
- * 输出的是**代码**而不是 JSON：整合包里的 GT 配方基本都是用代码（datagen）注册的，
- * 导出成 `GTRecipeTypes.xxx.recipeBuilder(...)…save(provider);` 这种片段，
- * Java / Kotlin 两边都能直接改改用，代价是不做语言选择。
- *
- * 文件落点与多方块导出统一收在 `GtetExport/` 下：本类是 `GtetExport/recipes/`，
- * 多方块是 `GtetExport/multiblock/`（都可用配置改）。文件名取配方 id，重复导出直接覆盖。
+ * 把 [RecipeDraft] 翻译成能直接粘进 datagen 的代码片段，并导出到 `GtetExport/recipes/`
+ * （目录见 [GTETConfig.recipeExportDirectory]）。输出**代码**而不是 JSON：整合包里的 GT 配方基本都用代码注册，
+ * 生成 `GTRecipeTypes.xxx.recipeBuilder(...)…save(provider);` 这种片段，Java / Kotlin 都能直接改改用。
+ * 文件名取配方 id，重复导出直接覆盖。
  *
  * @author rain fox
  */
@@ -45,9 +49,7 @@ object RecipeCodeWriter {
     /** 生成完整代码文本（含头部注释）。 */
     @JvmStatic
     fun toCode(draft: RecipeDraft): String = buildString {
-        append("// ").append(describe(draft)).append('\n')
-        append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")))
-            .append('\n')
+        append("// ").append(describe2(draft)).append('\n')
         append(
             when (draft.kind) {
                 RecipeDraft.Kind.CRAFTING_SHAPED -> shaped(draft)
@@ -73,6 +75,16 @@ object RecipeCodeWriter {
     /** 一句话描述当前草稿，用于头部注释与界面提示。 */
     @JvmStatic
     fun describe(draft: RecipeDraft): String {
+        val id = effectiveId(draft)
+        return if (draft.kind == RecipeDraft.Kind.GT) {
+            "${draft.gtType} / $id "
+        } else {
+            "${draft.kind.cn} / $id"
+        }
+    }
+
+    @JvmStatic
+    fun describe2(draft: RecipeDraft): String {
         val id = effectiveId(draft)
         return if (draft.kind == RecipeDraft.Kind.GT) {
             "${draft.gtType} / $id / ${draft.duration}t / ${draft.eut} EU/t / ${tierName(draft.tier)}"
@@ -205,17 +217,13 @@ object RecipeCodeWriter {
         return buildString {
             append(typeExpr(draft.gtType)).append(".recipeBuilder(\"").append(effectiveId(draft)).append("\")\n")
             inputs.forEach { stack ->
-                append("        .inputItems(").append(itemExpr(stack))
-                if (stack.count > 1) append(", ").append(stack.count)
-                append(")\n")
+                append("        .inputItems(").append(gtItemExpr(stack)).append(")\n")
             }
             fluidInputs.forEach { stack ->
                 append("        .inputFluids(").append(fluidExpr(stack)).append(")\n")
             }
             outputs.forEach { stack ->
-                append("        .outputItems(").append(itemExpr(stack))
-                if (stack.count > 1) append(", ").append(stack.count)
-                append(")\n")
+                append("        .outputItems(").append(gtItemExpr(stack)).append(")\n")
             }
             fluidOutputs.forEach { stack ->
                 append("        .outputFluids(").append(fluidExpr(stack)).append(")\n")
@@ -258,22 +266,14 @@ object RecipeCodeWriter {
         return sanitize(base)
     }
 
-    /**
-     * 电压等级名（越界先夹进合法范围）：GTM 档是 `ULV`…`MAX`，GTET 的特殊档是 `MAX+1`…`MAX+16`。
-     * 详细分工见 [VoltageTiers.name]。
-     */
+    /** 电压等级名（越界先夹进合法范围；GTM 档 `ULV`…`MAX`、特殊档 `MAX+1`…`MAX+16`，见 [VoltageTiers.name]）。 */
     @JvmStatic
     fun tierName(tier: Int): String = VoltageTiers.name(tier)
 
     /**
-     * `VA[LV]` 还是具体数字。
+     * 耗电正好等于该档 `GTValues.VA[tier]` 时写 `VA[档名]`，否则写字面量。
      *
-     * GTM 档位（`0..MAX`）行为不变：耗电正好等于该档的 `GTValues.VA[tier]` 时写成 `VA[档名]` 常量。
-     * 特殊档（`MAX+1` 之后）**没有**对应的 VA —— `VA` 是 `int[15]`，连 `2^33` 都装不下，
-     * 更没有 `VA[MAX+1]` 这种常量可写，所以一律输出数字字面量。
-     *
-     * ⚠️ 超过 int 的耗电必须带 `L`：特殊档从 `MAX+1`（8589934592）起就全在 int 之上，
-     * 写成裸整数的话，粘进 datagen 的 Java/Kotlin 会直接「整数字面量过大」编译不过。
+     * ⚠️ 特殊档（`MAX+1` 起）没有对应 VA 且数值都在 int 之上，必须带 `L`，否则粘进 datagen 编译不过。
      */
     @Suppress
     private fun eutExpr(draft: RecipeDraft): String {
@@ -284,38 +284,90 @@ object RecipeCodeWriter {
         return if (draft.eut > Int.MAX_VALUE) "${draft.eut}L" else draft.eut.toString()
     }
 
-    /** 物品表达式：能对上 `Items` 常量就用常量，否则退回注册表查询。 */
+    /** 原版配方用的物品表达式（要 `ItemLike`）：不带数量、不给 `ItemStack`，方块常量本身就是 `ItemLike`。 */
     private fun itemExpr(stack: ItemStack): String {
         val key = ForgeRegistries.ITEMS.getKey(stack.item) ?: return "Items.AIR /* 未注册物品 */"
-        ITEM_CONSTANTS[key]?.let { return "Items.$it" }
-        return "ForgeRegistries.ITEMS.getValue(new ResourceLocation(\"${key.namespace}\", \"${key.path}\"))"
+        ITEM_CONSTANTS[stack.item]?.let { return it.text }
+        blockConstant(stack)?.let { return it.text }
+        return registryItem(key)
     }
 
     /**
-     * 流体表达式：`FluidIngredient.of(<流体>, <mB>)`。
+     * GT 配方用的物品表达式 —— **已经带数量**，按优先级挑写法：
+     * Registrate 条目 `GTItems.X.asStack(n)` → 原版 `new ItemStack(Items.X[, n])` / `new ItemStack(Blocks.X[, n])`
+     * → 材料 `ChemicalHelper.get(TagPrefix.dust, GTMaterials.Iron[, n])` → 注册表查询。
      *
-     * 用 [FluidIngredient.of] 而不是 `.inputFluids(new FluidStack(...))`：
-     * 后者的重载会把流体转成**流体标签**（内部走 `TagUtil.createFluidTag`），
-     * 对 GT 自己的材料流体没问题，但对整合包里任意一个流体就可能生成一个根本不存在的标签；
-     * `of(Fluid, int)` 建的是精确流体条件，导出成 datagen 代码后语义最直白。
+     * ⚠️ 方块**必须**包进 `ItemStack`：`inputItems(Object, int)` 不认 `Block`，直接写 `Blocks.GLASS` 会静默丢掉这个输入。
+     */
+    private fun gtItemExpr(stack: ItemStack): String {
+        ITEM_CONSTANTS[stack.item]?.let { return stackExpr(it, stack.count) }
+        blockConstant(stack)?.let { return stackExpr(it, stack.count) }
+        // 带 NBT 的物品不写材料形式（材料形式描述不了 NBT），直接走注册表
+        if (!stack.hasTag()) materialItemExpr(stack)?.let { return it }
+        val key = ForgeRegistries.ITEMS.getKey(stack.item) ?: return "new ItemStack(Items.AIR) /* 未注册物品 */"
+        val ref = registryItem(key)
+        return if (stack.count > 1) "new ItemStack($ref, ${stack.count})" else ref
+    }
+
+    /**
+     * 流体表达式：材料流体写 `GTMaterials.X.getFluid(n)`（非主键带 `FluidStorageKeys`），其余 `FluidIngredient.of(<流体>, n)`。
      *
-     * 流体照样用注册表查（和 [itemExpr] 的兜底分支同一个套路），
-     * 拿不到 id 说明草稿里那个 FluidStack 已经失效，给个显眼的占位而不是写出崩不掉的假代码。
+     * 用 [FluidIngredient.of] 而不是 `inputFluids(new FluidStack(...))`：后者会把流体转成**流体标签**，
+     * 对整合包里任意一个流体可能生成根本不存在的标签。拿不到 id 就给个显眼的占位。
      */
     private fun fluidExpr(stack: FluidStack): String {
+        if (!stack.hasTag()) {
+            FLUID_MATERIAL_EXPRS[stack.fluid]?.let { return String.format(it, stack.amount) }
+        }
         val key = ForgeRegistries.FLUIDS.getKey(stack.fluid)
             ?: return "FluidIngredient.EMPTY /* 未注册流体 */"
-        return "FluidIngredient.of(ForgeRegistries.FLUIDS.getValue(new ResourceLocation(\"" +
-            "${key.namespace}\", \"${key.path}\")), ${stack.amount})"
+        val ref = FLUID_CONSTANTS[stack.fluid]
+            ?: "ForgeRegistries.FLUIDS.getValue(new ResourceLocation(\"${key.namespace}\", \"${key.path}\"))"
+        return "FluidIngredient.of($ref, ${stack.amount})"
     }
 
     /** define(...) 的第二个参数（既可以是物品也可以是标签，这里统一给物品常量）。 */
     private fun itemKey(stack: ItemStack): String = itemExpr(stack)
 
-    /** GT 配方类型表达式：优先用 `GTRecipeTypes` 的常量名。 */
+    /** 注册表查询 —— 拿不到常量时的兜底写法。 */
+    private fun registryItem(key: ResourceLocation): String =
+        "ForgeRegistries.ITEMS.getValue(new ResourceLocation(\"${key.namespace}\", \"${key.path}\"))"
+
+    /** 方块物品对应的方块常量（`Blocks.X` / `GTBlocks.X` / `ETBlock.X`）。 */
+    private fun blockConstant(stack: ItemStack): Ref? =
+        (stack.item as? BlockItem)?.block?.let { BLOCK_CONSTANTS[it] }
+
+    /** 常量引用 → 带数量的表达式：Registrate 条目走 `.asStack(n)`，原版 `Items.X` / `Blocks.X` 走 `new ItemStack(X[, n])`。 */
+    private fun stackExpr(ref: Ref, count: Int): String = if (ref.registrate) {
+        if (count > 1) "${ref.text}.asStack($count)" else "${ref.text}.asStack()"
+    } else {
+        if (count > 1) "new ItemStack(${ref.text}, $count)" else "new ItemStack(${ref.text})"
+    }
+
+    /**
+     * 材料物品 → `ChemicalHelper.get(TagPrefix.dust, GTMaterials.Iron[, n])`。
+     *
+     * ⚠️ 反查之后会用同一组常量正算一遍比对物品，对不上（统一化条目 / 别的 mod 同名物品）就不写这种形式。
+     */
+    private fun materialItemExpr(stack: ItemStack): String? {
+        val prefix = ChemicalHelper.getPrefix(stack.item)
+        if (prefix === TagPrefix.NULL_PREFIX) return null
+        val material = ChemicalHelper.getMaterialStack(stack.item).material()
+        val prefixName = PREFIX_FIELDS[prefix] ?: return null
+        val materialName = MATERIAL_FIELDS[material] ?: return null
+        val check = ChemicalHelper.get(prefix, material, 1)
+        if (check.isEmpty || check.item !== stack.item) return null
+        val count = if (stack.count > 1) ", ${stack.count}" else ""
+        return "ChemicalHelper.get(TagPrefix.$prefixName, GTMaterials.$materialName$count)"
+    }
+
+    /**
+     * GT 配方类型表达式：优先给 `GTRecipeTypes` 里常量的**裸名**（GTM 的配方类都是 `import static GTRecipeTypes.*`
+     * 之后直接写 `ALLOY_SMELTER_RECIPES.recipeBuilder(...)`，这样导出片段贴进去不用改），查不到才退回注册表查询。
+     */
     private fun typeExpr(gtTypeRaw: String): String {
         val id = parse(gtTypeRaw) ?: return "GTRecipeTypes.DUMMY_RECIPES /* 配方类型 id 写错了 */"
-        GT_TYPE_CONSTANTS[id]?.let { return "GTRecipeTypes.$it" }
+        GT_TYPE_CONSTANTS[id]?.let { return it }
         return "GTRegistries.RECIPE_TYPES.get(new ResourceLocation(\"${id.namespace}\", \"${id.path}\"))"
     }
 
@@ -329,25 +381,72 @@ object RecipeCodeWriter {
         raw.replace(Regex("[^a-zA-Z0-9_./-]"), "_").ifEmpty { "recipe" }
 
     // ======================== 常量名反射表 ========================
-    // 说明：这里刻意用普通 for 循环而不是 buildMap { forEach { runCatching { return@forEach } } }：
-    // 嵌套 lambda + 带标签的 return 在不同版本的 Kotlin 插件里判断不一致（编译器认、IDE 可能飘红），
-    // 展开成循环后语义一样，任何版本都不会有异议。
+    // 下面用普通 for 循环而不是 buildMap{...}：嵌套 lambda + 带标签的 return 在不同 Kotlin 插件版本下 IDE 会飘红。
 
-    /** 物品 → `Items` 里的常量名（拿不到就退回注册表查询）。 */
-    private val ITEM_CONSTANTS: Map<ResourceLocation, String> = HashMap<ResourceLocation, String>().apply {
-        for (field in Items::class.java.declaredFields) {//idea犯病了
-            if (!Modifier.isStatic(field.modifiers) || !Modifier.isPublic(field.modifiers)) continue
-            if (!Item::class.java.isAssignableFrom(field.type)) continue//idea犯病了
+    /**
+     * 常量引用。[text] 是 `Holder.字段名`；[registrate] 表示是 Registrate 条目（要 `.asStack(n)`，
+     * 原版 `Items.X` / `Blocks.X` 则写 `new ItemStack(X[, n])`）。
+     */
+    private data class Ref(val text: String, val registrate: Boolean)
 
-            val item = try {
-                field.get(null) as? Item
-            } catch (e: Throwable) { // 含 IllegalAccessException 与类初始化失败
+    /** 物品 → 常量（原版 `Items` + GTM `GTItems` + 本 mod `ETItems`）。 */
+    private val ITEM_CONSTANTS: Map<Item, Ref> = holderFields(
+        Item::class.java, Items::class.java.name,
+        "com.gregtechceu.gtceu.common.data.GTItems",
+        "rain.gtetcore.gtet.common.data.item.ETItems",
+    )
+
+    /** 方块 → 常量（原版 `Blocks` + GTM `GTBlocks` + 本 mod `ETBlock`）。 */
+    private val BLOCK_CONSTANTS: Map<Block, Ref> = holderFields(
+        Block::class.java, Blocks::class.java.name,
+        "com.gregtechceu.gtceu.common.data.GTBlocks",
+        "rain.gtetcore.gtet.common.data.block.ETBlock",
+    )
+
+    /** 流体 → 常量（原版 `Fluids`；GT 材料流体走 [FLUID_MATERIAL_EXPRS]）。 */
+    private val FLUID_CONSTANTS: Map<Fluid, String> =
+        holderFields(Fluid::class.java, Fluids::class.java.name).mapValues { (_, ref) -> ref.text }
+
+    /** GT 材料 → `GTMaterials` 里的字段名。 */
+    private val MATERIAL_FIELDS: Map<Material, String> =
+        holderFields(Material::class.java, "com.gregtechceu.gtceu.common.data.GTMaterials")
+            .mapValues { (_, ref) -> ref.text.substringAfterLast('.') }
+
+    /** `TagPrefix` → 字段名（`ingot` / `dust` / `plate` …）。 */
+    private val PREFIX_FIELDS: Map<TagPrefix, String> =
+        holderFields(TagPrefix::class.java, "com.gregtechceu.gtceu.api.data.tag.TagPrefix")
+            .mapValues { (_, ref) -> ref.text.substringAfterLast('.') }
+
+    /**
+     * 材料流体 → `GTMaterials.X.getFluid(...)` 模板（`%d` 是量）：主键流体短形式，其余带 `FluidStorageKeys.<KEY>`。
+     * 惰性构建 —— 材料要到注册阶段之后才齐全。
+     */
+    private val FLUID_MATERIAL_EXPRS: Map<Fluid, String> by lazy {
+        val keys = listOf(
+            FluidStorageKeys.LIQUID to "LIQUID",
+            FluidStorageKeys.GAS to "GAS",
+            FluidStorageKeys.PLASMA to "PLASMA",
+            FluidStorageKeys.MOLTEN to "MOLTEN",
+        )
+        val map = HashMap<Fluid, String>()
+        for ((material, name) in MATERIAL_FIELDS) {
+            if (!material.hasFluid()) continue
+            val primary = try {
+                material.getFluid()
+            } catch (e: Throwable) {
                 null
-            } ?: continue
-
-            val key = ForgeRegistries.ITEMS.getKey(item) ?: continue
-            putIfAbsent(key, field.name)
+            }
+            if (primary != null) map.putIfAbsent(primary, "GTMaterials.$name.getFluid(%d)")
+            for ((key, keyName) in keys) {
+                val fluid = try {
+                    material.getFluid(key)
+                } catch (e: Throwable) { // 该材料没有这一档流体时 getFluid 会抛
+                    null
+                } ?: continue
+                map.putIfAbsent(fluid, "GTMaterials.$name.getFluid(FluidStorageKeys.$keyName, %d)")
+            }
         }
+        map
     }
 
     /** 配方类型 id → `GTRecipeTypes` 里的常量名。 */
@@ -365,5 +464,42 @@ object RecipeCodeWriter {
             val key = GTRegistries.RECIPE_TYPES.getKey(type) ?: continue
             putIfAbsent(key, field.name)
         }
+    }
+
+    /**
+     * 扫若干持有类的静态字段，建「注册表对象 → [Ref]」反查表；字段值可以是对象本身，也可以是 Registrate 条目（取 `.get()`）。
+     *
+     * ⚠️ 一律 `isAccessible = true` 再读：本 mod 的 `ETItems` 是 Kotlin `object`，属性背后是私有静态字段。
+     */
+    private fun <T : Any> holderFields(type: Class<T>, vararg holderNames: String): Map<T, Ref> {
+        val map = HashMap<T, Ref>()
+        for (name in holderNames) {
+            val owner = try {
+                Class.forName(name)
+            } catch (e: Throwable) {
+                null
+            } ?: continue
+            for (field in owner.declaredFields) {
+                if (!Modifier.isStatic(field.modifiers)) continue
+                val raw = try {
+                    field.isAccessible = true
+                    field.get(null)
+                } catch (e: Throwable) { // 含 IllegalAccessException 与类初始化失败
+                    null
+                } ?: continue
+                val registrate = raw is RegistryEntry<*>
+                val value: T = when {
+                    type.isInstance(raw) -> type.cast(raw)
+                    registrate -> try {
+                        (raw as RegistryEntry<*>).get()?.takeIf { type.isInstance(it) }?.let { type.cast(it) }
+                    } catch (e: Throwable) {
+                        null
+                    }
+                    else -> null
+                } ?: continue
+                map.putIfAbsent(value, Ref("${owner.simpleName}.${field.name}", registrate))
+            }
+        }
+        return map
     }
 }

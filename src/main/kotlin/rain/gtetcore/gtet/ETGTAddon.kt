@@ -70,7 +70,7 @@ open class ETGTAddon : IGTAddon {
 
     /**
      * 剔除 GTM 自带并行仓（`GCYMMachines.PARALLEL_HATCH`，IV/LuV/ZPM/UV 四档）的合成配方
-     * —— 这四档由 GTET 自己的并行仓（[rain.gtetcore.gtet.common.data.machine.ETParallelHatches]）接管。
+     * —— 这四档由 GTET 自己的并行仓（[rain.gtetcore.gtet.common.data.machine.otherMachine.ETParallelHatches]）接管。
      *
      * 为什么走这个钩子而不是改 GTM 的数值：数值改了还会在 EMI/JEI 里并排出现两种「同档不同并行数」
      * 的仓，玩家分不清；直接从配方层面拿掉才是「整合包里没有它」。

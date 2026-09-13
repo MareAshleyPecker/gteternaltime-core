@@ -4,7 +4,7 @@ import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
 import net.minecraft.network.chat.Component
-import rain.gtetcore.gtet.common.machine.IThreadedRecipeMachine
+import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine
 import rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic
 import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
 

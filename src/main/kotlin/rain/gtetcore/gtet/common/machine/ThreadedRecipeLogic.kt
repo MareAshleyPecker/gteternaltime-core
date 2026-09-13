@@ -20,6 +20,7 @@ import net.minecraft.nbt.Tag
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.Gtetcore
+import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine
 
 /**
  * 「多线程配方逻辑内核」。
@@ -180,7 +181,7 @@ import rain.gtetcore.gtet.Gtetcore
  *   ⚠️ **必须注明**：GTO 的**调度与记账算法一行都拿不到** —— `libs/gtolib-1.0.jar` 里 `ICrossRecipeMachine`、`ICrossRecipeMachine$Thread`、`ICrossRecipeMachine$Logic`、`ThreadPartMachine` 的方法体全是 `native`（`javap` 只能看到签名，实现被抽到 `native0/native/` 那堆 `.bin` 的加密库里）。所以**线程表调度、动态开线程策略、每线程独立 IO 记账、线程数上限来源，全部是 GTET 自研**（见下面的【自研】条）。
  * - 【自研】线程表（`data class ThreadRec` 槽位数组）+ 「先给不同配方、再把剩余空闲线程发给**同一种**配方」的两轮调度（[tryStartThreads]）+ 「一组一预算、再均分」的防超发记账（[planThreadParallel] / [committedUnits]：用 `ParallelLogic#getParallelAmount` 的聚合上限调用一次性判定「输入 / tick 输入 / 输出」三头，再减掉本组已提交的份额，然后按本组还能开的线程数均分）+ 轮转式公平分配 + 同配方判等（按 `GTRecipe#id`，`id == null` 时退化成引用相等 —— 现成的 `GTRecipe#equals` 只比 id 且对 null id 会 NPE）+ 「线程数上限由线程仓 tier 决定」+ 「玩家下调线程数不砍已开线程」+ 「每线程独立 `chanceCaches`」+ 「基类单进度镜像」+ 存档恢复策略：这些在 GTOCore 里都没有可抄的实现（GTO 那半边在 native 里，且是 `ICrossRecipeMachine` 专属的私有调度 —— 它只有「同一种配方占一条线程」的 `duplicateCheck` 语义，没有「同配方多线程」这回事）。
  *
- * @param machine 持有本逻辑的机器（应当实现 [IThreadedRecipeMachine]；否则线程数上限退化为 1）
+ * @param machine 持有本逻辑的机器（应当实现 [rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine]；否则线程数上限退化为 1）
  *
  * @author rain fox
  */
@@ -455,12 +456,6 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
      * 1. **第一轮：不同配方各占一条**（原行为）—— 命中且「还没有线程在跑它」的候选占一条空闲槽位；
      * 2. **第二轮：同一种配方去吃剩下的空闲线程**（「吃线程并行」）—— **轮转**着给每个在跑的配方
      *    各加最多一条线程，一趟下来一条都没开出来就收手。
-     *
-     * ⚠️ 第二轮的「在跑配方」池必须**含本轮刚从第一轮开出来的那些**：池子是在第一轮的遍历里就地攒的
-     * （「已经在线程表里的」和「这一轮刚开成功的」都进池），而不是只收「进这一轮之前就在跑的」——
-     * 短配方（`duration = 1` tick）可能在**下一次搜索（[SEARCH_INTERVAL] = 5 tick）之前就跑完**，
-     * 那时它已经不在「在跑」状态；只认「之前就在跑」的话，这种配方永远等不到 fan-out，
-     * 而「一种原料、只跑一条线程」恰恰就是这种场景。
      *
      * 池子里装的是**配方库给的原始候选对象**：已在跑线程的 `rec.recipe` 已经被套过机器修改器与并行，
      * 拿它再 `fullModifyRecipe` 一遍会重复超频，所以绝不能拿来当原配方。
@@ -781,14 +776,14 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
     /** 状态机：有线程在推进 = WORKING；有线程但在等 = WAITING；一条线程都没有 = IDLE。 */
     private fun syncStatus(progressed: Boolean, waitingNow: Boolean, reason: Component?) {
         if (runningThreadCount == 0) {
-            if (getStatus() != Status.IDLE) setStatus(Status.IDLE)
+            if (status != Status.IDLE) status = Status.IDLE
             return
         }
         when {
-            progressed -> setStatus(Status.WORKING)
+            progressed -> status = Status.WORKING
             // setWaiting 每次都调 machine.onWaiting()，所以只在状态真的变了的时候调
-            waitingNow -> if (getStatus() != Status.WAITING) setWaiting(reason)
-            getStatus() != Status.WORKING && getStatus() != Status.WAITING -> setStatus(Status.WORKING)
+            waitingNow -> if (status != Status.WAITING) setWaiting(reason)
+            status != Status.WORKING && status != Status.WAITING -> status = Status.WORKING
         }
     }
 

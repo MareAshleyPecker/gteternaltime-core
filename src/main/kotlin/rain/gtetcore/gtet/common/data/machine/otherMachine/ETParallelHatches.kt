@@ -55,10 +55,10 @@ object ETParallelHatches {
      * ⚠️ UEV 相对 UHV 只翻了一倍（其余档都是 ×4），这是用户确认过的字面值，不是漏改。
      */
     val VARIANTS: List<ParallelHatchVariant> = listOf(
-        ParallelHatchVariant("parallel_hatch_iv", GTValues.IV, 32),
+        ParallelHatchVariant("parallel_hatch_iv" , GTValues.IV , 32),
         ParallelHatchVariant("parallel_hatch_luv", GTValues.LuV, 128),
         ParallelHatchVariant("parallel_hatch_zpm", GTValues.ZPM, 512),
-        ParallelHatchVariant("parallel_hatch_uv", GTValues.UV, 2048),
+        ParallelHatchVariant("parallel_hatch_uv" , GTValues.UV , 2048),
         ParallelHatchVariant("parallel_hatch_uhv", GTValues.UHV, 8192),
         ParallelHatchVariant("parallel_hatch_uev", GTValues.UEV, 16384),
         ParallelHatchVariant("parallel_hatch_uiv", GTValues.UIV, 65536),

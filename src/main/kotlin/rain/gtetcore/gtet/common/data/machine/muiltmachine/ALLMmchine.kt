@@ -1,61 +1,41 @@
 package rain.gtetcore.gtet.common.data.machine.muiltmachine
 
-import com.gregtechceu.gtceu.api.machine.MachineDefinition
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition
 import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
 import rain.gtetcore.gtet.common.GTETCreativeModeTabs
-import rain.gtetcore.gtet.common.data.machine.ETOverclockHatches
-import rain.gtetcore.gtet.common.data.machine.ETParallelHatches
+import rain.gtetcore.gtet.common.data.machine.ETModularTestMultiblocks
 import rain.gtetcore.gtet.common.data.machine.ETTestMultiblocks
-import rain.gtetcore.gtet.common.data.machine.ETThreadHatches
 
 /**
- * 多方块机器
- * 所有多方块机器在此初始化并注册到 [GTETCreativeModeTabs.MULTIBLOCK] 选项卡。
+ * 多方块机器的注册入口（单方块机器与部件仓在 `samplemachine.ALLSmahine`），进 [GTETCreativeModeTabs.MULTIBLOCK] 页。
+ *
+ * 归属哪个创造页由 [ETRegistrate] 的「当前默认页」在注册那一刻决定（GTET 的创造页用
+ * `RegistrateDisplayItemsGenerator` 扫自己那一份）。
+ *
+ * ⚠️ 要在部件仓注册**之后**调用：测试机的能力方块表依赖线程仓已经注册。
+ *
+ * @author rain fox
  */
 object ALLMmchine {
-    /** [init] 只跑一次（幂等标志：将来即使多入口重复调用，也不会重复注册）。 */
-    private var initialized = false
 
-
-    init {
-        ETRegistrate.creativeModeTab(GTETCreativeModeTabs.MULTIBLOCK)
-    }
-
-
-
+    /** 多方块测试机定义。 */
     var TEST_MULTIBLOCK: MultiblockMachineDefinition? = null
         private set
 
+    /** 模块化测试机定义（模块物品 → 等级 → 结构 + 配方上限）。 */
+    var MODULAR_TEST_MACHINE: MultiblockMachineDefinition? = null
+        private set
 
-    init {
-        ETRegistrate.creativeModeTab(GTETCreativeModeTabs.MACHINE)
-    }
-    /**
-     * 全部「超频仓」部件方块（6 个变体），由 [init] 填充。
-     */
-    var OVERCLOCK_HATCHES: List<MachineDefinition> = emptyList()
-        private set
-    /**
-     * 全部「线程仓」部件方块（7 个变体，UV ~ MAX），由 [init] 填充。
-     */
-    var THREAD_HATCHES: List<MachineDefinition> = emptyList()
-        private set
-    /**
-     * GTET 自己的「并行仓」部件方块（10 个变体，IV ~ MAX），由 [init] 填充。
-     */
-    var PARALLEL_HATCHES: List<MachineDefinition> = emptyList()
-        private set
-    /**
-     * 注册本模组的全部机器。
-     */
+    /** 注册全部多方块机器。 */
     fun init() {
+        registerMultiblocks()
+    }
 
-        OVERCLOCK_HATCHES = ETOverclockHatches.register(ETRegistrate)
-        THREAD_HATCHES = ETThreadHatches.register(ETRegistrate)
-        PARALLEL_HATCHES = ETParallelHatches.register(ETRegistrate)
-        // 多方块最后：上面三个部件的 register 都把创造页切到 MACHINE，
-        // 而 ETTestMultiblocks.register 开头会自己切回 MULTIBLOCK。
+    /** 多方块机器 → [GTETCreativeModeTabs.MULTIBLOCK]。 */
+    fun registerMultiblocks() {
+        ETRegistrate.creativeModeTab(GTETCreativeModeTabs.MULTIBLOCK)
+        MulitblockA.init()
         TEST_MULTIBLOCK = ETTestMultiblocks.register(ETRegistrate)
+        MODULAR_TEST_MACHINE = ETModularTestMultiblocks.register(ETRegistrate)
     }
 }

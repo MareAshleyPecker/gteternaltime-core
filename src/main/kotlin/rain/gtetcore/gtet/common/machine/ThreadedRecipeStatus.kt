@@ -54,6 +54,14 @@ object ThreadedRecipeStatus {
     /** 语言键：明细被截断时的尾行 —— 参数是「没显示的组数」「显示的组数」。 */
     const val LANG_MORE: String = "gtetcore.threads.more"
 
+    /**
+     * 语言键：Jade 组行里产物后面的尾巴（机器面板不用它，面板那条仍走 [LANG_OUTPUTS]）——
+     * 参数依次是「组内线程条数」「该组 EU/t」。
+     *
+     * 之所以要单独一条：Jade 那条行把产物画成**图标 + 名字 + 数量**，前面不能再套「产出 %s」这种把整串塞进参数的模板。
+     */
+    const val LANG_GROUP_TAIL: String = "gtetcore.threads.group_tail"
+
     /** 语言键：一条组行里产物种类超出上限时的补充 —— 参数是「没显示的种数」。 */
     const val LANG_OUTPUT_MORE: String = "gtetcore.threads.output_more"
 
@@ -107,14 +115,18 @@ object ThreadedRecipeStatus {
     /**
      * 一种产物的合并结果。
      *
-     * @param name    产物**已解析的组件**（服务端取 `ItemStack#getHoverName()`），而不是物品翻译键：
-     *                GTCEu 材料物品的键本身就是带 `%s` 的模板（`tagprefix.dust` = `%s粉`），材料名是运行时
-     *                作为参数拼进去的 —— 只传键、客户端再 `translatable(键)` 就会翻出模板本体。
-     *                组件的键与参数都还是可翻译的，客户端照样按自己的语言解析。
+     * @param stack   产物物品（**数量固定 1**，只用来取图标与名字）；要显示的数量看 [min] / [max]。
+     *                ⚠️ 传物品栈而不是「翻译键 / 已解析名字」：GTCEu 材料物品的键本身是带 `%s` 的模板
+     *                （`tagprefix.dust` = `%s粉`），材料名要运行时拼进去 —— 传栈则**图标与正确名字一起拿到**，
+     *                客户端自己 `hoverName` 就能解析（GTET 早期为此改传组件 JSON，现在这条限制没了，载荷也更小）。
      * @param min/max 一次机器周期该产出的数量区间（一般 min == max）
      * @param chanced 是否为**期望值**（内容带概率，见 [outputSnapshotOf]），显示时标 ≈
      */
-    data class OutputSnapshot(val name: Component, val min: Long, val max: Long, val chanced: Boolean)
+    data class OutputSnapshot(val stack: ItemStack, val min: Long, val max: Long, val chanced: Boolean) {
+
+        /** 产物显示名（服务端与客户端都能解析）。 */
+        val name: Component get() = stack.hoverName
+    }
 
     /** [groupSnapshots] 的结果：截断后的组行 + 组总数（组总数用于「还有 N 组」那一行）。 */
     data class GroupSnapshotPage(val groups: List<GroupSnapshot>, val totalGroups: Int)
@@ -153,6 +165,11 @@ object ThreadedRecipeStatus {
             LANG_MORE,
             "  ...and %s more recipe groups (showing first %s)",
             "  ……还有 %s 个配方组（仅显示前 %s 个）"
+        )
+        LangUtil.add(
+            LANG_GROUP_TAIL,
+            " · %s threads · %s EU/t",
+            " · %s 条线程 · %s EU/t"
         )
         LangUtil.add(
             LANG_OUTPUT_MORE,
@@ -262,10 +279,8 @@ object ThreadedRecipeStatus {
             }
         }
         val hidden = (merged.size - OUTPUTS_PER_LINE).coerceAtLeast(0)
-        return merged.take(OUTPUTS_PER_LINE).map {
-            // 名字在这里就解析成组件：显示层（面板）与 Jade 载荷都拿这一份，两边口径一致
-            OutputSnapshot(it.key.hoverName, it.min, it.max, it.chanced)
-        } to hidden
+        // 直接把物品栈带出去：面板取名字、Jade 取图标 + 名字，两边同一份口径
+        return merged.take(OUTPUTS_PER_LINE).map { OutputSnapshot(it.key, it.min, it.max, it.chanced) } to hidden
     }
 
     /**
@@ -323,17 +338,25 @@ object ThreadedRecipeStatus {
         val text = Component.empty()
         outputs.forEachIndexed { index, output ->
             if (index > 0) text.append(Component.translatable(LANG_OUTPUT_SEP))
-            // 区间用 ~，期望值用 ≈：两者都可能在（概率产出且数量是区间）
-            val count = if (output.min == output.max) {
-                FormattingUtil.formatNumbers(output.min)
-            } else {
-                "${FormattingUtil.formatNumbers(output.min)}~${FormattingUtil.formatNumbers(output.max)}"
-            }
-            text.append(output.name)
-                .append(" ${if (output.chanced) "≈" else "×"}$count")
+            text.append(output.name).append(" ").append(countText(output))
         }
         if (hiddenKinds > 0) text.append(Component.translatable(LANG_OUTPUT_MORE, hiddenKinds))
         return text
+    }
+
+    /**
+     * 数量文本：`×3`（定量）/ `×1~2`（区间）/ `≈4`（概率产出的期望值；区间 + 概率时两者都在）。
+     *
+     * 抽出来是为了让 Jade 那条「图标 + 名字 + 数量」的行与机器面板共用同一套口径。
+     */
+    @JvmStatic
+    fun countText(output: OutputSnapshot): Component {
+        val count = if (output.min == output.max) {
+            FormattingUtil.formatNumbers(output.min)
+        } else {
+            "${FormattingUtil.formatNumbers(output.min)}~${FormattingUtil.formatNumbers(output.max)}"
+        }
+        return Component.literal("${if (output.chanced) "≈" else "×"}$count")
     }
 
     /**

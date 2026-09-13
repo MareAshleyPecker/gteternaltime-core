@@ -5,6 +5,7 @@ import com.gregtechceu.gtceu.api.pattern.predicates.SimplePredicate;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
+import java.io.Serial;
 import java.util.Map;
 
 /**
@@ -108,6 +109,7 @@ import java.util.Map;
  */
 public class LiveGlobalCountView extends Object2IntOpenHashMap<SimplePredicate> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /** GTM 的实时表（globalCount 或 layerCount，两者结构相同，本类不区分）。 */

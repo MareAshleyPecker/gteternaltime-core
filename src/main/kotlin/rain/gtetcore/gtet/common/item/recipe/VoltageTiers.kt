@@ -24,13 +24,13 @@ object VoltageTiers {
     val GTM_TIERS: Int = GTValues.VN.size
 
     /** 特殊档数：`MAX+1 … MAX+16`，正好是 GTM `VEX` / `VNF` 比 `VN` 多出来的那 16 项。 */
-    val SPECIAL_TIERS: Int = GTValues.MAX_TRUE - GTValues.MAX
+    const val SPECIAL_TIERS: Int = GTValues.MAX_TRUE - GTValues.MAX
 
     /** 合法档位数（合法下标是 `0 .. TOTAL_TIERS - 1`）。 */
     val TOTAL_TIERS: Int = GTM_TIERS + SPECIAL_TIERS
 
     /** 特殊档的下标范围（`MAX+1` 起，到 `MAX+16` 止）。 */
-    val SPECIAL_RANGE: IntRange = GTM_TIERS..(TOTAL_TIERS - 1)
+    val SPECIAL_RANGE: IntRange = GTM_TIERS..<TOTAL_TIERS
 
     /** 是不是特殊档（`MAX` 之后；GTM 的 `VA`/`VN` 里没有这些下标）。 */
     fun isSpecial(tier: Int): Boolean = tier >= GTM_TIERS

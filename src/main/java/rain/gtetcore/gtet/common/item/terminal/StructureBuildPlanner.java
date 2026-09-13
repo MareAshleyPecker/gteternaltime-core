@@ -250,12 +250,28 @@ public final class StructureBuildPlanner {
     public static String groupKey(List<ItemStack> candidates) {
         Set<String> ids = new LinkedHashSet<>();
         for (ItemStack stack : candidates) {
-            var key = ForgeRegistries.ITEMS.getKey(stack.getItem());
-            ids.add(key == null ? "minecraft:air" : key.toString());
+            String id = itemId(stack);
+            ids.add(id == null ? "minecraft:air" : id);
         }
         List<String> sorted = new ArrayList<>(ids);
         sorted.sort(Comparator.naturalOrder());
         return String.join("|", sorted);
+    }
+
+    /** 物品注册名；拿不到（例如空气、未注册物品）时返回 null。 */
+    @Nullable
+    public static String itemId(ItemStack stack) {
+        var key = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        return key == null ? null : key.toString();
+    }
+
+    /** 注册名 → 物品栈（面板里存的偏好是注册名字符串，搭建时要换回物品）。取不到返回 null。 */
+    @Nullable
+    public static ItemStack itemStackOf(String itemId) {
+        var location = net.minecraft.resources.ResourceLocation.tryParse(itemId);
+        if (location == null) return null;
+        var item = ForgeRegistries.ITEMS.getValue(location);
+        return item == null ? null : item.getDefaultInstance();
     }
 
     /**

@@ -1,6 +1,5 @@
 package rain.gtetcore.gtet.common.machine.multiblock.part
 
-import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.gui.widget.IntInputWidget
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity
 import com.gregtechceu.gtceu.api.machine.feature.IFancyUIMachine
@@ -12,6 +11,7 @@ import com.lowdragmc.lowdraglib.gui.widget.Widget
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder
+import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.Mth
 import rain.gtetcore.gtet.api.capability.IThreadHatch
 
@@ -28,34 +28,42 @@ import rain.gtetcore.gtet.api.capability.IThreadHatch
  * 用 [threadCount] 当线程数上限。
  *
  * ## 线程数怎么给
- * [maxThreadsForTier] 就是 `1 shl (tier - GTValues.LuV)`：上限**由 tier 直接推出来**，
- * 既不写死在变体表里、也不做成配置项 —— 从 LuV 起每级翻倍，于是
- * UV=4、UHV=8、UEV=16、UIV=32、UXV=64、OpV=128、MAX=256，
- * 语义是「比上一级多一倍同时跑得动的配方种类」。
- * 低于 LuV 的档位不注册，函数里兜底返回 1（不能是 0，否则线程逻辑会一条也开不出来）。
+ * 上限 [maxThreads] 由**注册表显式传入**（构造函数第 3 个参数 `threads`），数值写在
+ * `ETThreadHatches.VARIANTS` 那张表里，构造后不再变化：UV=4、UHV=8、UEV=16、UIV=32、
+ * UXV=64、OpV=128、MAX=256 —— 表里写多少就是多少，本类不做任何推导
+ * （原先那份「由 tier 现算」的 `maxThreadsForTier` 已删）。
+ * 语义是「比上一级多一倍同时跑得动的线程条数」。
+ * 唯一的下限兜底是 [MIN_THREAD]（表里误写 0 时线程逻辑会一条也开不出来）。
  *
  * ## 玩家可下调
  * [currentThread] 是 `@Persisted` 字段（所以 UI 改了能存进 NBT），
  * 玩家只能往下调（1 ~ [maxThreads]）。下调**不会**杀掉已经在跑的线程
  * （否则扣掉的料会凭空消失），只是「不再为多出来的槽位开新线程」，见 `ThreadedRecipeLogic#ensureSlots`。
+ * 存档读回来时再由 [loadCustomPersistedData] 夹一次，越界值不会漏进线程逻辑。
  *
  * ## 思路来源
  * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）`com.gtolib.api.machine.impl.part.ThreadPartMachine` / `AmountConfigurationPartMachine` —— 借「分级部件 + 一个 `min`/`max`/`current` 三元配置 + `createUIWidget()` 里放数值输入 + `canShared() = false`」这个形状（这两个类只能用 `javap` 看到字段与签名：`protected final long min`、`private final long max`、`protected long current`、`native createUIWidget()`、`native canShared()` —— 方法体在加密 native 里，一行都拿不到）；GTET 侧把它改成 `IntInput` 版本，并把「当前值 / 上限」拆成两个语义（GTO 只有一个 `getCurrentThread()`）。
  * - 【自研】「下调线程数不砍已开线程」的取舍 —— 并行仓改并行数只是改个数字，没有「已经吃掉的料」这回事；线程仓一旦开线程就已经扣过料，砍线程等于吞材料，所以这里只封住「新线程」而放已开线程跑完。
- * - 【自研】`currentThread` 与 `maxThreads` 分开存 —— 上限由 tier 算出来（不可改），当前值才是 `@Persisted` 的那一份；这样「玩家把 256 线程的仓调到 3」之后存档重载仍然记得，而不会被 tier 上限覆盖回去。
+ * - 【自研】`currentThread` 与 `maxThreads` 分开存 —— 上限是构造时注入的固定值（不可改），当前值才是 `@Persisted` 的那一份；这样「玩家把 256 线程的仓调到 3」之后存档重载仍然记得，而不会被上限覆盖回去。上限独立成字段还让 [loadCustomPersistedData] 有依据给读回来的越界值兜底。
  *
- * @param holder 方块实体持有者
- * @param tier   电压等级（同时决定外壳贴图与线程数上限，见 `ETThreadHatches` 的变体表）
+ * @param holder  方块实体持有者
+ * @param tier    电压等级（决定外壳贴图，见 `ETThreadHatches` 的变体表）
+ * @param threads 该档的线程数上限（= 同时能跑的线程条数），由 `ETThreadHatches` 的变体表显式给出
  *
  * @author rain fox
  */
 class ThreadHatchPartMachine(
     holder: IMachineBlockEntity,
-    tier: Int
+    tier: Int,
+    threads: Int
 ) : TieredPartMachine(holder, tier), IFancyUIMachine, IThreadHatch {
 
-    /** 该仓按 tier 提供的线程数上限，构造后不再变化，所以不需要 `@Persisted`。 */
-    override val maxThreads: Int = maxThreadsForTier(tier)
+    /**
+     * 该仓的线程数上限：构造时由变体表传入，之后不再变化，所以不需要 `@Persisted`。
+     *
+     * ⚠️ 兜底到 [MIN_THREAD]：变体表里误写 0 / 负数时，线程逻辑会一条线程也开不出来。
+     */
+    override val maxThreads: Int = threads.coerceAtLeast(MIN_THREAD)
 
     /**
      * 玩家在 UI 里设定的线程数（1 ~ [maxThreads]）。
@@ -114,6 +122,24 @@ class ThreadHatchPartMachine(
         }
     }
 
+    /**
+     * 存档读回来之后，把 [currentThread] 夹回 `[MIN_THREAD] .. [maxThreads]`。
+     *
+     * ⚠️ 时机是 ldlib 给的：`BlockEntity#load`（`BlockEntityMixin#injectLoad`）→
+     * `IAutoPersistBlockEntity#loadManagedPersistentData` 先走
+     * `IManagedAccessor#writePersistedFields` 把 NBT 写进 `@Persisted` 字段，
+     * **然后**才回调 `loadCustomPersistedData` —— 所以这里是唯一能对「刚读回来的值」动手的地方。
+     * 必须在本类覆写：`MetaMachine#loadCustomPersistedData` 只把调用转发给 traits，不会回到本部件。
+     *
+     * 拦住这几种越界值：旧存档里存的数大于当前上限（例如同一位置换成低一档的仓）、
+     * 手改 NBT、以及 0 / 负数 —— 不夹的话 `ThreadedRecipeLogic` 会照着越界值开线程。
+     * 夹取写法与 [setThreadAmount] 一致（那边夹的是 UI 输入，这边夹的是 NBT 输入）。
+     */
+    override fun loadCustomPersistedData(tag: CompoundTag) {
+        super.loadCustomPersistedData(tag)
+        currentThread = currentThread.coerceIn(MIN_THREAD, maxThreads)
+    }
+
     override fun getFieldHolder(): ManagedFieldHolder = MANAGED_FIELD_HOLDER
 
     override fun canShared(): Boolean = false
@@ -122,21 +148,6 @@ class ThreadHatchPartMachine(
 
         /** 线程数下限：至少 1 条线程（= 退化成 GTCEu 原版单配方机器）。 */
         const val MIN_THREAD: Int = 1
-
-        /**
-         * tier → 线程数上限：`1 shl (tier - GTValues.LuV)`。
-         *
-         * | tier | UV | UHV | UEV | UIV | UXV | OpV | MAX |
-         * |---|---|---|---|---|---|---|---|
-         * | 线程数 | 4 | 8 | 16 | 32 | 64 | 128 | 256 |
-         *
-         * 低于 LuV 的 tier 一律返回 [MIN_THREAD]（本 mod 不注册那些档，只是别返回 0 或负数）。
-         */
-        @JvmStatic
-        fun maxThreadsForTier(tier: Int): Int {
-            val shift = tier - GTValues.LuV
-            return if (shift <= 0) MIN_THREAD else 1 shl shift
-        }
 
         /**
          * 挂在 [MultiblockPartMachine] 的字段持有者后面，保证父类的

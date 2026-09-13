@@ -226,9 +226,8 @@ class RecipeDraft {
         /** 手持物品里存草稿的 NBT 键。 */
         const val KEY: String = "recipe_editor"
 
-        /** 幽灵物品槽的容量上限（按 GT 里最大的配方类型给：装配线 16 物品输入、9 输出）。 */
-        const val MAX_INPUTS: Int = 16
-        const val MAX_OUTPUTS: Int = 9
+        const val MAX_INPUTS: Int = 64
+        const val MAX_OUTPUTS: Int = 32
 
         /**
          * 幽灵流体槽的容量上限。
@@ -246,8 +245,8 @@ class RecipeDraft {
          * （上限 16 / 9）一样的处理方式：界面放不下就不画，草稿里多出来的槽也不会被写进代码。
          * 真要做 12 输出的蒸馏塔配方时，在导出代码里手补两行 `.outputFluids(...)` 即可。
          */
-        const val MAX_FLUID_INPUTS: Int = 8
-        const val MAX_FLUID_OUTPUTS: Int = 8
+        const val MAX_FLUID_INPUTS: Int = 16
+        const val MAX_FLUID_OUTPUTS: Int = 16
 
         /** GT 幽灵电路的最大编号（与 GTCEu `IntCircuitBehaviour.CIRCUIT_MAX` 一致）。 */
         const val CIRCUIT_MAX: Int = 32
