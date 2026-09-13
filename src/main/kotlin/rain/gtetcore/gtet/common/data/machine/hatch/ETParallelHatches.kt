@@ -49,10 +49,8 @@ object ETParallelHatches {
 
     /**
      * 全部并行仓变体（IV ~ MAX 十档），tier 与并行上限一一对应：
-     * IV 32 / LuV 128 / ZPM 512 / UV 2048 / UHV 8192 / UEV 16384 / UIV 65536 /
-     * UXV 262144 / OpV 1048576 / MAX 4194304。
-     *
-     * ⚠️ UEV 相对 UHV 只翻了一倍（其余档都是 ×4），这是用户确认过的字面值，不是漏改。
+     * IV 32 / LuV 128 / ZPM 512 / UV 2048 / UHV 8192 / UEV 32768  / UIV 524288 /
+     * UXV 2097152 / OpV 8388608 / MAX 33554432。
      */
     val VARIANTS: List<ParallelHatchVariant> = listOf(
         ParallelHatchVariant("parallel_hatch_iv" , GTValues.IV , 32),
@@ -60,11 +58,11 @@ object ETParallelHatches {
         ParallelHatchVariant("parallel_hatch_zpm", GTValues.ZPM, 512),
         ParallelHatchVariant("parallel_hatch_uv" , GTValues.UV , 2048),
         ParallelHatchVariant("parallel_hatch_uhv", GTValues.UHV, 8192),
-        ParallelHatchVariant("parallel_hatch_uev", GTValues.UEV, 16384),
-        ParallelHatchVariant("parallel_hatch_uiv", GTValues.UIV, 65536),
-        ParallelHatchVariant("parallel_hatch_uxv", GTValues.UXV, 262144),
-        ParallelHatchVariant("parallel_hatch_opv", GTValues.OpV, 1048576),
-        ParallelHatchVariant("parallel_hatch_max", GTValues.MAX, 4194304),
+        ParallelHatchVariant("parallel_hatch_uev", GTValues.UEV, 32768),
+        ParallelHatchVariant("parallel_hatch_uiv", GTValues.UIV, 524288),
+        ParallelHatchVariant("parallel_hatch_uxv", GTValues.UXV, 2097152),
+        ParallelHatchVariant("parallel_hatch_opv", GTValues.OpV, 8388608),
+        ParallelHatchVariant("parallel_hatch_max", GTValues.MAX, 33554432),
     )
 
     /**
