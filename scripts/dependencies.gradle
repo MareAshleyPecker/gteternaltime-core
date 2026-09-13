@@ -20,7 +20,18 @@ dependencies {
     compileOnly files("libs/configuration-forge-${mc_version}-${configuration_version}.jar")
 
     implementation fg.deobf("curse.maven:ldlib-626676:7809449")//ldlib-1.20.1-1.0.50-forge
-    implementation fg.deobf("curse.maven:gtmthings-1104310:7712957")//gtmthings-1.6.0-forge
+
+    // GTMThings —— dev 的 compile/runtime 必须用**仓内那份补丁 jar**，不能是 curse 上的官方原件：
+    //   · 补丁内容是高级终端 UI / 逻辑，官方原件跑起来界面完全没变化（dev 里永远看不到补丁效果）；
+    //   · 该 jar 是 SRG 名（由 GTMThings 自己的 reobfJar 产出），dev 是 Mojmap，所以必须过 fg.deobf 重映射；
+    //   · fg.deobf 只认**单文件 artifact 依赖**（Gradle 的 files(...) 依赖 FG 明确不支持 deobf），
+    //     本地 jar 只能走 flatDir 记号 → 见 scripts/repositories.gradle 的 `dir "libs/jarjar"`。
+    // flatDir 记号是「组名:name:version」，组名被忽略，实际匹配的是 libs/jarjar/gtmthings-1.6.0-forge.jar。
+    // 原 curse 坐标 curse.maven:gtmthings-1104310:7712957 已删除：它的 POM（curse 那边自动生成的）
+    // 里**没有任何 dependencies**，删掉不丢传递依赖；它需要的 ae2 / guideme / ldlib / gtceu 在本文件里都单独声明了。
+    // ⚠️ 代价：dev 编译从此**硬依赖** libs/jarjar/gtmthings-1.6.0-forge.jar 存在。仓里没有就先
+    //    gradlew buildPatchedGtmThings（或 gradlew build / jar，那条链路会自动补建），否则解析失败。
+    implementation fg.deobf("jarjar:gtmthings-1.6.0:forge")//libs/jarjar/gtmthings-1.6.0-forge.jar（补丁版）
 
     //architectury (ftb 依赖)
     implementation fg.deobf("curse.maven:architectury-api-419699:5137938")//architectury-9.2.14-forge

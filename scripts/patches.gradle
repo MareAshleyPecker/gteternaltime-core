@@ -1,0 +1,409 @@
+// ================================================================
+//  补丁 jar 的构建 + 校验 —— 把两个「被补丁依赖」的构建并入 build / jar 主流程
+//
+//  本仓库内嵌的两个 jar 都必须来自**打过补丁**的构建，不能是官方原件：
+//    · GTM       → mavenLocal 里那份本地补丁构建（判据：jar 内 MultiblockConfigHook）
+//    · GTMThings → libs/jarjar/gtmthings-1.6.0-forge.jar（由 D:\java\GTMThings-1.6.0 构建而来）
+//  本文件负责：产物缺失就自动去外部检出构建，产物已在就「秒过」（快路径），并做轻量校验。
+//
+//  ⚠️ 绝不在本仓库内编译 GTM / GTMThings 的补丁源码（那要自己搞 reobf）：一律 Exec 驱动
+//     那两个检出自己的 gradlew —— 与 GTM 补丁一直以来的做法一致。
+//
+//  开关（-P）：
+//    gtetPatchBuild=true      强制重建补丁 jar（忽略快路径）
+//    gtetSkipPatchBuild=true  强制跳过外部构建（没装源码检出 / CI 用）。⚠️ GTMThings 不再有
+//                              「退回 curse 官方原件」这条退路（dev 依赖直接指向仓内补丁 jar），
+//                              所以跳过时若 libs/jarjar 里没有产物，本次构建会解析失败并 warn
+//
+//  ⚠️ 外部路径 / 版本 / JDK 全部写死。**升级时要同时改**：
+//      1) 本文件的 gtmVersion / gtmtVersion / patchJdk / gtmRepo / gtmtRepo；
+//      2) build.gradle 的 JarJar 段（读的正是本文件的 jarjar* ext 属性，数值不用重复改）；
+//      3) scripts/dependencies.gradle 里 gtmthings 的 flatDir 坐标（jarjar:gtmthings-<版本>:forge）
+//         与 gradle.properties 的 gtm_version。
+// ================================================================
+
+// ---------- 写死的常量（build.gradle 的 JarJar 段以这些 ext 属性为唯一来源） ----------
+def gtmVersion = '7.5.3'                       // 与 gradle.properties 的 gtm_version 必须一致
+def gtmtVersion = '1.6.0'                      // 与 scripts/dependencies.gradle 的 curse 坐标必须一致
+def gtmRepo = file('D:/java/GregTech-Modern-7.5.3-1.20.1')   // GTM 补丁源码检出（不在就跳过 + warn）
+def gtmtRepo = file('D:/java/GTMThings-1.6.0')               // GTMThings 补丁源码检出（不在就跳过 + warn）
+def patchJdk = 'D:/Java/zulu-17/zulu17.68.203-ca-jdk17.0.20.1-win_x64'  // 两个外部检出的构建 JDK 17
+
+ext.jarjarGtmVersion = gtmVersion
+ext.jarjarGtmtVersion = gtmtVersion
+ext.jarjarGtmName = "gtceu-${mc_version}-${gtmVersion}.jar"
+ext.jarjarGtmtName = "gtmthings-${gtmtVersion}-forge.jar"
+
+// GTM：只能取 mavenLocal 里那份本地补丁构建
+ext.jarjarGtmJar = file("${System.properties['user.home']}/.m2/repository/com/gregtechceu/gtceu/gtceu-${mc_version}/${gtmVersion}/gtceu-${mc_version}-${gtmVersion}.jar")
+
+// GTMThings：仓库内 vendored 的补丁 jar（由 buildPatchedGtmThings 自动刷新）
+ext.jarjarGtmtPatched = file("libs/jarjar/gtmthings-${gtmtVersion}-forge.jar")
+
+// ---------- GTMThings 的资源补齐（⚠️ 见文件末尾 buildPatchedGtmThings 上面那一大段说明） ----------
+// 补丁 jar 的资源补齐脚本：把 build 产物缺的 datagen json（blockstates / models）从下面这份
+// 仓内 vendored 的 release 资源参考里补进来。参考 zip 的来源与理由写在 modpatch/gtmthings-1.6.0/NOTES.md §8。
+def gtmtResfixScript = file('scripts/gtmt-resfix.ps1')
+def gtmtResfixReference = file('libs/gtmt/gtmthings-1.6.0-datagen-resources.zip')
+
+def forcePatchBuild = project.hasProperty('gtetPatchBuild') && project.property('gtetPatchBuild').toString().equalsIgnoreCase('true')
+def skipPatchBuild = project.hasProperty('gtetSkipPatchBuild') && project.property('gtetSkipPatchBuild').toString().equalsIgnoreCase('true')
+
+// 外部构建公共参数。内存吃紧的机器上这几项是**必须**的：外部检出的 NeoForm 反编译峰值约 600MB，
+// 堆给大了会 os::commit_memory(...) failed ... DOS error 1455 直接失败，所以 --no-daemon + 单 worker + 小堆。
+def externalBuildArgs = {
+    ['--console=plain', '--no-daemon',
+     "-Dorg.gradle.java.installations.paths=${patchJdk}",
+     '-Dorg.gradle.jvmargs=-Xmx512m',
+     '-Dorg.gradle.workers.max=1']
+}
+
+// ---------- 小工具：校验 jar 里的补丁标记 / 算 sha256 ----------
+def jarClassContains = { File jar, String entry, String needle ->
+    def zf = new java.util.zip.ZipFile(jar)
+    try {
+        def e = zf.getEntry(entry)
+        if (e == null) return false
+        def is = zf.getInputStream(e)
+        try {
+            return new String(is.bytes, 'ISO-8859-1').contains(needle)
+        } finally {
+            is.close()
+        }
+    } finally {
+        zf.close()
+    }
+}
+def jarHasClass = { File jar, String entry ->
+    def zf = new java.util.zip.ZipFile(jar)
+    try {
+        return zf.getEntry(entry) != null
+    } finally {
+        zf.close()
+    }
+}
+def sha256 = { File f ->
+    def md = java.security.MessageDigest.getInstance('SHA-256')
+    f.withInputStream { is ->
+        def buf = new byte[1 << 16]
+        int n
+        while ((n = is.read(buf)) > 0) md.update(buf, 0, n)
+    }
+    return md.digest().encodeHex().toString()
+}
+
+// ⚠️ 探针：补丁 GTMThings jar 里 assets 的规模。返回 [assets: 条目数, hasBlockModels: 是否有方块模型]。
+//    光验「是不是补丁版」不够：GTMThings 的 blockstates/*.json 与 models/block|item/*.json 全是 datagen
+//    产物（build.gradle 的 sourceSets.main.resources { srcDir 'src/generated/resources' }）。
+//    那个目录在检出里默认不存在，只跑 `gradlew build` 而不跑 datagen 得到的 jar 就不含这些 json，
+//    进游戏后 GTMT 的机器模型/材质会全变紫黑块（Exception loading blockstate definition:
+//    'gtmthings:blockstates/xxx.json' missing model for variant）。基线数字见
+//    modpatch/gtmthings-1.6.0/NOTES.md。
+def jarAssetsProbe = { File jar ->
+    def zf = new java.util.zip.ZipFile(jar)
+    try {
+        int assets = 0
+        boolean hasBlockModels = false
+        def en = zf.entries()
+        while (en.hasMoreElements()) {
+            def n = en.nextElement().getName()
+            if (n.startsWith('assets/')) assets++
+            if (n.startsWith('assets/gtmthings/models/block/')) hasBlockModels = true
+        }
+        return [assets: assets, hasBlockModels: hasBlockModels]
+    } finally {
+        zf.close()
+    }
+}
+
+def gtmMarkerEntry = 'com/gregtechceu/gtceu/api/machine/multiblock/MultiblockControllerMachine.class'
+def gtmMarker = 'MultiblockConfigHook'
+def gtmtMarkerEntries = ['com/hepdd/gtmthings/common/item/AdvancedTerminalBehavior$ItemIconWidget.class',
+                         'com/hepdd/gtmthings/common/item/AdvancedTerminalBehavior$TierGroups.class']
+
+// 补丁 GTMThings jar 的 assets 条目数下限。含 datagen 产物的正确基线是 1092
+// （见 modpatch/gtmthings-1.6.0/NOTES.md），留 12 条余量防止正常增删误报。
+def gtmtMinAssets = 1080
+
+// ---------- 资源补齐：调 scripts/gtmt-resfix.ps1 ----------
+// ⚠️ 用绝对路径找 Windows PowerShell：这台机器上 powershell.exe 不在 PATH 里（Get-Command 找不到），
+//    写 "powershell" 会 Task '...' 直接失败；System32\WindowsPowerShell\v1.0 是它的固定位置。
+def powershellCommand = {
+    def root = System.getenv('SystemRoot') ?: 'C:\\Windows'
+    def exe = new File(root, 'System32/WindowsPowerShell/v1.0/powershell.exe')
+    return exe.isFile() ? [exe.absolutePath] : ['powershell']
+}
+
+/**
+ * 跑一次补齐脚本：builtJar（外部构建产物）→ outJar（补齐后）。
+ * 已存在的条目一律跳过（保护补丁类与我们改过的 lang）、拒绝 .class、跳过 .cache/ 这三条硬约束
+ * 都在脚本里（见 scripts/gtmt-resfix.ps1 的头注释）。
+ */
+def applyGtmtResfix = { File builtJar, File outJar ->
+    if (!gtmtResfixScript.isFile()) {
+        throw new GradleException("[gtetcore] 找不到资源补齐脚本：${gtmtResfixScript}")
+    }
+    if (!gtmtResfixReference.isFile()) {
+        throw new GradleException("[gtetcore] 找不到补丁 GTMThings 的资源参考：${gtmtResfixReference}\n" +
+                "  这份 jar 是仓内 vendored 的（来源与理由见 modpatch/gtmthings-1.6.0/NOTES.md §8），" +
+                "丢了就没法给缺 datagen 资源的 build 产物补齐。")
+    }
+    outJar.parentFile.mkdirs()
+    project.exec { spec ->
+        spec.commandLine(powershellCommand() + ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+                                                gtmtResfixScript.absolutePath,
+                                                '-PatchedJar', builtJar.absolutePath,
+                                                '-ReferenceJar', gtmtResfixReference.absolutePath,
+                                                '-OutJar', outJar.absolutePath])
+        spec.workingDir project.projectDir
+    }
+}
+
+/**
+ * 补齐 + 体检 + 落到目标路径。体检不过就抛（**不静默降级**：宁可不覆盖 libs/jarjar，也不留一份
+ * 会让 GTMT 模型全变紫黑块的 jar）。目标路径只在体检通过后才被写。
+ */
+def resfixAndVerifyGtmt = { File builtJar, File dstJar ->
+    def tmp = project.file("${project.buildDir}/tmp/gtmt-resfix/resfix-out.jar")
+    applyGtmtResfix(builtJar, tmp)
+
+    def probe = jarAssetsProbe(tmp)
+    if (probe.assets < gtmtMinAssets || !probe.hasBlockModels) {
+        throw new GradleException("[gtetcore] 补齐后的 GTMThings jar 仍然缺 datagen 资源：" +
+                "assets 条目 = ${probe.assets}（要求 ≥ ${gtmtMinAssets}），方块模型目录存在 = ${probe.hasBlockModels}\n" +
+                "  输入（外部构建产物）：${builtJar}\n" +
+                "  资源参考：${gtmtResfixReference}\n" +
+                "  也就是说：build 产物缺资源 + 仓内参考里也没有可补的条目。\n" +
+                "  查：① 参考 zip 是不是被清掉了（应含 782 条 json，来源见 NOTES §8）；\n" +
+                "      ② build 产物是不是根本不完整（在 ${gtmtRepo} 看 build/libs）。\n" +
+                "  libs/jarjar 里那份**没有被覆盖**，仍是上一份通过体检的产物。")
+    }
+
+    dstJar.parentFile.mkdirs()
+    java.nio.file.Files.copy(tmp.toPath(), dstJar.toPath(),
+            java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+    logger.lifecycle('[gtetcore] 补丁 GTMThings 已就绪（资源补齐后）：{}  assets={} sha256={}',
+            dstJar, probe.assets, sha256(dstJar))
+}
+
+// 校验两个 jar 是不是补丁版，返回问题列表（空 = 都是补丁版）。
+// collectJarjarDeps 拿它 warn，verifyPatchedJarjar 拿它报错 —— 只有这一份判据。
+ext.jarjarPatchProblems = {
+    def problems = []
+    if (!jarjarGtmJar.isFile()) {
+        problems << "缺少补丁 GTM jar：${jarjarGtmJar}"
+    } else if (!jarClassContains(jarjarGtmJar, gtmMarkerEntry, gtmMarker)) {
+        problems << "GTM jar 里没有 ${gtmMarker} 标记，说明 mavenLocal 里这份不是补丁构建：${jarjarGtmJar}"
+    }
+    if (!jarjarGtmtPatched.isFile()) {
+        problems << "缺少补丁 GTMThings jar：${jarjarGtmtPatched}"
+    } else {
+        if (!gtmtMarkerEntries.every { jarHasClass(jarjarGtmtPatched, it) }) {
+            problems << "GTMThings jar 里找不到 GTO 样式补丁的内部类，说明这份不是补丁构建：${jarjarGtmtPatched}"
+        }
+        // ⚠️ 资源完整性：缺 datagen 产物的 jar 一样能编译能加载，但机器模型会全变紫黑块，
+        //    所以这里必须当成硬错误拦住，不能只 warn。
+        def assetsProbe = jarAssetsProbe(jarjarGtmtPatched)
+        if (assetsProbe.assets < gtmtMinAssets || !assetsProbe.hasBlockModels) {
+            problems << ("补丁 GTMThings jar 缺 datagen 资源（assets 条目 = ${assetsProbe.assets}，要求 ≥ ${gtmtMinAssets}；" +
+                    "方块模型目录存在 = ${assetsProbe.hasBlockModels}）。" +
+                    "补丁 jar 缺 datagen 资源，需先跑 GTMThings 的 datagen（在 ${gtmtRepo} 跑 gradlew runData，" +
+                    "产物落 src/generated/resources）或补齐资源：${jarjarGtmtPatched}")
+        }
+    }
+    return problems
+}
+
+// ================================================================
+//  buildPatchedGtm —— 外部检出构建补丁 GTM 并 publishToMavenLocal
+//  jar / build 需要它时自动触发；mavenLocal 里已有补丁 jar 就 SKIPPED（快路径）
+// ================================================================
+tasks.register('buildPatchedGtm', Exec) {
+    group = 'gtetcore patch'
+    description = '在外部 GTM 检出构建补丁版并装进 mavenLocal（缺失时由 collectJarjarDeps 自动触发）'
+
+    workingDir gtmRepo
+    environment 'JAVA_HOME', patchJdk
+    // ⚠️ 外部检出的 gradle.properties 里有一行失效的 org.gradle.java.home（指向不存在的 jdk-17.0.19），
+    //    必须用命令行 -D 覆盖，否则一启动就 "Java home supplied is invalid"
+    commandLine([project.file("${gtmRepo}/gradlew.bat").absolutePath, 'build', 'publishToMavenLocal',
+                 "-Dorg.gradle.java.home=${patchJdk}"] + externalBuildArgs())
+
+    // 自己判退出码，好给出「怎么办」的提示；失败照样让本次构建失败（不要悄悄产出一个没内嵌 GTM 的包）
+    ignoreExitValue = true
+
+    inputs.property('patchedGtmVersion', gtmVersion)
+    outputs.file(jarjarGtmJar)
+
+    onlyIf {
+        if (skipPatchBuild) {
+            logger.lifecycle('[gtetcore] -PgtetSkipPatchBuild=true：跳过 GTM 补丁构建')
+            return false
+        }
+        if (!gtmRepo.isDirectory()) {
+            logger.warn('[gtetcore] 未找到 GTM 补丁源码检出，跳过补丁构建：{}', gtmRepo)
+            return false
+        }
+        if (forcePatchBuild) {
+            logger.lifecycle('[gtetcore] -PgtetPatchBuild=true：强制重建补丁 GTM')
+            return true
+        }
+        if (jarjarGtmJar.isFile()) {
+            logger.lifecycle('[gtetcore] 补丁 GTM jar 已存在，跳过外部构建（-PgtetPatchBuild=true 可强制重建）：{}', jarjarGtmJar)
+            return false
+        }
+        logger.lifecycle('[gtetcore] mavenLocal 缺补丁 GTM jar，开始外部构建：{}', gtmRepo)
+        return true
+    }
+
+    doLast {
+        def rc = executionResult.get().exitValue
+        if (rc != 0) {
+            throw new GradleException("[gtetcore] 外部 GTM 构建失败（exit ${rc}）：${gtmRepo}\n" +
+                    "  这次为了不产出一个「没内嵌补丁 GTM」的包，直接让构建失败。\n" +
+                    "  只想先出包：-PgtetSkipPatchBuild=true（会 warn 并跳过内嵌）")
+        }
+        if (!jarjarGtmJar.isFile()) {
+            throw new GradleException("[gtetcore] GTM 外部构建成功但 mavenLocal 里仍没有 ${jarjarGtmJar}（检查外部检出的 publishToMavenLocal）")
+        }
+        logger.lifecycle('[gtetcore] 补丁 GTM 已就绪：{}  sha256={}', jarjarGtmJar, sha256(jarjarGtmJar))
+    }
+}
+
+// ================================================================
+//  buildPatchedGtmThings —— 外部检出 spotlessApply + build，补齐资源后拷进 libs/jarjar/
+//  带 Spotless(eclipse formatter) 检查，所以必须先 spotlessApply 再 build
+//
+//  ⚠️⚠️ 为什么「build 之后必须补资源」：`build` 本身不产 datagen 资源。
+//      GTMThings 的 blockstates/ 与 models/（block/machine + item）全是 datagen 产物，落在
+//      `src/generated/resources`（build.gradle: `sourceSets.main.resources { srcDir 'src/generated/resources' }`），
+//      而那个目录在 D:\java\GTMThings-1.6.0 里**根本不存在**（没跑过 runData）。所以只跑 build
+//      得到的 jar 一定少 782 条资源（实测：456 条目 / assets 310，正确基线 1238 / 1092），
+//      进游戏后 GTMT 的机器模型/材质全变紫黑块
+//      （Exception loading blockstate definition: 'gtmthings:blockstates/xxx.json' missing model for variant）。
+//      因此这里把步骤固化成：build → scripts/gtmt-resfix.ps1 补齐 → 体检 → 才覆盖 libs/jarjar。
+//      体检不过 = 任务失败（不静默降级），libs/jarjar 保持上一份通过体检的产物。
+//
+//  历史：2026-09-13 之前只有「build → 拷贝 → warn」，那次的残缺 jar 是事后手工从 curse 原件
+//      补齐的（脚本当时在 build\tmp 下，`gradlew clean` 就会删掉）。现在补齐是构建流程的一部分。
+// ================================================================
+tasks.register('buildPatchedGtmThings', Exec) {
+    group = 'gtetcore patch'
+    description = '在外部 GTMThings 检出 spotlessApply + build 补丁版，补齐 datagen 资源后拷到 libs/jarjar/'
+
+    workingDir gtmtRepo
+    environment 'JAVA_HOME', patchJdk
+    commandLine([project.file("${gtmtRepo}/gradlew.bat").absolutePath, 'spotlessApply', 'build'] + externalBuildArgs())
+    ignoreExitValue = true   // 退出码自己判，好给出「怎么办」的提示
+
+    inputs.property('patchedGtmtVersion', gtmtVersion)
+    outputs.file(jarjarGtmtPatched)
+
+    onlyIf {
+        if (skipPatchBuild) {
+            logger.lifecycle('[gtetcore] -PgtetSkipPatchBuild=true：跳过 GTMThings 补丁构建')
+            return false
+        }
+        if (!gtmtRepo.isDirectory()) {
+            logger.warn('[gtetcore] 未找到 GTMThings 补丁源码检出，跳过补丁构建：{}', gtmtRepo)
+            return false
+        }
+        if (forcePatchBuild) {
+            logger.lifecycle('[gtetcore] -PgtetPatchBuild=true：强制重建补丁 GTMThings')
+            return true
+        }
+        if (jarjarGtmtPatched.isFile()) {
+            logger.lifecycle('[gtetcore] 补丁 GTMThings jar 已存在，跳过外部构建（-PgtetPatchBuild=true 可强制重建）：{}', jarjarGtmtPatched)
+            return false
+        }
+        logger.lifecycle('[gtetcore] libs/jarjar 缺补丁 GTMThings jar，开始外部构建：{}', gtmtRepo)
+        return true
+    }
+
+    doLast {
+        def rc = executionResult.get().exitValue
+        if (rc != 0) {
+            throw new GradleException("[gtetcore] 外部 GTMThings 构建失败（exit ${rc}）：${gtmtRepo}\n" +
+                    "  常见原因：补丁文件格式不合 Spotless（已经先跑 spotlessApply，报错说明是别的问题，看上面输出）。\n" +
+                    "  只想先出包：-PgtetSkipPatchBuild=true（会 warn 并跳过内嵌）")
+        }
+        def built = project.file("${gtmtRepo}/build/libs/gtmthings-${gtmtVersion}.jar")
+        if (!built.isFile()) {
+            def ls = project.file("${gtmtRepo}/build/libs").listFiles()?.collect { it.name }?.join(', ')
+            throw new GradleException("[gtetcore] GTMThings 构建结束但没找到产物 ${built}（build/libs 现有：${ls}）")
+        }
+        // ⚠️ 补齐 + 体检 + 落盘：体检不过就抛，且**不覆盖** libs/jarjar 里已有的那份
+        resfixAndVerifyGtmt(built, jarjarGtmtPatched)
+    }
+}
+
+// ================================================================
+//  resfixGtmtJar —— 只做「补齐 + 体检 + 落盘」，不跑外部构建
+//  用于：① 已经手工在 GTMThings 检出 build 过一次，想把它补齐后收进 libs/jarjar；
+//        ② 验证补齐流程本身（-PgtmtBuiltJar=... -PgtmtResfixOut=... 换成残缺 jar 与临时输出，
+//           不动 libs/jarjar）—— 见 modpatch/gtmthings-1.6.0/NOTES.md §8.7
+// ================================================================
+tasks.register('resfixGtmtJar') {
+    group = 'gtetcore patch'
+    description = '把 GTMThings 的 build 产物补齐 datagen 资源后落到 libs/jarjar/（-PgtmtBuiltJar= / -PgtmtResfixOut= 可覆盖输入输出）'
+
+    doLast {
+        File built = project.hasProperty('gtmtBuiltJar')
+                ? project.file(project.property('gtmtBuiltJar').toString())
+                : project.file("${gtmtRepo}/build/libs/gtmthings-${gtmtVersion}.jar")
+        File dst = project.hasProperty('gtmtResfixOut')
+                ? project.file(project.property('gtmtResfixOut').toString())
+                : jarjarGtmtPatched
+        if (!built.isFile()) {
+            throw new GradleException("[gtetcore] 找不到要补齐的 build 产物：${built}\n" +
+                    "  先在 ${gtmtRepo} 跑 gradlew spotlessApply build（或 gradlew buildPatchedGtmThings），" +
+                    "或用 -PgtmtBuiltJar=<jar 路径> 指定。")
+        }
+        logger.lifecycle('[gtetcore] 补齐 GTMThings build 产物：{} -> {}', built, dst)
+        resfixAndVerifyGtmt(built, dst)
+    }
+}
+
+// 显式排序：GTMThings 先跑（快、产物落在仓库内），GTM 后跑（外部大构建，可能失败）——
+// 这样即使 GTM 那步把构建搞挂，GTMThings 的补丁 jar 也已经刷新落盘了。
+// （不写的话 Gradle 按任务名字母序跑，反而先跑 buildPatchedGtm）
+tasks.named('buildPatchedGtm').configure { mustRunAfter 'buildPatchedGtmThings' }
+
+// ⚠️ 注意 GTMThings 编译期用的 GTM 版本是**它自己** gradle.properties 的 gtceu_version（当前 7.5.2），
+//    不是本仓库随包分发的补丁版 7.5.3。所以补丁源码里不能直接用「只有 7.5.3 / GTET 补丁才有」的 API
+//    （例如 MultiblockState.clearCache()：7.5.2 没有），否则 :compileJava 直接失败。
+//    要做版本适配（反射/兼容分支，见 GTMThings 的 AdvancedBlockPattern.clearCache），
+//    或者在下面的 commandLine 里加 "-Pgtceu_version=${gtmVersion}" 让它改用 mavenLocal 的补丁构建编译（未实测）。
+
+// ================================================================
+//  verifyPatchedJarjar —— 只校验不构建：内嵌的两个 jar 到底是不是补丁版
+//  单独跑：gradlew verifyPatchedJarjar （CI / 换机后自检用）
+// ================================================================
+tasks.register('verifyPatchedJarjar') {
+    group = 'gtetcore patch'
+    description = '校验两个补丁 jar 是否真的是补丁版（不做任何外部构建）'
+
+    doLast {
+        def problems = jarjarPatchProblems()
+        if (!problems.isEmpty()) {
+            // ⚠️ 修复提示必须分情况：资源问题**不能**靠「只重建补丁 jar」解决 ——
+            //    外部构建只跑 build 不跑 datagen，重建出来的产物照样缺这些 json；现在
+            //    buildPatchedGtmThings / resfixGtmtJar 会在覆盖 libs/jarjar **之前**自动补齐，
+            //    所以这条提示是「补齐链路本身也坏了」时才该看到的。
+            def hints = []
+            if (problems.any { it.contains('datagen') }) {
+                hints << ('资源缺失：跑 gradlew resfixGtmtJar，让它从仓内参考 ' +
+                        'libs/gtmt/gtmthings-1.6.0-datagen-resources.zip 把缺的 datagen 资源补进 libs/jarjar ' +
+                        '（来源与理由见 modpatch/gtmthings-1.6.0/NOTES.md §8）；也可以在 D:\\java\\GTMThings-1.6.0 ' +
+                        '先跑 gradlew runData 生成 src/generated/resources 再重建')
+            }
+            if (problems.any { !it.contains('datagen') }) {
+                hints << '补丁 jar 缺失/不是补丁版：跑 gradlew buildPatchedGtm buildPatchedGtmThings（或直接 gradlew build 让它自动补建）'
+            }
+            throw new GradleException("[gtetcore] 补丁 jar 校验失败：\n  - ${problems.join('\n  - ')}\n" +
+                    "  修：${hints.join('；')}")
+        }
+        logger.lifecycle('[gtetcore] [OK] 补丁 GTM：{}  sha256={}', jarjarGtmJar, sha256(jarjarGtmJar))
+        logger.lifecycle('[gtetcore] [OK] 补丁 GTMThings：{}  sha256={}', jarjarGtmtPatched, sha256(jarjarGtmtPatched))
+    }
+}

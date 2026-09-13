@@ -18,6 +18,8 @@ out/
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+# JVM 崩溃重放日志（runData OOM 之类会落在工程根目录）
+replay_pid*.log
 
 # Common working directory
 run
@@ -30,3 +32,6 @@ run-data/
 
 # Generated resources (committed intentionally)
 # src/generated/
+
+# 反编译参考产物（例如 net/minecraft/server/level/ServerPlayer.java），只在本机看，不进仓库
+net/

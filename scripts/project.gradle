@@ -10,6 +10,9 @@ base {
 }
 
 java {
+    // ⚠️ 必须是 17：MC 1.20.1 / Forge 47 跑在 Java 17 上，编成 21 字节码（major 65）在玩家机器上会 UnsupportedClassVersionError。
+    // 这里同时决定 javac 的 target，必须与 build.gradle 里 Kotlin 的 jvmTarget = 17 一致，否则 Gradle 会报
+    // 「Inconsistent JVM-target compatibility」直接拒绝编译。
     toolchain.languageVersion = JavaLanguageVersion.of(17)
 }
 

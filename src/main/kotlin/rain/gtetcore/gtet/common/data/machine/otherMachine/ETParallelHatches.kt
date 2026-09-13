@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.data.machine
+package rain.gtetcore.gtet.common.data.machine.otherMachine
 
 import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.GTValues
@@ -8,10 +8,8 @@ import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
-import com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTieredHullMachineModel
 import net.minecraft.network.chat.Component
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETParallelHatchPartMachine
 import rain.gtetcore.gtet.util.lang.LangUtil
 

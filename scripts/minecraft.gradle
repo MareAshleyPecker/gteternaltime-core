@@ -19,8 +19,20 @@ minecraft {
             // 可选级别参考：https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
             property 'forge.logging.console.level', 'debug'
 
-            // 限制游戏堆内存，避免 OOM（与 Gradle/Kotlin 守护进程争抢内存）
-            jvmArgs '-Xmx6G', '-Xms512M', '-XX:ReservedCodeCacheSize=256m'
+            // 游戏堆上限 —— 这一条是**唯一**决定 runClient 堆的地方（实测：
+            // runClient 最终 jvmArgs 尾段 = `-Xmx6G -Xms256M -XX:ReservedCodeCacheSize=256m`）。
+            //
+            // ⚠️ 6G 是页面文件扩容之后才敢用的值。以前页面文件在 C 盘、上限 10G 且峰值打到 9999/10000，
+            //    提交上限只有 ~26G，于是 6G 堆会稳定死在进游戏后 60~110 秒：`run/hs_err_pid*.log`
+            //    那 4 份全是 `Native memory allocation (mmap) failed to map 5xx~8xx MB. Error detail: G1 virtual space`。
+            //    —— 那不是堆不够，是**系统提交内存被多进程打满**（客户端堆 + 构建守护进程 + 常驻 IDE）。
+            //    现在页面文件挪到 D 盘（初始 19G / 上限 20G），提交上限 ≈ 34.4G、可用 ~16G，6G 堆有充足余量。
+            //    若这个错再次出现，先看 `Get-CimInstance Win32_OperatingSystem` 的 FreeVirtualMemory，
+            //    而不是继续降 -Xmx（降堆只是把问题推给 GC 频率）。
+            // -Xms 保持在 256M：不必启动就 commit 6G，启动更快，也不会在刚要进世界时挤掉别的进程。
+            // ⚠️ 客户端堆**不设** -XX:MaxMetaspaceSize：Forge/Mixin 在 dev 下会生成大量类，
+            //    把 metaspace 卡死会换来更难查的 `OutOfMemoryError: Metaspace`。
+            jvmArgs '-Xmx6G', '-Xms256M', '-XX:ReservedCodeCacheSize=256m'
 
             mods {
                 "${mod_id}" {

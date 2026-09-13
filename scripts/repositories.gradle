@@ -3,6 +3,12 @@ repositories {
     flatDir {
         dir "libs"
     }
+    // 补丁 jar 的 flatDir 仓库：记号是「仓库名:name:version」，flatDir 忽略 group、只按
+    // <name>-<version>.jar 找文件 —— 所以这里的 dir 必须是 jar 所在的那一层目录。
+    // ⚠️ 不能把这一条并进上面的 `dir "libs"`：flatDir 不递归子目录，libs/jarjar/ 里的 jar 找不到。
+    flatDir {
+        dir "libs/jarjar"
+    }
     mavenCentral()
 
     maven {

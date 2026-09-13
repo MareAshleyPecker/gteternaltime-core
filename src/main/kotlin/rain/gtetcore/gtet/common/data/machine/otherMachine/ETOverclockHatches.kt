@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.data.machine
+package rain.gtetcore.gtet.common.data.machine.otherMachine
 
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.data.RotationState
@@ -11,7 +11,6 @@ import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTi
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.api.capability.ETPartAbility
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.machine.multiblock.part.OverclockHatchPartMachine
 import rain.gtetcore.gtet.util.lang.LangUtil
 import kotlin.math.floor
@@ -106,17 +105,28 @@ object ETOverclockHatches {
      * 必须靠后缀区分（`_max` 的写法与 [ETThreadHatches] 的 `thread_hatch_max` 一致）。
      */
     val VARIANTS: List<OverclockHatchVariant> = listOf(
-        OverclockHatchVariant("overclock_hatch_8x_lossy4"       , 8 , 4.0, GTValues.ZPM),
-        OverclockHatchVariant("overclock_hatch_8x_lossy2"       , 8 , 2.0, GTValues.UV ),
-        OverclockHatchVariant("overclock_hatch_8x_perfect"      , 8 , 1.0, GTValues.UHV),
-        OverclockHatchVariant("overclock_hatch_8x_saving"       , 8 , 0.5, GTValues.UEV),
-
-        OverclockHatchVariant("overclock_hatch_16x_lossy4"      , 16, 4.0, GTValues.UIV ),
-        OverclockHatchVariant("overclock_hatch_16x_lossy2"      , 16, 2.0, GTValues.UXV ),
-        OverclockHatchVariant("overclock_hatch_16x_perfect"     , 16, 1.0, GTValues.OpV ),
-        OverclockHatchVariant("overclock_hatch_16x_saving_max"  , 16, 0.5, GTValues.MAX ),
-
-
+        //UV
+        OverclockHatchVariant("overclock_hatch_4x_lossy4"       , 4  , 8.0, GTValues.ZPM),
+        OverclockHatchVariant("overclock_hatch_4x_lossy2"       , 4  , 4.0, GTValues.UV ),
+        OverclockHatchVariant("overclock_hatch_4x_perfect"      , 4  , 2.0, GTValues.UHV),
+        OverclockHatchVariant("overclock_hatch_4x_saving"       , 4  , 1.0, GTValues.UEV),
+        //UHV
+        OverclockHatchVariant("overclock_hatch_16x_lossy4"      , 16 , 8.0, GTValues.UV  ),
+        OverclockHatchVariant("overclock_hatch_16x_lossy2"      , 16 , 4.0, GTValues.UHV ),
+        OverclockHatchVariant("overclock_hatch_16x_perfect"     , 16 , 2.0, GTValues.UEV ),
+        OverclockHatchVariant("overclock_hatch_16x_saving"      , 16 , 1.0, GTValues.UIV ),
+        //UEV
+        OverclockHatchVariant("overclock_hatch_64x_lossy4"      , 64 , 8.0, GTValues.UHV),
+        OverclockHatchVariant("overclock_hatch_64x_lossy2"      , 64 , 4.0, GTValues.UEV),
+        OverclockHatchVariant("overclock_hatch_64x_perfect"     , 64 , 2.0, GTValues.UIV),
+        OverclockHatchVariant("overclock_hatch_64x_saving"      , 64 , 1.0, GTValues.UXV),
+        //UIV
+        OverclockHatchVariant("overclock_hatch_256x_lossy4"     , 256, 4.0, GTValues.UEV ),
+        OverclockHatchVariant("overclock_hatch_256x_lossy2"     , 256, 2.0, GTValues.UIV ),
+        OverclockHatchVariant("overclock_hatch_256x_perfect"    , 256, 1.0, GTValues.UXV ),
+        OverclockHatchVariant("overclock_hatch_256x_saving"     , 256, 0.5, GTValues.OpV ),
+        //MAX
+        OverclockHatchVariant("overclock_hatch_1024x_saving_max", 1024,0.25, GTValues.MAX)
     )
 
     /**
@@ -177,6 +187,7 @@ object ETOverclockHatches {
             .tooltips(
                 Component.translatable("gtceu.part_sharing.disabled")
             )
+            .tooltips()
             .register()
     }
 
