@@ -25,13 +25,13 @@ ___
 ### 中文
 
 - [开发指南](README/zh_CN/开发.md)
-- [GTM 开发教程（编写中）](README/zh_CN/GTM开发教程(编写中).md)
+- [GTET 开发教程（编写中）](README/zh_CN/GTM开发教程(编写中).md)
 - [IDEA 使用教程](README/zh_CN/IDEA使用教程.md)
 
 ### English
 
 - [Development Guide](README/en_US/Development.md)
-- [GTM Dev Tutorial (WIP)](README/en_US/GTM-Dev-Tutorial-(WIP).md)
+- [GTET Dev Tutorial (WIP)](README/en_US/GTM-Dev-Tutorial-(WIP).md)
 - [IDEA Guide](README/en_US/IDEA-Guide.md)
 
 ---
