@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/block",
   "loader": "gtceu:machine",
-  "machine": "gtetcore:overclock_hatch_8x_perfect",
+  "machine": "gtetcore:overclock_hatch_64x_lossy4",
   "replaceable_textures": [
     "bottom",
     "top",

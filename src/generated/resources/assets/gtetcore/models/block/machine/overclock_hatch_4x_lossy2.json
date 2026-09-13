@@ -1,7 +1,7 @@
 {
   "parent": "minecraft:block/block",
   "loader": "gtceu:machine",
-  "machine": "gtetcore:overclock_hatch_8x_lossy4",
+  "machine": "gtetcore:overclock_hatch_4x_lossy2",
   "replaceable_textures": [
     "bottom",
     "top",
@@ -10,7 +10,7 @@
   "variants": {
     "is_formed=false,recipe_logic_status=idle": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/zpm",
+        "parent": "gtceu:block/casings/voltage/uv",
         "textures": {
           "overlay_front": "gtocore:block/machines/overclock_hatch/overclock_hatch_mk1/overlay_front"
         }
@@ -18,7 +18,7 @@
     },
     "is_formed=false,recipe_logic_status=suspend": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/zpm",
+        "parent": "gtceu:block/casings/voltage/uv",
         "textures": {
           "overlay_front": "gtocore:block/machines/overclock_hatch/overclock_hatch_mk1/overlay_front"
         }
@@ -26,7 +26,7 @@
     },
     "is_formed=false,recipe_logic_status=waiting": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/zpm",
+        "parent": "gtceu:block/casings/voltage/uv",
         "textures": {
           "overlay_front": "gtocore:block/machines/overclock_hatch/overclock_hatch_mk1/overlay_front"
         }
@@ -34,7 +34,7 @@
     },
     "is_formed=false,recipe_logic_status=working": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/zpm",
+        "parent": "gtceu:block/casings/voltage/uv",
         "textures": {
           "overlay_front": "gtocore:block/machines/overclock_hatch/overclock_hatch_mk1/overlay_front"
         }
@@ -42,7 +42,7 @@
     },
     "is_formed=true,recipe_logic_status=idle": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/zpm",
+        "parent": "gtceu:block/casings/voltage/uv",
         "textures": {
           "overlay_front": "gtocore:block/machines/overclock_hatch/overclock_hatch_mk1/overlay_front"
         }
@@ -50,7 +50,7 @@
     },
     "is_formed=true,recipe_logic_status=suspend": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/zpm",
+        "parent": "gtceu:block/casings/voltage/uv",
         "textures": {
           "overlay_front": "gtocore:block/machines/overclock_hatch/overclock_hatch_mk1/overlay_front"
         }
@@ -58,7 +58,7 @@
     },
     "is_formed=true,recipe_logic_status=waiting": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/zpm",
+        "parent": "gtceu:block/casings/voltage/uv",
         "textures": {
           "overlay_front": "gtocore:block/machines/overclock_hatch/overclock_hatch_mk1/overlay_front"
         }
@@ -66,7 +66,7 @@
     },
     "is_formed=true,recipe_logic_status=working": {
       "model": {
-        "parent": "gtceu:block/casings/voltage/zpm",
+        "parent": "gtceu:block/casings/voltage/uv",
         "textures": {
           "overlay_front": "gtocore:block/machines/overclock_hatch/overclock_hatch_mk1/overlay_front"
         }
