@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import rain.gtetcore.gtet.api.registrate.OnlyETreg;
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs;
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs;
 
 /**
  * 在 GTCEu 注册流体容器（桶）前设置 GTET 的 FLUID 标签，确保流体桶进入正确物品栏。

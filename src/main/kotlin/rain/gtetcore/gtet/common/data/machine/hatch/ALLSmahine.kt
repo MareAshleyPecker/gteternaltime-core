@@ -1,25 +1,27 @@
-package rain.gtetcore.gtet.common.data.machine.samplemachine
+package rain.gtetcore.gtet.common.data.machine.hatch
 
 import com.gregtechceu.gtceu.api.machine.MachineDefinition
 import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs
-import rain.gtetcore.gtet.common.data.machine.otherMachine.ETOverclockHatches
-import rain.gtetcore.gtet.common.data.machine.otherMachine.ETParallelHatches
-import rain.gtetcore.gtet.common.data.machine.otherMachine.ETThreadHatches
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
+import rain.gtetcore.gtet.common.data.machine.hatch.ETOverclockHatches
+import rain.gtetcore.gtet.common.data.machine.hatch.ETParallelHatches
+import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches
 
 /**
- * 单方块机器与部件仓（超频仓 / 线程仓 / 并行仓）的注册入口，进 [GTETCreativeModeTabs.MACHINE] 页。
+ * 三种**部件仓**（超频仓 / 线程仓 / 并行仓）的注册入口，进 [GTETCreativeModeTabs.MACHINE] 页。
  *
- * ⚠️ 要在 `muiltmachine.ALLMmchine` 之前调用：多方块测试机注册时要读线程仓的能力方块表。
+ * ⚠️ 它**不含单方块机器** —— 名字里的 Machine 是历史叫法，这里只有部件仓。
+ *
+ * ⚠️ 要在 `multiblock.ALLMmchine` 之前调用：多方块测试机注册时要读线程仓的能力方块表。
  */
 object ALLSmahine {
 
-    /** 注册单方块机器与部件仓。 */
+    /** 注册三种部件仓。 */
     fun init() {
         registerMachines()
     }
 
-    /** 部件仓 + 单方块机器 → [GTETCreativeModeTabs.MACHINE]。 */
+    /** 三种部件仓 → [GTETCreativeModeTabs.MACHINE]。 */
     fun registerMachines() {
         ETRegistrate.creativeModeTab(GTETCreativeModeTabs.MACHINE)
         OVERCLOCK_HATCHES = ETOverclockHatches.register(ETRegistrate)
@@ -31,7 +33,7 @@ object ALLSmahine {
     var OVERCLOCK_HATCHES: List<MachineDefinition> = emptyList()
         private set
 
-    /** 「线程仓」部件方块（UV ~ MAX）。 */
+    /** 「线程仓」部件方块（ZPM ~ MAX）。 */
     var THREAD_HATCHES: List<MachineDefinition> = emptyList()
         private set
 

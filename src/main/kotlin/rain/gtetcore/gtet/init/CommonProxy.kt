@@ -16,7 +16,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
 import rain.gtetcore.gtet.config.GTETConfig
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.data.block.ETBlock
 import rain.gtetcore.gtet.common.data.item.ETItems
 import rain.gtetcore.gtet.common.data.machine.MachineRegister
@@ -24,11 +24,11 @@ import rain.gtetcore.gtet.common.item.recipe.FluidCountSlotWidget
 import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget
 import rain.gtetcore.gtet.common.item.terminal.TerminalLang
 import rain.gtetcore.gtet.common.item.tool.ToolNetwork
-import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
+import rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeStatus
 import rain.gtetcore.gtet.common.machine.multiblock.ETModularMachine
 import rain.gtetcore.gtet.common.machine.multiblock.ETModuleHostMachine
 import rain.gtetcore.gtet.common.machine.multiblock.ETModuleMachine
-import rain.gtetcore.gtet.common.material.ETElementMaterials
+import rain.gtetcore.gtet.common.data.material.ETElementMaterials
 import rain.gtetcore.gtet.data.GTETDatagen
 import rain.gtetcore.gtet.integration.jade.GTETJadeLang
 

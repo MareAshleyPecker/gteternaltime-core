@@ -12,7 +12,7 @@ import com.gregtechceu.gtceu.common.data.GTRecipeModifiers
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes
 import net.minecraft.network.chat.Component
 import rain.gtetcore.gtet.api.capability.ETPartAbility
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.machine.multiblock.TestMultiblockMachine
 import rain.gtetcore.gtet.util.lang.LangUtil
 

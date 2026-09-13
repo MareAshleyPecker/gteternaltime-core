@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.item
+package rain.gtetcore.gtet.common.item.tool
 
 import com.gregtechceu.gtceu.api.item.ComponentItem
 import com.gregtechceu.gtceu.api.item.component.IInteractionItem

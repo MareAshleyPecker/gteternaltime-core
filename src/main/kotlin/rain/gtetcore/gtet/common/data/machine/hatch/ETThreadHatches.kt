@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.data.machine.otherMachine
+package rain.gtetcore.gtet.common.data.machine.hatch
 
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.data.RotationState
@@ -22,8 +22,8 @@ import rain.gtetcore.gtet.util.lang.LangUtil
  * 原样传给 [ThreadHatchPartMachine] —— 表里写 4 就真的是 4，
  * 不用再去别处翻一个公式算它。
  *
- * ⚠️ 线程数与 tier 必须自己对上（4↔UV、8↔UHV、16↔UEV、32↔UIV、64↔UXV、128↔OpV、256↔MAX，
- * 每档相对上一档翻倍、比 LuV 起每级翻倍的那条旧规则逐档一致）；加档时这一行要一起改，
+ * ⚠️ 线程数与 tier 必须自己对上（4↔ZPM、8↔UV、16↔UHV、32↔UEV、64↔UIV、128↔UXV、256↔OpV、512↔MAX，
+ * 从 ZPM 起每档相对上一档翻倍）；加档时这一行要一起改，
  * 别只改一半。名字里的线程数与本档上限取自**同一个** `threads`，所以这两处不会打架。
  *
  * @param id      注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`；
@@ -80,7 +80,7 @@ private fun overlayFor(v: ThreadHatchVariant): ResourceLocation =
  * 说明性的多行 tooltip 与部件面板的说明行都已删除（清单见 [registerOne] 的注释）。
  *
  * ## 接线位置
- * 本文件的 [register] 由 `rain.gtetcore.gtet.common.data.machine.muiltmachine.ALLMmchine.init()`
+ * 本文件的 [register] 由 `rain.gtetcore.gtet.common.data.machine.multiblock.ALLMmchine.init()`
  * 调用一次（结果存进 `ALLMmchine.THREAD_HATCHES`），走的是与 [ETOverclockHatches] 完全相同的那条路径
  * —— 那里也是机器表 `unfreeze()` / `freeze()` 的窗口所在，不要另找入口重复注册。
  *
@@ -95,7 +95,7 @@ private fun overlayFor(v: ThreadHatchVariant): ResourceLocation =
 object ETThreadHatches {
 
     /**
-     * 全部线程仓变体：UV 起每级翻倍，一路到 MAX。
+     * 全部线程仓变体：ZPM 起每级翻倍，一路到 MAX。
      *
      * 下表「线程数」那一列就是 [ThreadHatchVariant.threads] 的字面值
      * ```kotlin
@@ -114,8 +114,9 @@ object ETThreadHatches {
      * ⚠️ 顺序即注册顺序（影响物品栏与存档里的方块出现次序），加档请往末尾追加、
      * 不要重排既有行、也不要改既有 id。
      *
-     * LuV/ZPM 不注册：那两级的并行仓本身就不大，线程仓从 UV 起步是为了让
-     * 「线程数」始终是「并行数」量级往上的东西（UV 是 4 线程 vs 4 并行，同量级但语义不同）。
+     * 从 ZPM 起步：最低档 4 线程，往后每级翻倍。
+     * ⚠️ 「线程数」与并行仓的「并行数」不是同一个量 —— 线程 = 同时跑**几种不同配方**，
+     * 并行 = 同一种配方**同时跑几次**，所以两族的档位不用对齐。
      */
     val VARIANTS: List<ThreadHatchVariant> = listOf(
         ThreadHatchVariant("thread_hatch_zpm", 4  , GTValues.ZPM),

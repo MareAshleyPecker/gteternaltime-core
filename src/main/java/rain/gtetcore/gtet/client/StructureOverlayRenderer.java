@@ -23,8 +23,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.slf4j.Logger;
 
 import rain.gtetcore.gtet.config.GTETConfig;
-import rain.gtetcore.gtet.common.item.StructureDetectBehavior;
-import rain.gtetcore.gtet.common.item.StructureWriteBehavior;
+import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior;
+import rain.gtetcore.gtet.common.item.tool.StructureWriteBehavior;
 
 /**
  * 客户端渲染器：手持结构工具时绘制选区半透明立方体，

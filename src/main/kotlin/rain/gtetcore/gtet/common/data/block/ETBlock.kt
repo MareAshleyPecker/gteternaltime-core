@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.RenderType
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.level.block.Blocks
 import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import java.util.function.Supplier
 
 /**

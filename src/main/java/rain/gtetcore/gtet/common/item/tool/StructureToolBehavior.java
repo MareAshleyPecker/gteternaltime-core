@@ -24,9 +24,9 @@ import net.minecraft.world.level.Level;
 
 import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.Gtetcore;
-import rain.gtetcore.gtet.common.item.StructureDetectBehavior;
-import rain.gtetcore.gtet.common.item.StructureWriteBehavior;
-import rain.gtetcore.gtet.common.item.TerminalBehavior;
+import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior;
+import rain.gtetcore.gtet.common.item.tool.StructureWriteBehavior;
+import rain.gtetcore.gtet.common.item.tool.TerminalBehavior;
 import rain.gtetcore.gtet.util.lang.LangUtil;
 
 /**

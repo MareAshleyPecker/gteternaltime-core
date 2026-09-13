@@ -24,13 +24,13 @@ import rain.gtetcore.gtet.api.capability.IThreadHatch
  * - `canShared() = false`，禁止多方块部件共享。
  *
  * 真正「开线程 / 每线程计时 / 每线程结算」的是
- * [rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic]：它从控制器上找到本部件，
+ * [rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeLogic]：它从控制器上找到本部件，
  * 用 [threadCount] 当线程数上限。
  *
  * ## 线程数怎么给
  * 上限 [maxThreads] 由**注册表显式传入**（构造函数第 3 个参数 `threads`），数值写在
- * `ETThreadHatches.VARIANTS` 那张表里，构造后不再变化：UV=4、UHV=8、UEV=16、UIV=32、
- * UXV=64、OpV=128、MAX=256 —— 表里写多少就是多少，本类不做任何推导
+ * `ETThreadHatches.VARIANTS` 那张表里，构造后不再变化：ZPM=4、UV=8、UHV=16、UEV=32、
+ * UIV=64、UXV=128、OpV=256、MAX=512 —— 表里写多少就是多少，本类不做任何推导
  * （原先那份「由 tier 现算」的 `maxThreadsForTier` 已删）。
  * 语义是「比上一级多一倍同时跑得动的线程条数」。
  * 唯一的下限兜底是 [MIN_THREAD]（表里误写 0 时线程逻辑会一条也开不出来）。

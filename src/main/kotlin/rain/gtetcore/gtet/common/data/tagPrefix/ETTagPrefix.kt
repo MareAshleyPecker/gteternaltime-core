@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.tagPrefix
+package rain.gtetcore.gtet.common.data.tagPrefix
 
 /**
  */

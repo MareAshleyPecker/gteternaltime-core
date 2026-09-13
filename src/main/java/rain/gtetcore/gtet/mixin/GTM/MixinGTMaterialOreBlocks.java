@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import rain.gtetcore.gtet.api.registrate.OnlyETreg;
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs;
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs;
 
 /**
  * 在 GTCEu 生成矿石方块前设置 GTET 的 ORE 标签，确保矿石方块物品进入正确物品栏。

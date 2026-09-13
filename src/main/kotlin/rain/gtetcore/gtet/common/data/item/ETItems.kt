@@ -3,14 +3,14 @@ package rain.gtetcore.gtet.common.data.item
 import com.gregtechceu.gtceu.api.item.ComponentItem
 import com.tterrag.registrate.util.entry.ItemEntry
 import net.minecraft.resources.ResourceLocation
-import rain.gtetcore.gtet.common.item.StructureDetectBehavior
-import rain.gtetcore.gtet.common.item.StructureWriteBehavior
-import rain.gtetcore.gtet.common.item.TerminalBehavior
+import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior
+import rain.gtetcore.gtet.common.item.tool.StructureWriteBehavior
+import rain.gtetcore.gtet.common.item.tool.TerminalBehavior
 import rain.gtetcore.gtet.common.item.recipe.RecipeEditorBehavior
 import rain.gtetcore.gtet.common.item.tool.StructureToolBehavior
 import rain.gtetcore.gtet.api.registrate.OnlyETreg
 import rain.gtetcore.gtet.util.tooltips
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 
 object ETItems {
 

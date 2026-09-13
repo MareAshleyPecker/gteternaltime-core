@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.item;
+package rain.gtetcore.gtet.common.item.tool;
 
 import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
 import net.minecraft.core.BlockPos;

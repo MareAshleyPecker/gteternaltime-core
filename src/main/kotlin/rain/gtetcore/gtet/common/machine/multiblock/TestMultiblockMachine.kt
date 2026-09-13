@@ -5,8 +5,8 @@ import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMa
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
 import net.minecraft.network.chat.Component
 import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine
-import rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic
-import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
+import rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeLogic
+import rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeStatus
 
 /**
  * GTET 的**第一台多方块机器** —— 「多方块测试机」。
@@ -19,7 +19,7 @@ import rain.gtetcore.gtet.common.machine.ThreadedRecipeStatus
  * 研磨配方是全 GTCEu 最多的一类，最容易验证「不同配方各自跑」）。
  *
  * ## 接上内核之后的行为
- * - 装线程仓 → 最多同时跑 N 条线程（N = 线程仓的 `threadCount`，UV=4 起、MAX=256）；⚠️ 是线程条数，
+ * - 装线程仓 → 最多同时跑 N 条线程（N = 线程仓的 `threadCount`，ZPM=4 起、MAX=512）；⚠️ 是线程条数，
  *   同一种配方可以占多条（空闲线程会被发给已经在跑的同一种配方），所以线程条数 ≥ 配方种数；
  *   没装仓时退化成原版「一台机器一条配方」（`threadCount` 默认 1）；
  * - 每条线程各扣各的料、各自计时、各自出料，并**各自吃一遍并行仓的并行倍率**

@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common
+package rain.gtetcore.gtet.common.machine.overclock
 
 import com.gregtechceu.gtceu.api.recipe.OverclockingLogic
 import kotlin.math.pow

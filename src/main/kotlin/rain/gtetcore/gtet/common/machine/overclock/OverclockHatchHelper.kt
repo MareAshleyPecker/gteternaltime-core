@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common
+package rain.gtetcore.gtet.common.machine.overclock
 
 import com.google.common.math.IntMath
 import com.gregtechceu.gtceu.api.GTValues

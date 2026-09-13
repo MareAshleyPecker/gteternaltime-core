@@ -8,7 +8,7 @@ import com.gregtechceu.gtceu.common.data.GTMachines;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 
-import rain.gtetcore.gtet.common.data.machine.samplemachine.ALLSmahine;
+import rain.gtetcore.gtet.common.data.machine.hatch.ALLSmahine;
 
 import org.jetbrains.annotations.Nullable;
 

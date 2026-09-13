@@ -25,7 +25,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import org.spongepowered.asm.mixin.Unique;
 import rain.gtetcore.gtet.api.registrate.OnlyETreg;
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs;
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs;
 
 /**
  * 覆写 GTCEu 的 {@link GTMaterialItems#generateMaterialItems()}，

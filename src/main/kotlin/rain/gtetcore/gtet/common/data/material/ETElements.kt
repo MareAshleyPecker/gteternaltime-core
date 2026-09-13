@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.material
+package rain.gtetcore.gtet.common.data.material
 
 import com.gregtechceu.gtceu.api.data.chemical.Element
 

@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.data.lang.initlang
+package rain.gtetcore.gtet.data.lang
 
 import net.minecraftforge.common.data.LanguageProvider
 

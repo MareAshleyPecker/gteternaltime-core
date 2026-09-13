@@ -4,7 +4,7 @@ package rain.gtetcore.gtet.api.capability
  * 「线程仓」部件能力接口。
  *
  * 语义：把 N 台同型机器**融合成一台**。线程仓往控制器上声明「这台机器最多能同时跑几条线程」，
- * 由 [rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic] 读取：
+ * 由 [rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeLogic] 读取：
  *
  * - 一台装了这个仓的机器最多同时跑 [threadCount] 条线程；⚠️ 是**线程条数**而不是「配方种数」——
  *   同一种配方现在可以占多条线程（空闲线程会发给已经在跑的同一种配方，见该内核的「吃线程并行」），
@@ -43,7 +43,7 @@ interface IThreadHatch {
      * 该仓提供的线程数**上限**（玩家只能往下调，不能往上加）。
      *
      * 数值由 `ETThreadHatches.VARIANTS` 变体表显式给出，构造时注入部件：
-     * UV=4、UHV=8、UEV=16、UIV=32、UXV=64、OpV=128、MAX=256。
+     * ZPM=4、UV=8、UHV=16、UEV=32、UIV=64、UXV=128、OpV=256、MAX=512。
      * 本接口只约定语义（「上限」而不是「当前值」），不管这个数字从哪来。
      */
     val maxThreads: Int

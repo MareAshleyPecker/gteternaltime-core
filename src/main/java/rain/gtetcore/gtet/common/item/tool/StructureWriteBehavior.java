@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.item;
+package rain.gtetcore.gtet.common.item.tool;
 
 import com.google.common.base.Joiner;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;

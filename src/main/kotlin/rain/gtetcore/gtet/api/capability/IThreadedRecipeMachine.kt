@@ -5,10 +5,10 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController
 /**
  * 「可跑多线程配方」多方块控制器的标记接口。
  *
- * 机器只要实现本接口（并且把 `createRecipeLogic` 重写成返回 [rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic]），
+ * 机器只要实现本接口（并且把 `createRecipeLogic` 重写成返回 [rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeLogic]），
  * 就获得「一台机器同时跑 N 条线程、每条线程各自计时、各自吃一份并行倍率」的行为：
  * 先让**不同配方各占一条**线程，剩下的空闲线程再发给**已经在跑的同一种配方**（「吃线程并行」，
- * 见 [rain.gtetcore.gtet.common.machine.ThreadedRecipeLogic] 的「同配方多线程怎么分配」——总处理次数的上限因此变成
+ * 见 [rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeLogic] 的「同配方多线程怎么分配」——总处理次数的上限因此变成
  * 「线程数 × 每条线程的并行倍数」，而不是「并行仓那个数字」本身）。
  *
  * ```kotlin

@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common
+package rain.gtetcore.gtet.common.data
 
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
@@ -13,12 +13,12 @@ import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.ItemStack
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs.BLOCK
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs.FLUID
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs.ITEM
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs.MACHINE
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs.MULTIBLOCK
-import rain.gtetcore.gtet.common.GTETCreativeModeTabs.ORE
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs.BLOCK
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs.FLUID
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs.ITEM
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs.MACHINE
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs.MULTIBLOCK
+import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs.ORE
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 object GTETCreativeModeTabs {

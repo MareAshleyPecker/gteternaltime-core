@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.data.machine.otherMachine
+package rain.gtetcore.gtet.common.data.machine.hatch
 
 import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.GTValues

@@ -15,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import rain.gtetcore.gtet.api.capability.IOverclockHatch;
-import rain.gtetcore.gtet.common.OverclockHatchHelper;
-import rain.gtetcore.gtet.common.OverclockingLogics;
+import rain.gtetcore.gtet.common.machine.overclock.OverclockHatchHelper;
+import rain.gtetcore.gtet.common.machine.overclock.OverclockingLogics;
 
 /**
  * 「超频仓」的核心挂钩：把多方块的普通超频换成 8×/16× 特殊超频。

@@ -8,7 +8,6 @@ import net.minecraft.data.PackOutput
 import net.minecraftforge.common.data.LanguageProvider
 import org.slf4j.Logger
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.data.lang.initlang.Lang
 import rain.gtetcore.gtet.util.lang.LangUtil
 import java.lang.reflect.Field
 
