@@ -316,8 +316,10 @@ if (autoBuildSetting.isDemolitionMode()) {
    又在别处恰好落在同一个谓词的位置上，就会被拆走。GTO 也是这个语义，本补丁未做额外限制。
 2. 结构方块被拆掉后**原地放了别的方块**时，拆除模式不会清理它（因为不匹配候选），
    会留下「非结构方块卡在结构位」的残留 —— 这是拿安全性换的，避免误删。
-3. 掉落的物品进的是**玩家背包**，不走 AE：GTO 会先试着塞进 AE 网络。这条与「使用 AE 物品」
-   那一项一起**留到后续排期**（用户已同意），也是本补丁与 GTO 的**唯一行为差异**。
+3. 掉落的物品进的是**玩家背包**，不走 AE：GTO 会先试着塞进 AE 网络，塞不进才给玩家。
+   **这一半（拆除掉落）目前仍未实现**，是本补丁与 GTO 的**唯一行为差异**。
+   ⚠️ 别和「**建造取料**」混为一谈 —— 那一半（`isUseAE` 时从 AE 网络提取方块）**已经实现**了，
+   见 §7 第一条与 `AdvancedBlockPattern.java:587-598`。
    注意 GTO 那边无论创造/生存都会给物品，本补丁照抄（创造模式会把方块放进背包）。
 
 ### 6.6 镜像搭建的落点
@@ -370,8 +372,17 @@ public void autoBuild(Player, MultiblockState, AdvancedTerminalBehavior$AutoBuil
 
 ## 7. 有意没做的部分
 
-- **「使用 AE 物品」的 AE 取料改造**（把 `AutoBuildSetting#apply` 改成返回 `List<AEKey>`）牵连 AE2
-  依赖与返回类型变更，用户已同意**单独排期**；拆除模式的掉落物也因此只进玩家背包（见 6.5 风险 3）。
+- 「使用 AE 物品」的**建造取料**：**已经实现**（本节旧文写的"留给后续排期"已过期，已更正）。
+  `AdvancedBlockPattern.java:587-598` 在 `isUseAE == 1` 且手上是**已绑接入点（`accessPoint`）的 AE2 无线终端**时，
+  用 `storage.extract(AEItemKey.of(candidate), 1, Actionable.MODULATE, null)` 从 AE 网络取方块。
+  ⚠️ GTO 那种「把 `AutoBuildSetting#apply` 改成返回 `List<AEKey>`」的改法**没有采用** —— GTET 这边按候选方块
+  逐个 `extract`，不动返回类型，因此也没有牵连 AE2 依赖。
+  **仍未实现的只有另一半**：拆除掉落物直接进 AE 网络（`demolish()` 现在是 `player.addItem(...)`，
+  塞不下就 `Block.popResource(...)` 掉在原地，见 §6.5 风险 3）。
+- **GTET 自己那套终端 AE 绑定链暂未接线**（已确认：保持现状，既不接线也不删除）：`TerminalSettings.linkAe/unlinkAe`、
+  `AeGridLink`、`StructureBuilder` 目前**全项目没有调用点** —— 「把高级终端绑到某个无线接入点」这条路径
+  **没有游戏内入口**。实际可用的是上面那条 `isUseAE` 分支：背包里带着已绑好接入点的 AE2 无线终端即可。
+  将来若要接，入口大概是「Shift+右键无线接入点即绑定」的物品行为（`AeGridLink` 里的解析逻辑已经写好）。
 - 不抄 GTO 的 `BlockMapSelector` / `BlockMap` + 注解处理器（那要引入 GTO 自己的 `BlockMap` 与
   `@DataGeneratorScanned` 那套数据生成）；GTET 这边的「分级方块」走的是自己那套
   `gtet_terminal.plan.groups` NBT + 右侧两块列表面板（§3）。
