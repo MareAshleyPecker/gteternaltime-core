@@ -19,7 +19,6 @@ import net.minecraft.world.item.Item
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.state.BlockBehaviour
 import rain.gtetcore.gtet.util.lang.LangUtil
-import rain.gtetcore.gtet.util.math.then
 import java.util.function.Supplier
 
 /**
@@ -130,7 +129,7 @@ class ETREGISTRATE(modid: String) : GTRegistrate(modid) {
         val itemPath = tagPrefix.idPattern().format(material.name)
         return super.item(itemPath) { properties: Item.Properties ->
             tagPrefix.itemConstructor().create(
-                material.hasFlag(MaterialFlags.FIRE_RESISTANT) then properties.fireResistant() or properties,
+                if (material.hasFlag(MaterialFlags.FIRE_RESISTANT)) properties.fireResistant() else properties,
                 tagPrefix, material
             )
         }

@@ -35,3 +35,7 @@ run-data/
 
 # 反编译参考产物（例如 net/minecraft/server/level/ServerPlayer.java），只在本机看，不进仓库
 net/
+
+# 构建 / 数据生成的临时日志（排查用，不进仓库）
+build-*.log
+runData-*.txt

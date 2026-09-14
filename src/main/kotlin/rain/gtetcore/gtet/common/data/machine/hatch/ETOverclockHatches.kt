@@ -180,7 +180,7 @@ object ETOverclockHatches {
         val tooltipKey = "gtetcore.machine.${v.id}.tooltip.0"
         val extraTooltips: Array<Component> = v.tooltip?.let {
             LangUtil.add(tooltipKey, it.en, it.cn)
-            arrayOf<Component>(Component.translatable(tooltipKey))
+            arrayOf(Component.translatable(tooltipKey))
         } ?: emptyArray()
 
         return registrate
@@ -200,11 +200,9 @@ object ETOverclockHatches {
             // TODO 以后画 GTET 自己的超频仓贴图，把 [OVERCLOCK_OVERLAY_ROOT] 换成自己的目录即可
             .model(
                 createWorkableTieredHullMachineModel(overlayFor(v))
-                    .andThen(
-                        MachineBuilder.ModelInitializer { _, _, model ->
-                            model.addReplaceableTextures("bottom", "top", "side")
-                        }
-                    )
+                    .andThen { _, _, model ->
+                        model.addReplaceableTextures("bottom", "top", "side")
+                    }
             )
             // 提示 = GTM 自带的「部件不可共享」+ 变体表里可选的说明行（没填的档位 extraTooltips 为空）
             .tooltips(
