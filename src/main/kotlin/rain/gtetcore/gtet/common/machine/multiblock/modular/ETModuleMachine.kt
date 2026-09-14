@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.machine.multiblock
+package rain.gtetcore.gtet.common.machine.multiblock.modular
 
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity

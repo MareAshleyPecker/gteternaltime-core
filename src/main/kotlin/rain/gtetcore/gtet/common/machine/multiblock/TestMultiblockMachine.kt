@@ -5,8 +5,8 @@ import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMa
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
 import net.minecraft.network.chat.Component
 import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine
-import rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeLogic
-import rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeStatus
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeLogic
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
 
 /**
  * GTET 的**第一台多方块机器** —— 「多方块测试机」。

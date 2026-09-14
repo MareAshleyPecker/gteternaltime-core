@@ -11,8 +11,8 @@ import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemStack
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeLogic
-import rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeStatus
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeLogic
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
 import snownee.jade.api.BlockAccessor
 import snownee.jade.api.IBlockComponentProvider
 import snownee.jade.api.IServerDataProvider

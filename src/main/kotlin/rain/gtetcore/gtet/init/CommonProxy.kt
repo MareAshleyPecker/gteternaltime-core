@@ -24,10 +24,10 @@ import rain.gtetcore.gtet.common.item.recipe.FluidCountSlotWidget
 import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget
 import rain.gtetcore.gtet.common.item.terminal.TerminalLang
 import rain.gtetcore.gtet.common.item.tool.ToolNetwork
-import rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeStatus
-import rain.gtetcore.gtet.common.machine.multiblock.ETModularMachine
-import rain.gtetcore.gtet.common.machine.multiblock.ETModuleHostMachine
-import rain.gtetcore.gtet.common.machine.multiblock.ETModuleMachine
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleHostMachine
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleMachine
 import rain.gtetcore.gtet.common.data.material.ETElementMaterials
 import rain.gtetcore.gtet.data.GTETDatagen
 import rain.gtetcore.gtet.integration.jade.GTETJadeLang

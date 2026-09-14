@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.machine.thread
+package rain.gtetcore.gtet.common.machine.multiblock.thread
 
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability
 import com.gregtechceu.gtceu.api.recipe.GTRecipe

@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.machine.thread
+package rain.gtetcore.gtet.common.machine.multiblock.thread
 
 import com.gregtechceu.gtceu.api.capability.IParallelHatch
 import com.gregtechceu.gtceu.api.capability.recipe.IO
@@ -6,7 +6,6 @@ import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability
 import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
-import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic.Status
 import com.gregtechceu.gtceu.api.recipe.ActionResult
 import com.gregtechceu.gtceu.api.recipe.GTRecipe
 import com.gregtechceu.gtceu.api.recipe.RecipeHelper
@@ -181,7 +180,7 @@ import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine
  *   ⚠️ **必须注明**：GTO 的**调度与记账算法一行都拿不到** —— `libs/gtolib-1.0.jar` 里 `ICrossRecipeMachine`、`ICrossRecipeMachine$Thread`、`ICrossRecipeMachine$Logic`、`ThreadPartMachine` 的方法体全是 `native`（`javap` 只能看到签名，实现被抽到 `native0/native/` 那堆 `.bin` 的加密库里）。所以**线程表调度、动态开线程策略、每线程独立 IO 记账、线程数上限来源，全部是 GTET 自研**（见下面的【自研】条）。
  * - 【自研】线程表（`data class ThreadRec` 槽位数组）+ 「先给不同配方、再把剩余空闲线程发给**同一种**配方」的两轮调度（[tryStartThreads]）+ 「一组一预算、再均分」的防超发记账（[planThreadParallel] / [committedUnits]：用 `ParallelLogic#getParallelAmount` 的聚合上限调用一次性判定「输入 / tick 输入 / 输出」三头，再减掉本组已提交的份额，然后按本组还能开的线程数均分）+ 轮转式公平分配 + 同配方判等（按 `GTRecipe#id`，`id == null` 时退化成引用相等 —— 现成的 `GTRecipe#equals` 只比 id 且对 null id 会 NPE）+ 「线程数上限由线程仓 tier 决定」+ 「玩家下调线程数不砍已开线程」+ 「每线程独立 `chanceCaches`」+ 「基类单进度镜像」+ 存档恢复策略：这些在 GTOCore 里都没有可抄的实现（GTO 那半边在 native 里，且是 `ICrossRecipeMachine` 专属的私有调度 —— 它只有「同一种配方占一条线程」的 `duplicateCheck` 语义，没有「同配方多线程」这回事）。
  *
- * @param machine 持有本逻辑的机器（应当实现 [rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine]；否则线程数上限退化为 1）
+ * @param machine 持有本逻辑的机器（应当实现 [IThreadedRecipeMachine]；否则线程数上限退化为 1）
  *
  * @author rain fox
  */

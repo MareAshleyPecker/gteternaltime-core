@@ -24,7 +24,7 @@ import rain.gtetcore.gtet.api.capability.IThreadHatch
  * - `canShared() = false`，禁止多方块部件共享。
  *
  * 真正「开线程 / 每线程计时 / 每线程结算」的是
- * [rain.gtetcore.gtet.common.machine.thread.ThreadedRecipeLogic]：它从控制器上找到本部件，
+ * [rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeLogic]：它从控制器上找到本部件，
  * 用 [threadCount] 当线程数上限。
  *
  * ## 线程数怎么给

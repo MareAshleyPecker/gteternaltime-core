@@ -18,6 +18,7 @@ import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup
 import com.lowdragmc.lowdraglib.utils.BlockInfo
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /**

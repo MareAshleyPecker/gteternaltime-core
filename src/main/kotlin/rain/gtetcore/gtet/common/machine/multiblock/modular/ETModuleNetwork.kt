@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.machine.multiblock
+package rain.gtetcore.gtet.common.machine.multiblock.modular
 
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.Level

@@ -4,7 +4,6 @@ import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.data.RotationState
 import com.gregtechceu.gtceu.api.machine.MultiblockMachineDefinition
-import com.gregtechceu.gtceu.api.pattern.BlockPattern
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.common.data.GTBlocks
 import com.gregtechceu.gtceu.common.data.GTRecipeModifiers
@@ -17,7 +16,7 @@ import java.util.function.Supplier
  * 「模块化测试机」的注册。
  *
  * ⚠️ GTM 一个 `MultiblockMachineDefinition` 只存**一套运行时图案**，运行时换结构靠机器自己重写
- * `getPattern()`（见 [rain.gtetcore.gtet.common.machine.multiblock.ETModularMachine]）。
+ * `getPattern()`（见 [rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine]）。
  * 所以这里 `pattern { ... }` 给的是最小的 MK1 3³（运行时兜底 / GTM 自动 DFS 兜底都用它），
  * 而 EMI/JEI 预览用的三套结构是在 `register()` 之后另外塞进 `definition.shapes` 的。
  *
