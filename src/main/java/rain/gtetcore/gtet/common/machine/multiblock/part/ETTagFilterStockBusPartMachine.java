@@ -166,7 +166,7 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
 
     /**
      * 换掉 GTM 的库存列表，好让每个槽都由 {@link ETTagFilterStockItemSlot} 承担取数（见类注释「为什么走这条路」）。
-     *
+     * <p>
      * ⚠️ 这个方法是**在 {@code super(...)} 构造期间**被调用的，那时本类的字段还没初始化 ——
      * 所以槽只持有 {@code this} 这个视图，绝不在构造期读 {@code batchSize} / {@code tagFilter}。
      */
@@ -184,7 +184,7 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
 
     /**
      * 装回自动拉取谓词。
-     *
+     * <p>
      * ⚠️ 必须在 {@code super.addedToController} **之后**调：GTM 的
      * {@code IMEStockingPart#addedToController} 会把 {@code autoPullTest} 覆盖成「不同仓去重」检查，
      * 构造函数里设的会被它抹掉。这里把「标签放行」与「去重」两条语义组合回去。

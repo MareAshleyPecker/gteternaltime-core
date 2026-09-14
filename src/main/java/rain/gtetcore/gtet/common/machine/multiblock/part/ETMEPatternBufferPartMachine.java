@@ -70,7 +70,7 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
 
     /**
      * 面板最多同时显示几行（超过就套可拖动滚动区）。
-     *
+     * <p>
      * ⚠️ 为什么要有这个上限：GTM 的机器 UI 由 {@code FancyMachineUIWidget} **按内容尺寸撑开**
      * （源码 194-199 行：{@code setSize(max(172, page.width+border*2), ...)} 后还会
      * {@code getGui().setSize(...)}），所以 24 行 = 448px 的面板会把整个 GUI 顶出屏幕

@@ -54,17 +54,17 @@ object OverclockHatchHelper {
         logic: OverclockingLogic
     ): ModifierFunction {
         // 配方的真实 EUt：先看输入 EU，没有再看输出 EU（例如发电机配方）
-        val EUt = RecipeHelper.getRealEUt(recipe).totalEU
-        if (EUt == 0L) return ModifierFunction.IDENTITY
+        val eut = RecipeHelper.getRealEUt(recipe).totalEU
+        if (eut == 0L) return ModifierFunction.IDENTITY
 
         // 配方等级 / 机器等级（都按「需要多少电压才能带动」算）
-        val recipeTier = GTUtil.getTierByVoltage(EUt).toInt()
+        val recipeTier = GTUtil.getTierByVoltage(eut).toInt()
         val maximumTier = GTUtil.getOCTierByVoltage(maxVoltage).toInt()
 
         // 可用的超频级数：机器等级 - 配方等级；配方在 ULV 时再减 1（ULV 没有「上一级」可用）
-        var OCs = maximumTier - recipeTier
-        if (recipeTier == GTValues.ULV) OCs--
-        if (OCs <= 0) return ModifierFunction.IDENTITY
+        var ocs = maximumTier - recipeTier
+        if (recipeTier == GTValues.ULV) ocs--
+        if (ocs <= 0) return ModifierFunction.IDENTITY
 
         // ── 下面这段是并行预算：剩余 OC 能换多少并行 ──
         // 它只被 GTM 的 subtick 类算法用来算「剩余 OC 换成的并行数」；
@@ -78,15 +78,15 @@ object OverclockHatchHelper {
             // OCs <= lg：耗时大概压不到 4 以下，老实按 1 倍并行
             // OCs >  lg：理论上能换 4^(OCs - lg) 倍并行，再让 ParallelLogic 按实际输入/输出卡一次
             val lg = IntMath.log2(recipe.duration, RoundingMode.FLOOR) / 2
-            maxParallels = if (lg > OCs) {
+            maxParallels = if (lg > ocs) {
                 16
             } else {
-                val p = GTMath.saturatedCast((1L shl (2 * (OCs - lg))) + 1)
+                val p = GTMath.saturatedCast((1L shl (2 * (ocs - lg))) + 1)
                 ParallelLogic.getParallelAmount(machine, recipe, p)
             }
         }
 
-        val params = OverclockingLogic.OCParams(EUt, recipe.duration, OCs, maxParallels)
+        val params = OverclockingLogic.OCParams(eut, recipe.duration, ocs, maxParallels)
         return logic.runOverclockingLogic(params, maxVoltage).toModifier()
     }
 }
