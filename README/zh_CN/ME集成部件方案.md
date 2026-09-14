@@ -98,6 +98,7 @@ GTCEu 7.5.3 在 `GTAEMachines` 里已经注册了整套 ME 部件，类在 `inte
 | GTCEu / GTM 7.5.3 | `GTAEMachines`、`MEStockingBusPartMachine`、`MEStockingHatchPartMachine`、`MEInputBusPartMachine`、`MEInputHatchPartMachine`、`MEPatternBufferPartMachine`、`MEPatternBufferProxyPartMachine`、`IMEStockingPart`、`IGridConnectedMachine` | 本体与父类 |
 | GTOCore（LGPL-3.0） | `ITagFilterPartMachine`、`METagFilterStockBusPartMachine`、`METagFilterStockHatchPartMachine`、`MESimplePatternBufferPartMachine`、`MEInputBufferPartMachine` | 标签过滤与样板总成变体的形状 |
 | GTCA（LGPL-3.0） | 部件与结构谓词的写法 | 可读的同版本参考 |
+| BetterGregTechAndAppliedEnergistics（**GPL-3.0**） | `ExtendMEPatternBufferPartMachine`、`ExtendMEPatternBufferProxyPartMachine`、`MEDualHatchPartMachine`、`MultiCircuitConfigurator` | ⚠️ **许可证与前两个不同**：它是 **GPL-3.0**，而本项目代码是 **LGPL-3.0**。因此**只借鉴设计与结构、不复制代码**（抄 GPL 代码会让含它的整体作品在分发时必须按 GPL-3.0 走）。它的代理版是「自己写 proxy + 自己的 trait + 认自己的宿主类」，正是本项目解决「代理认不出复制版」的参考形状 |
 
 ## 4. 批次安排
 

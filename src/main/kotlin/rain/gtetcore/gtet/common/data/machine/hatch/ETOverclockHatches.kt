@@ -118,7 +118,6 @@ object ETOverclockHatches {
      */
     val VARIANTS: List<OverclockHatchVariant> = listOf(
         // 4× 系列：ZPM / UV / UHV / UEV
-        // ⚠️ 全表只有两档带说明行，这是第一档
         OverclockHatchVariant("overclock_hatch_4x_lossy4"       , 4  , 8.0, GTValues.ZPM,
             tooltip = HatchTooltip("看起来并不好用", "Looks pretty useless")),
         OverclockHatchVariant("overclock_hatch_4x_lossy2"       , 4  , 4.0, GTValues.UV ),
@@ -139,7 +138,7 @@ object ETOverclockHatches {
         OverclockHatchVariant("overclock_hatch_256x_lossy2"     , 256, 2.0, GTValues.UIV ),
         OverclockHatchVariant("overclock_hatch_256x_perfect"    , 256, 1.0, GTValues.UXV ),
         OverclockHatchVariant("overclock_hatch_256x_saving"     , 256, 0.5, GTValues.OpV ),
-        // 1024× 档：本表终点，铭牌 MAX（⚠️ 全表只有两档带说明行，这是第二档）
+        // 1024× 档：本表终点，铭牌 MAX
         OverclockHatchVariant("overclock_hatch_1024x_saving_max", 1024,0.25, GTValues.MAX,
             tooltip = HatchTooltip("屌爆啦！！！", "Absolutely insane!!!"))
     )

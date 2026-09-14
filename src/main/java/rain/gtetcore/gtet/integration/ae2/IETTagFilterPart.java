@@ -54,7 +54,7 @@ public interface IETTagFilterPart {
 
     /**
      * 库存逻辑真正用的谓词：**标签放行 ∧ 不是别的仓已经配置过的东西**。
-     *
+     * <p>
      * ⚠️ 后半截不能省：GTM 的 {@code IMEStockingPart#addedToController} 默认就是把自动拉取谓词设成
      * 「不同仓去重」检查，我们覆写它时必须把这条语义组合回来，否则同一个多方块里两个库存总成会配置到同一种物品。
      *
