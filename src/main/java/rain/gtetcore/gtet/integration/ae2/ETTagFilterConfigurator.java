@@ -2,13 +2,16 @@ package rain.gtetcore.gtet.integration.ae2;
 
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyConfigurator;
-import com.gregtechceu.gtceu.api.gui.widget.IntInputWidget;
 import com.gregtechceu.gtceu.api.gui.widget.PhantomFluidWidget;
 import com.gregtechceu.gtceu.api.gui.widget.PhantomSlotWidget;
 import com.gregtechceu.gtceu.api.transfer.fluid.CustomFluidTank;
 import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
 
+import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
 import com.lowdragmc.lowdraglib.gui.texture.IGuiTexture;
+import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
+import com.lowdragmc.lowdraglib.gui.util.ClickData;
+import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
 import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
 import com.lowdragmc.lowdraglib.gui.widget.TextFieldWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
@@ -31,10 +34,18 @@ import java.util.function.Consumer;
  * <ol>
  * <li><b>白名单</b>：输入框（留空 = 不限制）+ 幻影槽；</li>
  * <li><b>黑名单</b>：输入框（留空 = 不限制）+ 幻影槽；</li>
- * <li><b>每次拉取量 N</b>：数字框，范围 0 ~ {@code BATCH_MAX}，<b>0 = 不限制</b>（默认，行为与 GTM 原版库存部件一致）。
+ * <li><b>每次拉取量 N</b>：数字框在最左，两个 <b>-/+ 按钮在右侧</b>（与上面两行的幻影槽同一列），
+ * 范围 0 ~ {@code BATCH_MAX}，<b>0 = 不限制</b>（默认，行为与 GTM 原版库存部件一致）。
  * N 必须 ≥ 本仓的「保底数量」（GTM 自带的 {@code min_item_count} / {@code min_fluid_count}），否则备出来的量
  * 永远达不到保底，本仓会一直空着 —— 这是定量模式与保底语义的固有冲突，提示行里写明了。</li>
  * </ol>
+ *
+ * <h2>⚠️ 这一行为什么不用 GTM 的 {@code IntInputWidget}</h2>
+ * {@code IntInputWidget} 继承的 {@code NumberInputWidget#buildUI()} 是 <b>private</b>，按钮位置与高度写死在里面：
+ * 「-」按钮贴左边（x=0）、输入框居中、「+」按钮贴右边，而且两个按钮与输入框的高度硬编码 {@code 20}
+ * —— <b>不管构造时传多高</b>。于是它必然把按钮摊在输入框两侧，并且比声明的框高出 4px、压到下一块内容上；
+ * 子类无法重排。需求是「按钮挪到右边」，所以这里自己拼一行（输入框 + 两个按钮，全部 18 高、与框一致），
+ * 步进手感沿用 GTM（1 / Shift 8 / Ctrl 64 / 两键 512），tooltip 直接借 GTM 自带的那条说明键。
  *
  * <h2>幻影槽怎么工作</h2>
  * 往幻影槽里放一个物品（流体部件则是流体，可以从 JEI/EMI 拖，也可以点一下手持的桶）之后，
@@ -81,13 +92,51 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
     /** 说明行 3：留空语义与定量/保底的冲突。 */
     public static final String LANG_HINT_3 = "gtetcore.machine.et_tag_filter.hint.3";
 
-    /** 面板尺寸（与 GTOCore 的面板同宽，别再加宽：fancy 侧栏放不下）。 */
+    /**
+     * 面板尺寸。
+     *
+     * <p>
+     * ⚠️ 宽度 150 是上限，别再加：fancy 侧栏展开的浮层是「内容宽 + 8」，而浮层是从主界面左边缘往右画的，
+     * 再宽就会盖住主界面的配置槽区。
+     *
+     * <p>
+     * ⚠️ 高度必须**等于内容底边**（现在最后一行说明的底边正好是 150）：fancy 浮层的高度是
+     * 「内容高 + 24（图标行）+ 4」，多留的空白会变成浮层底部的一大块空区，少留则内容越界。
+     */
     private static final int PANEL_WIDTH = 150;
     private static final int PANEL_HEIGHT = 150;
-    /** 输入框宽度：右边要留出 18px 的幻影槽。 */
+
+    // 各行控件的 Y 与尺寸 —— 改布局只动这里，别在 addWidget 里散落魔数
+    /** 白名单：标题 / 输入框（输入框右侧留 18px 给幻影槽）。 */
+    private static final int Y_WHITE_LABEL = 2;
+    private static final int Y_WHITE_FIELD = 14;
+    /** 黑名单。 */
+    private static final int Y_BLACK_LABEL = 38;
+    private static final int Y_BLACK_FIELD = 50;
+    /** 定量行：标题在 74，数字框与 -/+ 按钮同在 86。 */
+    private static final int Y_BATCH_LABEL = 74;
+    private static final int Y_BATCH_ROW = 86;
+    /** 说明块首行 Y 与行距（4 行，末行底边 140 + 10 = 150 = 面板高）。 */
+    private static final int Y_HINT = 110;
+    private static final int HINT_LINE_HEIGHT = 10;
+
+    /** 表达式输入框宽度：右边要留出 18px 的幻影槽。 */
     private static final int FIELD_WIDTH = 112;
+    /** 第三行数字框宽度：右边要让出两个 18px 的按钮。 */
+    private static final int BATCH_FIELD_WIDTH = 88;
+    /** 幻影槽所在列（第三行「+」按钮与之同列，视觉上成一列）。 */
+    private static final int PHANTOM_X = 120;
+    /** 第三行「-」按钮的 X（紧接数字框右侧）。 */
+    private static final int BATCH_MINUS_X = 98;
+    /** 第三行控件统一高 18，与幻影槽同高。 */
+    private static final int ROW_HEIGHT = 18;
     /** 表达式最长字符数，够自动填 16 个标签。 */
     private static final int MAX_EXPRESSION_LENGTH = 512;
+    /** 数字框最长字符数：{@code BATCH_MAX} = 1000000 是 7 位。 */
+    private static final int MAX_BATCH_LENGTH = 7;
+
+    /** 步进按钮的悬停说明：直接用 GTM 自带的那条（中英都已有，不必新登记语言键）。 */
+    private static final String TOOLTIP_STEP = "gui.widget.incrementButton.default_tooltip";
 
     private final IMEStockingHost machine;
     /** true = 流体部件（幻影槽收流体、N 的单位是 mB），false = 物品部件。 */
@@ -114,30 +163,80 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
         WidgetGroup group = new WidgetGroup(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
 
         // 白名单行
-        group.addWidget(new LabelWidget(4, 2, LANG_WHITE));
-        group.addWidget(new TextFieldWidget(4, 14, FIELD_WIDTH, 16, machine::getTagWhite, machine::setTagWhite)
-                .setMaxStringLength(MAX_EXPRESSION_LENGTH));
-        group.addWidget(createPhantom(120, 14, machine::setTagWhite));
+        group.addWidget(new LabelWidget(4, Y_WHITE_LABEL, LANG_WHITE));
+        group.addWidget(
+                new TextFieldWidget(4, Y_WHITE_FIELD, FIELD_WIDTH, 16, machine::getTagWhite, machine::setTagWhite)
+                        .setMaxStringLength(MAX_EXPRESSION_LENGTH));
+        group.addWidget(createPhantom(PHANTOM_X, Y_WHITE_FIELD, machine::setTagWhite));
 
         // 黑名单行
-        group.addWidget(new LabelWidget(4, 38, LANG_BLACK));
-        group.addWidget(new TextFieldWidget(4, 50, FIELD_WIDTH, 16, machine::getTagBlack, machine::setTagBlack)
-                .setMaxStringLength(MAX_EXPRESSION_LENGTH));
-        group.addWidget(createPhantom(120, 50, machine::setTagBlack));
+        group.addWidget(new LabelWidget(4, Y_BLACK_LABEL, LANG_BLACK));
+        group.addWidget(
+                new TextFieldWidget(4, Y_BLACK_FIELD, FIELD_WIDTH, 16, machine::getTagBlack, machine::setTagBlack)
+                        .setMaxStringLength(MAX_EXPRESSION_LENGTH));
+        group.addWidget(createPhantom(PHANTOM_X, Y_BLACK_FIELD, machine::setTagBlack));
 
-        // 定量模式行：0 = 不限制
-        group.addWidget(new LabelWidget(4, 74, LANG_BATCH));
-        group.addWidget(new IntInputWidget(4, 86, FIELD_WIDTH, 16, machine::getBatchSize, machine::setBatchSize)
-                .setMin(BATCH_MIN)
-                .setMax(BATCH_MAX));
+        // 定量模式行：0 = 不限制。数字框在左，-/+ 按钮挪到右侧（与上面两行的幻影槽同一列）
+        group.addWidget(new LabelWidget(4, Y_BATCH_LABEL, LANG_BATCH));
+        group.addWidget(
+                new TextFieldWidget(4, Y_BATCH_ROW, BATCH_FIELD_WIDTH, ROW_HEIGHT,
+                        () -> Integer.toString(machine.getBatchSize()), this::setBatchSizeFromText)
+                        .setNumbersOnly(BATCH_MIN, BATCH_MAX)
+                        .setMaxStringLength(MAX_BATCH_LENGTH));
+        group.addWidget(createStepButton(BATCH_MINUS_X, "-", -1));
+        group.addWidget(createStepButton(PHANTOM_X, "+", 1));
 
         // 说明
-        group.addWidget(new LabelWidget(4, 108, LANG_HINT_0));
-        group.addWidget(new LabelWidget(4, 118, LANG_HINT_1));
-        group.addWidget(new LabelWidget(4, 128, LANG_HINT_2));
-        group.addWidget(new LabelWidget(4, 138, LANG_HINT_3));
+        group.addWidget(new LabelWidget(4, Y_HINT, LANG_HINT_0));
+        group.addWidget(new LabelWidget(4, Y_HINT + HINT_LINE_HEIGHT, LANG_HINT_1));
+        group.addWidget(new LabelWidget(4, Y_HINT + HINT_LINE_HEIGHT * 2, LANG_HINT_2));
+        group.addWidget(new LabelWidget(4, Y_HINT + HINT_LINE_HEIGHT * 3, LANG_HINT_3));
 
         return group;
+    }
+
+    /**
+     * 定量行的步进按钮（自己拼的那个，见类注释「这一行为什么不用 GTM 的 IntInputWidget」）。
+     *
+     * @param x     按钮 X（- 在数字框右侧，+ 在幻影槽那一列）
+     * @param label 按钮上的字（{@code -} / {@code +}）
+     * @param sign  +1 加、-1 减
+     */
+    private Widget createStepButton(int x, String label, int sign) {
+        return new ButtonWidget(x, Y_BATCH_ROW, ROW_HEIGHT, ROW_HEIGHT,
+                new GuiTextureGroup(GuiTextures.VANILLA_BUTTON, new TextTexture(label)),
+                clickData -> stepBatchSize(clickData, sign))
+                .setHoverTooltips(TOOLTIP_STEP);
+    }
+
+    /**
+     * 点一次步进按钮：步长沿用 GTM 的手感（1 / Shift 8 / Ctrl 64 / 两键 512）。
+     *
+     * <p>
+     * ⚠️ 只在服务端改值（{@code isRemote} 就是客户端那次回调）：{@code batchSize} 是 {@code @Persisted} 字段，
+     * 服务端改完由 LDLib 同步回客户端显示；客户端自己改会在下次同步时被覆盖，看起来像「点了没用」。
+     * 上下限交给部件侧的 {@code setBatchSize}（内部 {@code Mth.clamp}），这里不重复夹。
+     */
+    private void stepBatchSize(ClickData clickData, int sign) {
+        if (clickData.isRemote) return;
+        int step = clickData.isCtrlClick ? (clickData.isShiftClick ? 512 : 64) :
+                (clickData.isShiftClick ? 8 : 1);
+        machine.setBatchSize(machine.getBatchSize() + sign * step);
+    }
+
+    /**
+     * 数字框里手输的值。
+     *
+     * <p>
+     * {@code setNumbersOnly} 已经把非法输入挡在门外（校验不过时 LDLib 会把框里的字改回去、也不会回调到这里），
+     * 这里的 try/catch 只是兜底 —— 免得将来谁换个校验方式就让异常炸在 GUI tick 里。
+     */
+    private void setBatchSizeFromText(String text) {
+        try {
+            machine.setBatchSize(Integer.parseInt(text.trim()));
+        } catch (NumberFormatException ignored) {
+            // 空串 / 只有一个负号这类中间态：先不改值
+        }
     }
 
     /** 按部件类型造物品版或流体版幻影槽。 */

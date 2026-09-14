@@ -74,10 +74,11 @@ private const val OVERLAY_ME_INPUT_HATCH = "block/overlay/appeng/me_input_hatch"
  * 与 [ETTagFilterHatches] / [ETThreadHatches] 同一套约定：英文名走 `.langValue(...)`、
  * 中文名走 [LangUtil.BLOCK_LANG]；tooltip 保留 GTM 对应件那几条功能说明 + 一条本 mod 的功能说明。
  *
- * ⚠️ 多方块共享那一行本批写 `gtceu.part_sharing.enabled`：`IMultiPart#canShared()` 的默认值就是
- * `true`，这三件（以及它们继承的 GTM 库存件）都没有覆写它，GTM 自己的库存件也是写 `enabled`。
- * （第一批那两件写的是 `disabled`，与事实不符；本批**不改动已提交文件**，只在这里按事实写，
- * 后续若要统一，改的是 `ETTagFilterHatches` 里那一行。）
+ * ⚠️ 多方块共享那一行写 `gtceu.part_sharing.disabled`：这三件的机器类
+ * （`ETTagFilterStockBusPartMachine` / `ETTagFilterStockHatchPartMachine` / `ETMEDualStockingPartMachine`）
+ * 现在都覆写了 `IMultiPart#canShared() = false`（**仓室隔离**，防串配方），所以 tooltip 必须写「禁止」——
+ * 之前写 `enabled` 是因为当时没有覆写；行为变了，提示跟着改，两边不再打架。
+ * 第一批那两件（[ETTagFilterHatches]）本来就是写 `disabled`，现在两批一致。
  *
  * ## 注册位置
  *
@@ -146,7 +147,7 @@ object ETStockingInputHatches {
                 Component.translatable("gtceu.machine.me.copy_paste.tooltip"),
                 Component.translatable("gtceu.machine.me.stocking_item.tooltip.1"),
                 Component.translatable(TAG_FILTER_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.enabled")
+                Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()
     }
@@ -168,7 +169,7 @@ object ETStockingInputHatches {
                 Component.translatable("gtceu.machine.me.copy_paste.tooltip"),
                 Component.translatable("gtceu.machine.me.stocking_fluid.tooltip.1"),
                 Component.translatable(TAG_FILTER_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.enabled")
+                Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()
     }
@@ -197,7 +198,7 @@ object ETStockingInputHatches {
                 Component.translatable("gtceu.machine.me.stocking_fluid.tooltip.0"),
                 Component.translatable(DUAL_TOOLTIP_KEY),
                 Component.translatable(DUAL_HINT_KEY),
-                Component.translatable("gtceu.part_sharing.enabled")
+                Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()
     }

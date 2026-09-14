@@ -158,6 +158,22 @@ public class ETMEDualStockingPartMachine extends ETTagFilterStockBusPartMachine 
         return MANAGED_FIELD_HOLDER;
     }
 
+    /**
+     * <b>仓室隔离</b>：显式再写一遍 {@code false}。
+     *
+     * <p>
+     * 行为上父类 {@link ETTagFilterStockBusPartMachine#canShared()} 已经是 {@code false}，这一份是**冗余**的，
+     * 但本件比单侧件更需要它：一块方块同时挂在 {@code IMPORT_ITEMS} 与 {@code IMPORT_FLUIDS} 两条能力链上，
+     * 两侧各有一套标签 / 定量 / 库存列表（物品侧在父类字段、流体侧在本类字段），
+     * 一旦被两个多方块共享，两个控制器会同时读**同一份两侧配置**，串配方比单侧件更严重。
+     * 显式写出来是为了：以后若有人重构父类（例如把隔离逻辑挪走、或让父类改成 {@code true}），
+     * 本件不会**静默**失去隔离。语义与运行时影响见父类同名方法的注释。
+     */
+    @Override
+    public boolean canShared() {
+        return false;
+    }
+
     // ///////////////////////////////
     // ***** Machine LifeCycle ****//
     // ///////////////////////////////
@@ -409,15 +425,34 @@ public class ETMEDualStockingPartMachine extends ETTagFilterStockBusPartMachine 
      * 主页面：上半物品侧配置槽、下半流体侧配置槽（各 8×2，与 GTM 的 ME 部件布局一致）。
      *
      * <p>
-     * ⚠️ 尺寸必须显式给：{@code FancyMachineUIWidget} 是拿 {@code page.getSize()} 反推整个界面大小的，
-     * GTM 的 ME 部件给 {@code new WidgetGroup(new Position(0,0))}（0×0）也能用，
-     * 只是因为它的最小尺寸 172×86 刚好装得下一块 144×74 的配置面板。两块就装不下了。
+     * ⚠️ 尺寸必须显式给：{@code FancyMachineUIWidget} 是拿 {@code page.getSize()} 反推整个界面大小的
+     * （{@code size = (max(172, pageW + 8), max(86, pageH + 8))}），GTM 的 ME 部件给
+     * {@code new WidgetGroup(new Position(0,0))}（动态尺寸组）也能用，只是因为它的最小尺寸 172×86
+     * 刚好装得下一块 144×74 的配置面板。两块就装不下了。
+     *
+     * <p>
+     * ⚠️ 本组是**固定尺寸**组（不是 {@code WidgetGroup(Position)} 那种按子控件撑开的动态组），
+     * 所以 {@code PANEL_HEIGHT} 必须**正好等于最后一块配置面板的底边**（{@link #FLUID_BLOCK_Y} + 74 = 168）：
+     * 多留 = 主界面底部多一块空白（界面按内容反推，空白会整体变成窗口的一部分），
+     * 少留 = 内容画出组外、越到物品栏分割线以下。物品栏分割线固定在「主页面底边 + 4px」（窗口布局里 page
+     * 居中于 container，container 高 = page 高 + border*2），所以只要底边给准，内容变多时是**向上长**、
+     * 底边不动。
+     *
+     * <p>
+     * ⚠️ 两块之间的间距给 8（原来是 4）：4px 时物品侧那 8×2 槽区的下沿与流体侧槽区的上沿几乎贴在一起，
+     * 看着像压在一起。间距**不要**大于 50 —— GTM 的 {@code ConfigWidget} 会在自己上方 50px 处摆一块
+     * 80×30 的「数量」浮层（构造器里写死 {@code new AmountSetWidget(31, -50, this)}，占 {@code [顶边-50, 顶边-20]}），
+     * 间距一旦小于 50，那块浮层就会落到上面一块面板的槽区里。
+     * 好在库存列表 {@code isStocking() == true}（见本类两个列表的实现），GTM 侧左键点配置槽时
+     * 那个浮层**不会**弹出来（{@code AEItemConfigSlotWidget#mouseClicked} 与流体版同名方法里
+     * {@code enableAmountClient} 都被 {@code !parentWidget.isStocking()} 挡着，服务端 {@code enableAmount}
+     * 只改服务端实例的 visible、不会同步给客户端），这里只是把边界写清楚。
      *
      * @see com.gregtechceu.gtceu.integration.ae2.gui.widget.ConfigWidget 每块配置面板 144×74
      */
     @Override
     public Widget createUIWidget() {
-        WidgetGroup group = new WidgetGroup(0, 0, 150, 166);
+        WidgetGroup group = new WidgetGroup(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
 
         // ME 网络状态
         group.addWidget(new LabelWidget(3, 0, () -> isOnline() ?
@@ -425,12 +460,28 @@ public class ETMEDualStockingPartMachine extends ETTagFilterStockBusPartMachine 
                 "gtceu.gui.me_network.offline"));
 
         // 物品侧配置槽（父类那份列表）
-        group.addWidget(new AEItemConfigWidget(3, 12, aeItemHandler));
+        group.addWidget(new AEItemConfigWidget(3, ITEM_BLOCK_Y, aeItemHandler));
         // 流体侧配置槽
-        group.addWidget(new AEFluidConfigWidget(3, 90, aeFluidHandler));
+        group.addWidget(new AEFluidConfigWidget(3, FLUID_BLOCK_Y, aeFluidHandler));
 
         return group;
     }
+
+    // ///////////////////////////////
+    // ********** 主页面尺寸 *******//
+    // ///////////////////////////////
+
+    /** 主页面宽度：两块配置面板各 144 宽、左边距 3 → 内容 147；留到 150，窗口最小宽 172 依旧由 GTM 兜底。 */
+    private static final int PANEL_WIDTH = 150;
+    /** 物品侧配置面板的 Y（在上面；下面那块变大时它向上让位）。 */
+    private static final int ITEM_BLOCK_Y = 12;
+    /** 流体侧配置面板的 Y：物品块底边（12 + 74 = 86）再留 8px 间距。 */
+    private static final int FLUID_BLOCK_Y = 94;
+    /**
+     * 主页面高度 = 流体块底边（94 + GTM 配置面板的 74）—— 别改成别的数，
+     * 理由见 {@link #createUIWidget()} 上那两条 ⚠️。
+     */
+    private static final int PANEL_HEIGHT = FLUID_BLOCK_Y + 74;
 
     @Override
     public void attachConfigurators(ConfiguratorPanel configuratorPanel) {

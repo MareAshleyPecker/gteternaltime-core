@@ -97,6 +97,25 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
         return actionSource;
     }
 
+    // ////////////////////////////////
+    // ***** 仓室隔离（IMultiPart）****//
+    // ////////////////////////////////
+
+    /**
+     * <b>仓室隔离</b>：禁止本件被两个多方块同时占用（防串配方）。
+     *
+     * <p>
+     * 语义、运行时影响（{@code BlockPattern#checkPatternAt} 里
+     * {@code isFormed() && !canShared() && !hasController(...)} 那一处判定）与「为什么本件必须隔离」
+     * 的完整说明见物品版 {@link ETTagFilterStockBusPartMachine#canShared()} —— 流体侧的配置
+     * （{@link #tagWhite} / {@link #tagBlack} / {@code batchSize}）同样是每件独立的，
+     * 共享会让两个控制器的配方匹配读到同一份 {@code stock}。
+     */
+    @Override
+    public boolean canShared() {
+        return false;
+    }
+
     // ///////////////////////////////
     // ****** 标签过滤（接口实现）*****//
     // ///////////////////////////////

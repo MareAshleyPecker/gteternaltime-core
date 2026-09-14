@@ -109,6 +109,56 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
         return MANAGED_FIELD_HOLDER;
     }
 
+    // ////////////////////////////////
+    // ***** 仓室隔离（IMultiPart）****//
+    // ////////////////////////////////
+
+    /**
+     * <b>仓室隔离</b>：禁止本件被两个多方块同时占用（防串配方）。
+     *
+     * <h2>这道闸门在运行时到底卡住了什么</h2>
+     * {@code IMultiPart#canShared()} 的默认实现返回 {@code true}（GTM 源码：接口里就一句
+     * {@code default boolean canShared() { return true; }}），而全 GTM 只有**一个**消费点：
+     * {@code BlockPattern#checkPatternAt} 逐格匹配时，若该格上的方块是 {@code IMultiPart}：
+     * <pre>
+     * if (part.isFormed() &amp;&amp; !part.canShared() &amp;&amp; !part.hasController(worldState.controllerPos)) {
+     *     canPartShared = false;
+     *     worldState.setError(new PatternStringError("multiblocked.pattern.error.share"));
+     * }
+     * ...
+     * if (!predicate.test(worldState) || !canPartShared) { ... 该格匹配失败 ... }
+     * </pre>
+     * 于是：
+     * <ul>
+     * <li>{@code isFormed()} 在 {@code MultiblockPartMachine} 里就是 {@code !controllerPositions.isEmpty()}
+     * —— 也就是「本件已经属于某个**已成型**的多方块」；</li>
+     * <li>此时若本件不允许共享、且当前正在检查的这个控制器**不是**它已有的控制器，本格直接判失败
+     * → <b>第二个多方块结构成不了型</b>（控制器界面在该格显示
+     * {@code multiblocked.pattern.error.share}，⚠️ 该键 GTM 与 LDLib 的 lang 里都没有，玩家看到的是原文键名）；</li>
+     * <li>{@code hasController(controllerPos)} 那一项保证**同一个控制器重新检查自己的结构**（成型后周期性复检）
+     * 不会被自己挡住；</li>
+     * <li>{@code predicate.isAny()} 那层守卫只对「任意方块」的通配位放行，本族部件所在的位置都是
+     * {@code autoAbilities(...)} 里的具体 {@code blocks(...)} 候选，不是通配，所以照卡。</li>
+     * </ul>
+     *
+     * <h2>为什么本件必须隔离</h2>
+     * 「标签 / 定量 / 库存列表」全是**每件独立**的配置（{@link #tagWhite}、{@link #tagBlack}、
+     * {@code batchSize}、{@code stock}）。被两个多方块共享时，两个控制器会读同一份 {@code stock} 与同一套标签闸门，
+     * 配方匹配会互相看见对方的料 —— 这就是「串配方」。
+     * 同族先例：本项目自己的 {@code ThreadHatchPartMachine} / {@code OverclockHatchPartMachine} /
+     * {@code ETParallelHatchPartMachine} 都写了这一条，GTM 自己的 {@code ParallelHatchPartMachine} /
+     * {@code TankValvePartMachine} / {@code MaintenanceHatchPartMachine}（接口默认方法里覆写）同样如此。
+     *
+     * <p>
+     * ⚠️ 这**不是**「一个结构里只能放一件」：它只挡「同一格方块同时属于两个已成型结构」，
+     * 一个结构里放两件各自独立的库存总线照旧允许（仓库去重由 {@code distinct} 与
+     * {@link #testConfiguredInOtherPart} 管）。
+     */
+    @Override
+    public boolean canShared() {
+        return false;
+    }
+
     // ///////////////////////////////
     // ****** 标签过滤（接口实现）*****//
     // ///////////////////////////////
