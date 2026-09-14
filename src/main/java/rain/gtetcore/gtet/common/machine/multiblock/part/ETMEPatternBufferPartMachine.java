@@ -7,6 +7,7 @@ import com.gregtechceu.gtceu.integration.ae2.gui.widget.AETextInputButtonWidget;
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.slot.AEPatternViewSlotWidget;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEPatternBufferPartMachine;
 
+import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 import com.lowdragmc.lowdraglib.gui.widget.DraggableScrollableWidgetGroup;
 import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
@@ -15,6 +16,7 @@ import com.lowdragmc.lowdraglib.utils.Position;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import appeng.api.implementations.blockentities.PatternContainerGroup;
@@ -50,7 +52,8 @@ import rain.gtetcore.gtet.mixin.GTM.IMEPatternBufferAccess;
  * <ol>
  * <li>{@link #getTerminalPatternInventory()}：父类返回的那个匿名 {@code InternalInventory}
  * 的 {@code size()} 也是内联的 27（AE 终端据此决定能放几盘样板），换成按真实格子数；</li>
- * <li>{@link #createUIWidget()}：父类的面板写死 9×3，换成 9 列 × ⌈容量/9⌉ 行；</li>
+ * <li>{@link #createUIWidget()}：父类的面板写死 9×3，换成「9 列一块、需要时并排多块」的网格
+ * （**不滚动**，四档全部一眼看全，见该方法的注释与 {@link #createUI(Player)}）；</li>
  * <li>{@link #getTerminalGroup()}：父类在「未成型」分支把图标与名字写死成 GTM 自己的
  * {@code me_pattern_buffer}，换成我们自己这一档的定义。</li>
  * </ol>
@@ -65,20 +68,37 @@ import rain.gtetcore.gtet.mixin.GTM.IMEPatternBufferAccess;
 @MethodsReturnNonnullByDefault
 public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
 
-    /** 面板列数（与 GTM 一致：9 列）。 */
-    private static final int COLUMNS = 9;
+    /** 一格样板槽的像素边长（LDLib 标准格）。 */
+    private static final int SLOT = 18;
+
+    /** 一个网格块的列数（与 GTM 的面板一致：9 列）。 */
+    private static final int BLOCK_COLUMNS = 9;
 
     /**
-     * 面板最多同时显示几行（超过就套可拖动滚动区）。
-     * <p>
-     * ⚠️ 为什么要有这个上限：GTM 的机器 UI 由 {@code FancyMachineUIWidget} **按内容尺寸撑开**
-     * （源码 194-199 行：{@code setSize(max(172, page.width+border*2), ...)} 后还会
-     * {@code getGui().setSize(...)}），所以 24 行 = 448px 的面板会把整个 GUI 顶出屏幕
-     * （1080p + GUI 缩放 2 时可用高度只有 240px），底部格子既看不见也点不到。
-     * 8 行 = 144px 配上标题栏与玩家背包刚好放得下。1 档 3 行、2 档 7 行都**不会**触发滚动，
-     * 面板与规格一致；3、4 档各多出的行靠拖动/滚轮查看。
+     * 一个网格块最多几行（12 行 = 216px）。
+     *
+     * <p>这个数不是"可见行数上限"（**不再滚动**），而是"要不要再并一块"的阈值：
+     * 行数一多就横向再铺一块 9 列的块，而不是让面板无限变高。
+     * 取 12 的依据见 {@link #createUIWidget()} 里的高度账。
      */
-    private static final int VISIBLE_ROWS = 8;
+    private static final int MAX_ROWS_PER_BLOCK = 12;
+
+    /**
+     * 面板最多并几块（2 块 = 18 列 = 340px 宽）。
+     *
+     * <p>宽度也要有上限：GTM 的 fancy UI 把页码侧栏画在窗口**左侧外面**
+     * （{@code FancyMachineUIWidget} 的 {@code VerticalTabsWidget} 在 x=-20），窗口一旦宽过屏幕，
+     * 侧栏会被挤出屏幕、玩家连翻页都点不到。所以宁可让兜底去管高度（见
+     * {@link ETPatternBufferUIWidget} 的底边贴屏），也不让宽度无限长。
+     */
+    private static final int MAX_BLOCKS = 2;
+
+    /** 网格上方的状态行高度（ME 网络状态 + 改名按钮，固定在面板最上一行）。 */
+    private static final int HEADER = 14;
+
+    /** 面板左右各留 8px、底边留 2px（沿用 GTM 那一版的边距）。 */
+    private static final int PADDING_X = 8;
+    private static final int PADDING_BOTTOM = 2;
 
     /**
      * AE 终端看到的样板库存视图（尺寸 = 真实格子数）。
@@ -144,56 +164,120 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
                 definition.getItem().getDescription(), Collections.emptyList());
     }
 
+    /**
+     * 机器 UI：一行与 GTM 的 {@code IFancyUIMachine#createUI} **逐字对应**，只把
+     * {@code FancyMachineUIWidget} 换成会"底边贴屏"的子类（见 {@link ETPatternBufferUIWidget}）。
+     *
+     * <p>为什么必须在这里换、而不能只在 {@code createUIWidget()} 里做：窗口的尺寸与屏幕定位由
+     * {@code FancyMachineUIWidget#setupFancyUI} 决定（它按内容算尺寸、再 {@code getGui().setSize()}），
+     * 面板控件自己没有屏幕坐标。用户的要求是"面板从物品栏分割线向上/左/右扩"，而"往上长"这件事
+     * 在 LDLib 里是**窗口居中**的表现，窗口一高就会上下一起出屏 —— 所以要在窗口这一层兜底。
+     * 层级关系（GTM {@code IFancyUIMachine}）：{@code ModularUI.mainGroup} ← 本类（FancyMachineUIWidget）
+     * ← {@code pageContainer} ← {@code createUIWidget()} 返回的面板。
+     */
+    @Override
+    public ModularUI createUI(Player entityPlayer) {
+        return new ModularUI(176, 166, this, entityPlayer)
+                .widget(new ETPatternBufferUIWidget(this, 176, 166));
+    }
+
+    /**
+     * 样板槽面板：**9 列一块，需要几块就并排几块；不套滚动区，四档全部一眼看全**。
+     *
+     * <h2>布局规则与四档的实际尺寸</h2>
+     * <pre>
+     * 每块 = BLOCK_COLUMNS(9) 列 × rows 行；rows = ⌈容量 / (9 × 块数)⌉
+     * 块数 = clamp(⌈容量 / (9 × 12)⌉, 1, 2)
+     *
+     * 档位  容量  块数×行数   面板(宽×高)   整个窗口高 = 面板高 + 8(边框) + 86(玩家物品栏)
+     * LuV    27   1 × 3      178 ×  70        164
+     * UV     63   1 × 7      178 × 142        236
+     * UEV   126   2 × 7      340 × 142        236
+     * UXV   216   2 × 12     340 × 232        326
+     * </pre>
+     * ⚠️ 玩家物品栏那 86 是 LDLib {@code PlayerInventoryWidget} 的**默认尺寸 172×86**
+     * （javap 本项目实际编译用的 ldlib deobf jar：构造器里 {@code super(0,0,172,86)}）；
+     * 8 是 {@code FancyMachineUIWidget#setupFancyUI} 的 {@code border*2}（border 默认 4）。
+     *
+     * <h2>为什么这样摆（以及当年为什么会去滚动）</h2>
+     * 上一轮把槽位按 ⌈容量/9⌉ 排成**一列**：216 格 = 24 行 = 448px 面板 ⇒ 542px 窗口，
+     * 在任何常用 GUI 缩放（1080p 缩放 2 = 540、缩放 3 = 360、自动 = 270）下都放不下，
+     * 于是退成了"8 行 + 拖动滚动区"。用户否掉了滚动，并要求"面板向上扩、底边固定在物品栏分割线"。
+     * 现在改成：**高度只到 12 行封顶，多出来的容量往左右并块**，于是四档都不需要滚动，
+     * 最坏 326px 的窗口在 1080p 缩放 2/3 下都装得下；真的装不下时（更小的窗口或更高的缩放）
+     * 由 {@link ETPatternBufferUIWidget} 把窗口下移到底边贴屏，**宁可裁掉最上面几行也不让底部
+     * 格子出屏**（用户口径）。宽度封在 2 块 = 340px 的理由见 {@link #MAX_BLOCKS}。
+     *
+     * <h2>块内怎么排</h2>
+     * 每块 9 列、共 rows 行；第 b 块放槽位 {@code [b*9*rows, (b+1)*9*rows)}，块内**先列后行**
+     * （与 GTM 面板一致：{@code x = i%9, y = i/9}）。所以槽号沿着一块从上往下、再换到右面一块，
+     * 与"总成里的第 N 盘样板"一一对应、不跳号。
+     *
+     * <h2>兜底（几乎不可达）</h2>
+     * 容量若超过 9×12×2 = 216（当前注册表的四档最大就是 216；注册上限 4096 只是防笔误），
+     * 块数被 {@link #MAX_BLOCKS} 卡住、行数会超过 12，这里才退回 GTM 那套"可拖动滚动区"，
+     * 免得做出一个高得离谱的窗口。这是**防御性**分支，正常游戏里走不到。
+     */
     @Override
     public Widget createUIWidget() {
         var inventory = getPatternInventory();
         int capacity = inventory.getSlots();
-        // 9 列向上取整：27→3 行、63→7 行、126→14 行、216→24 行
-        int rows = (capacity + COLUMNS - 1) / COLUMNS;
-        int gridHeight = 18 * rows;
-        int viewHeight = Math.min(gridHeight, 18 * VISIBLE_ROWS);
 
-        var group = new WidgetGroup(0, 0, 18 * COLUMNS + 16, viewHeight + 16);
+        int perBlockCapacity = BLOCK_COLUMNS * MAX_ROWS_PER_BLOCK;
+        int blocks = Math.max(1, Math.min(MAX_BLOCKS, (capacity + perBlockCapacity - 1) / perBlockCapacity));
+        int rows = (capacity + BLOCK_COLUMNS * blocks - 1) / (BLOCK_COLUMNS * blocks);
 
-        // 顶部：ME 网络状态 + 改名（固定在顶部，不随网格滚动）
-        group.addWidget(new LabelWidget(8, 2,
+        int blockWidth = SLOT * BLOCK_COLUMNS;
+        int gridWidth = blockWidth * blocks;
+        int gridHeight = SLOT * rows;
+        boolean scrolling = rows > MAX_ROWS_PER_BLOCK;
+        int viewHeight = scrolling ? SLOT * MAX_ROWS_PER_BLOCK : gridHeight;
+
+        int pageWidth = gridWidth + PADDING_X * 2;
+        int pageHeight = HEADER + viewHeight + PADDING_BOTTOM;
+        var group = new WidgetGroup(0, 0, pageWidth, pageHeight);
+
+        // 顶部：ME 网络状态 + 改名（固定在面板最上一行，不随网格动）
+        group.addWidget(new LabelWidget(PADDING_X, 2,
                 () -> isOnline() ? "gtceu.gui.me_network.online" : "gtceu.gui.me_network.offline"));
-        group.addWidget(new AETextInputButtonWidget(18 * COLUMNS + 8 - 70, 2, 70, 10)
+        group.addWidget(new AETextInputButtonWidget(pageWidth - PADDING_X - 70, 2, 70, 10)
                 .setText(access().gtet$getCustomName())
                 .setOnConfirm(this::setCustomName)
                 .setButtonTooltips(Component.translatable("gui.gtceu.rename.desc")));
 
-        // 网格本体：9 列 × rows 行，格子数正好等于容量
-        var grid = new WidgetGroup(0, 0, 18 * COLUMNS, gridHeight);
+        // 网格本体：块数 × (9 列 × rows 行)，格子数正好等于容量
+        var grid = new WidgetGroup(0, 0, gridWidth, gridHeight);
         int index = 0;
-        for (int y = 0; y < rows; y++) {
-            for (int x = 0; x < COLUMNS; x++) {
-                if (index >= capacity) break;
-                int slotIndex = index++;
-                grid.addWidget(new AEPatternViewSlotWidget(inventory, slotIndex, x * 18, y * 18)
-                        .setOccupiedTexture(GuiTextures.SLOT)
-                        .setItemHook(stack -> {
-                            // 编码样板显示成它的产物（与 GTM 的面板一致）
-                            if (!stack.isEmpty() && stack.getItem() instanceof EncodedPatternItem iep) {
-                                ItemStack out = iep.getOutput(stack);
-                                if (!out.isEmpty()) return out;
-                            }
-                            return stack;
-                        })
-                        .setChangeListener(() -> access().gtet$onPatternChange(slotIndex))
-                        .setBackground(GuiTextures.SLOT, GuiTextures.PATTERN_OVERLAY));
+        for (int b = 0; b < blocks && index < capacity; b++) {
+            var block = new WidgetGroup(b * blockWidth, 0, blockWidth, gridHeight);
+            for (int y = 0; y < rows && index < capacity; y++) {
+                for (int x = 0; x < BLOCK_COLUMNS && index < capacity; x++) {
+                    int slotIndex = index++;
+                    block.addWidget(new AEPatternViewSlotWidget(inventory, slotIndex, x * SLOT, y * SLOT)
+                            .setOccupiedTexture(GuiTextures.SLOT)
+                            .setItemHook(stack -> {
+                                // 编码样板显示成它的产物（与 GTM 的面板一致）
+                                if (!stack.isEmpty() && stack.getItem() instanceof EncodedPatternItem iep) {
+                                    ItemStack out = iep.getOutput(stack);
+                                    if (!out.isEmpty()) return out;
+                                }
+                                return stack;
+                            })
+                            .setChangeListener(() -> access().gtet$onPatternChange(slotIndex))
+                            .setBackground(GuiTextures.SLOT, GuiTextures.PATTERN_OVERLAY));
+                }
             }
+            grid.addWidget(block);
         }
 
-        if (gridHeight > viewHeight) {
-            // 行数超上限：套可拖动滚动区（同 GTM 的维护仓那块面板的做法），
-            // 拖动/滚轮查看被裁掉的行，而不是让面板顶出屏幕
-            group.addWidget(new DraggableScrollableWidgetGroup(8, 14, 18 * COLUMNS, viewHeight)
+        if (scrolling) {
+            // 只有容量 > 216 才可能走到（见方法注释「兜底」）：退回 GTM 维护仓那套可拖动滚动区
+            group.addWidget(new DraggableScrollableWidgetGroup(PADDING_X, HEADER, gridWidth, viewHeight)
                     .setYScrollBarWidth(4)
                     .setDraggable(false)
                     .addWidget(grid));
         } else {
-            grid.setSelfPosition(new Position(8, 14));
+            grid.setSelfPosition(new Position(PADDING_X, HEADER));
             group.addWidget(grid);
         }
         return group;

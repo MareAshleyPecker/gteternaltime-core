@@ -34,8 +34,9 @@ object ALLSmahine {
         // ME 标签库存件：⚠️ AE2 没装时这里返回空表（那两件直接引用 appeng.*，装不上就加载不了，
         // 与 GTM 自己的 GTAEMachines 一样按 isAE2Loaded 挡在外面）
         TAG_FILTER_HATCHES = ETTagFilterHatches.register(ETRegistrate)
-        // ME 多阶段样板总成 + 镜像（四档）：同样按 isAE2Loaded 挡在外面；
-        // ⚠️ 它还会把每档容量登记进 ETPatternBufferCapacities（mixin 按方块定义查容量用）
+        // ME 多阶段样板总成（四档）+ 通用镜像（一件，能连所有档位）：同样按 isAE2Loaded 挡在外面；
+        // ⚠️ 它还会把每档容量登记进 ETPatternBufferCapacities（mixin 按方块定义查容量用，
+        //    通用镜像的代理表也按那张表的最大值建）
         PATTERN_BUFFER_HATCHES = ETMEPatternBufferHatches.register(ETRegistrate)
         // ME 库存输入总线 / 输入仓（GTM 那两件的同行为另注册）+ ME 二合一库存输入总成：
         // 同样按 isAE2Loaded 挡在外面
@@ -58,7 +59,7 @@ object ALLSmahine {
     var TAG_FILTER_HATCHES: List<MachineDefinition> = emptyList()
         private set
 
-    /** 「ME 多阶段样板总成 / 镜像」八件（LuV 27 / UV 63 / UEV 126 / UXV 216，各配一份镜像）；AE2 缺失时为空表。 */
+    /** 「ME 样板总成 / 镜像」五件（LuV 27 / UV 63 / UEV 126 / UXV 216 + 一件全档通用镜像）；AE2 缺失时为空表。 */
     var PATTERN_BUFFER_HATCHES: List<MachineDefinition> = emptyList()
         private set
 

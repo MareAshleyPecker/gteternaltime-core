@@ -105,6 +105,27 @@ public final class ETPatternBufferCapacities {
     }
 
     /**
+     * 已登记的最大容量 —— 也就是「一件镜像要能服务所有档位」所需的代理槽数。
+     *
+     * <p>镜像只有 LuV 一件（见 {@code ETMEPatternBufferHatches}），却要能连 27 / 63 / 126 / 216
+     * 任何一档的总成，所以它的槽级代理表必须按**表里最大的那一档**建：
+     * 多方块只在**成型那一刻**收集一次部件处理器表（证据见
+     * {@code WorkableMultiblockMachine#onStructureFormed} 与 {@code IRecipeCapabilityHolder#addHandlerList}），
+     * 之后换表它看不见，所以容量不能等"连上宿主"再决定。
+     * 完整取舍见 {@code ETProxySlotRecipeHandler} 的类注释。
+     *
+     * <p>⚠️ 必须在**所有档位注册完之后**调用（机器实例只会在方块实体创建时构造，必然晚于注册）。
+     * 没登记过任何档位时返回 {@link #NATIVE}。
+     */
+    public static int maxCapacity() {
+        int max = NATIVE;
+        for (int capacity : BY_DEFINITION.values()) {
+            if (capacity > max) max = capacity;
+        }
+        return max;
+    }
+
+    /**
      * 运行时自检：机器的实际存储格子数与表里登记的是否一致。
      *
      * <p>⚠️ 这是给「mixin 没生效」准备的**探针**：mixin 若因 GTM 版本变化没能改写那 3 处常量，

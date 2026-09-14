@@ -1,5 +1,6 @@
 package rain.gtetcore.gtet.common.machine.multiblock.part;
 
+import com.gregtechceu.gtceu.api.GTValues;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -35,7 +36,7 @@ import rain.gtetcore.gtet.Gtetcore;
 import rain.gtetcore.gtet.integration.ae2.ETProxySlotRecipeHandler;
 
 /**
- * 「多阶段 ME 样板总成镜像」：贴在多方块里的代理部件，把配方输入转发到别处的
+ * 「ME 样板总成镜像」：贴在多方块里的代理部件，把配方输入转发到别处的
  * {@link ETMEPatternBufferPartMachine}。
  *
  * <h2>作用与用法</h2>
@@ -43,10 +44,26 @@ import rain.gtetcore.gtet.integration.ae2.ETProxySlotRecipeHandler;
  * （总成的 {@code onDataStickShiftUse} 会把坐标写进闪存的 {@code pos}），再对着镜像右键绑定；
  * 之后多方块从镜像这里拿输入，实际数据在总成里。一个总成可以挂多个镜像（各机器共享同一批样板）。
  *
+ * <h2>只有一件，且能连所有档位（本轮改动）</h2>
+ * 镜像曾经按档注册四件（LuV/UV/UEV/UXV，各带自己的容量），实机验收后用户要求**只留 LuV 一件、
+ * 让它能连上所有档位的总成**。所以：
+ * <ul>
+ * <li>本类现在只有一个构造器，tier 固定 {@code GTValues.LuV}（非能源部件不看部件 tier，
+ * 只影响外壳贴图；GTM 自己也是拿 LuV 的 ME 部件去装更高档的多方块）；</li>
+ * <li>槽级代理表按 {@link rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities#maxCapacity()}
+ * 建死（= 已登记档位里最大的那个，本 mod 是 216），绑定时前 N 个指向宿主的 N 个槽、
+ * 其余整条解绑 —— 于是 27 / 63 / 126 / 216 任何一档都能连，**证据链与代价记账在
+ * {@link ETProxySlotRecipeHandler} 的类注释里**（核心是：多方块只在成型那一刻收集一次部件
+ * 处理器表，成型后换表它看不见，所以表长不能按宿主临时决定）；</li>
+ * <li>因此原来那条「低档镜像连高档总成 → 后面 N 个槽不会被转发」的 WARN **删掉了**：
+ * 那个失败方式已经不存在。只剩下一条不变式告警（宿主容量竟然大于表长，只可能意味着容量表在
+ * 镜像构造之后被改过，见 {@link #warnIfTableTooSmall}）。</li>
+ * </ul>
+ *
  * <h2>为什么不继承 GTM 的 MEPatternBufferProxyPartMachine</h2>
  * <ol>
  * <li>它的构造器把槽位数写死成 {@code MEPatternBufferPartMachine.MAX_PATTERN_COUNT}（27），
- * 而本 mod 的镜像要按档转发 27/63/126/216 个槽 —— 这是本功能的**核心**，改不了就等于没做；</li>
+ * 而本 mod 的镜像要转发到 216 格的宿主 —— 这是本功能的**核心**，改不了就等于没做；</li>
  * <li>它的 tier 被它自己的 super 调用锁死在 {@code GTValues.LuV}，而我们要与四个阶段同级外壳；</li>
  * <li>它转发时点名 {@code InternalSlotRecipeHandler.SlotRHL}（protected 嵌套类，跨包不可见），
  * 我们无法把它换成"转发到本 mod 总成"。</li>
@@ -90,7 +107,7 @@ public class ETMEPatternBufferProxyPartMachine extends TieredIOPartMachine
     protected static final ManagedFieldHolder MANAGED_FIELD_HOLDER = new ManagedFieldHolder(
             ETMEPatternBufferProxyPartMachine.class, TieredIOPartMachine.MANAGED_FIELD_HOLDER);
 
-    /** 本镜像的槽级代理表（构造期按本档容量建好，绑定只改转发目标）。 */
+    /** 本镜像的槽级代理表（构造期按**已登记的最大容量**建好，绑定只改转发目标）。 */
     @Getter
     private final ETProxySlotRecipeHandler proxySlotRecipeHandler;
 
@@ -105,14 +122,11 @@ public class ETMEPatternBufferProxyPartMachine extends TieredIOPartMachine
     private boolean bufferResolved = false;
 
     /**
-     * @param holder   方块实体
-     * @param tier     本档电压等级（只影响外壳贴图与提示：多方块的非能源部件不看部件 tier，
-     *                 GTM 自己也是拿 LuV 的 ME 部件去装机）
-     * @param capacity 本档要转发的样板槽位数（与同档总成一致；见 {@link ETProxySlotRecipeHandler}）
+     * @param holder 方块实体（容量不从这里传：表长取自容量表，见 {@link ETProxySlotRecipeHandler}）
      */
-    public ETMEPatternBufferProxyPartMachine(IMachineBlockEntity holder, int tier, int capacity) {
-        super(holder, tier, IO.IN);
-        this.proxySlotRecipeHandler = new ETProxySlotRecipeHandler(this, capacity);
+    public ETMEPatternBufferProxyPartMachine(IMachineBlockEntity holder) {
+        super(holder, GTValues.LuV, IO.IN);
+        this.proxySlotRecipeHandler = new ETProxySlotRecipeHandler(this);
     }
 
     @Override
@@ -147,7 +161,7 @@ public class ETMEPatternBufferProxyPartMachine extends TieredIOPartMachine
             buffer = machine;
             if (!isRemote()) {
                 proxySlotRecipeHandler.updateProxy(machine);
-                warnIfCapacityMismatch(machine);
+                warnIfTableTooSmall(machine);
             }
         } else {
             // 不是本 mod 的样板总成（GTM 原生的、或那个位置压根不是总成）：解绑并清掉代理，
@@ -211,15 +225,21 @@ public class ETMEPatternBufferProxyPartMachine extends TieredIOPartMachine
     }
 
     /**
-     * 档位不对（镜像槽数 < 宿主槽数）时警告一次：多出来的宿主槽**不会**被本镜像转发，
-     * 多方块只能吃到前 N 个槽。低档镜像配高档总成是能用的，但通常不是本意。
+     * 不变式告警：**宿主容量竟然大于本镜像的代理表长**。
+     *
+     * <p>这件镜像的表按「已登记的最大容量」建（见 {@link ETProxySlotRecipeHandler}），所以
+     * 「低档镜像连高档总成」这种过去要警告的用法现在**完全正常、不再警告**：高档宿主的每一个槽
+     * 都在表内，低档宿主只是用不完表。这一条只剩不变式意义 —— 能触发它只意味着**容量表在镜像
+     * 构造之后又登记了更大的档位**（注册全在 mod 初始化期完成，机器实例只会在方块实体创建时构造，
+     * 正常流程下不可能发生）。真触发了说明有人破坏了那个顺序，必须吵一次而不是静默少转发。
      */
-    private void warnIfCapacityMismatch(ETMEPatternBufferPartMachine machine) {
-        int proxySlots = proxySlotRecipeHandler.getProxySlotHandlers().size();
+    private void warnIfTableTooSmall(ETMEPatternBufferPartMachine machine) {
+        int proxySlots = proxySlotRecipeHandler.getSlotCount();
         int bufferSlots = machine.getPatternCapacity();
         if (bufferSlots > proxySlots) {
-            Gtetcore.LOGGER.warn("[gtetcore] {} 的镜像只带 {} 个槽，但 {} 有 {} 个样板槽：后面 {} 个槽不会被转发。" +
-                    "请用与总成同档的镜像", getPos(), proxySlots, machine.getPos(), bufferSlots, bufferSlots - proxySlots);
+            Gtetcore.LOGGER.warn("[gtetcore] {} 的镜像代理表只有 {} 格，但 {} 有 {} 个样板槽：" +
+                    "容量表可能在镜像构造之后才登记这一档，后面 {} 个槽不会被转发",
+                    getPos(), proxySlots, machine.getPos(), bufferSlots, bufferSlots - proxySlots);
         }
     }
 }

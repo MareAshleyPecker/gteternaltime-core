@@ -53,12 +53,39 @@ import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferPartMa
  * 逐个对应（含 {@code HIGH + 槽号 + 1} 的优先级与「空槽直接放过」的短路）。
  * 坏处是多了一层自己的转发器对象，好处是一行 GTM 代码都不用复制。
  *
- * <h2>容量与绑定时序</h2>
- * 表在**构造期**按本档容量建好（一份镜像对应一档，容量由注册表给），绑定时只把每个转发器的
- * 目标指针指过去 —— 与 GTM 一样不给多方块「中途换表」的机会（多方块注册处理器表有缓存，
- * 列表长度中途变化不可靠）。宿主容量比镜像小时多出来的转发器保持空代理（与 GTM 的未绑定
- * ProxyRHL 语义一致：内容为空、放过一切），并在 {@code ETMEPatternBufferProxyPartMachine}
- * 里给一次警告。
+ * <h2>表为什么按「已登记的最大容量」一次建死（**本类的核心取舍**）</h2>
+ * 镜像只有 LuV 一件，却要能连 27 / 63 / 126 / 216 任何一档的总成，所以表长在**构造期**就得
+ * 取一个"够所有档位用"的值（{@link ETPatternBufferCapacities#maxCapacity()}）。
+ * 为什么不能在「连上宿主的时刻」按宿主的实际容量重建表 —— 这是本轮专门核实的点，证据链：
+ * <ol>
+ * <li>{@code WorkableMultiblockMachine#onStructureFormed}（源码 121-141 行）在**成型那一刻**
+ * 遍历 {@code getParts()}、拿走每个部件的 {@code getRecipeHandlers()}，逐个
+ * {@code this.addHandlerList(handlerList)} 并订阅；</li>
+ * <li>{@code IRecipeCapabilityHolder#addHandlerList}（源码 37-47 行）把**这一批 RHL 对象与它们
+ * 内部的 {@code IRecipeHandler} 引用**拷进控制器的 {@code capabilitiesProxy} /
+ * {@code capabilitiesFlat} 两张表；</li>
+ * <li>多方块侧全项目只有 {@code onStructureFormed} 这一处调用它（`grep addHandlerList` 只有
+ * WorkableMultiblockMachine:138 / 153 两行是多方块路径），{@code onStructureInvalid} 才会清表。
+ * 也就是说：**成型之后再改我们返回的 List，控制器不会重新收集**，只会继续拿旧对象。</li>
+ * </ol>
+ * 好消息是"收集的是对象、不是快照值"：所以只要**对象本身**在，绑定时改它们的目标指针就立刻生效
+ * （这也是 GTM 自己 {@code ProxySlotRecipeHandler} 的做法）。
+ * 于是方案是：表按最大容量建死，绑定时前 N 个指到宿主的 N 个槽，**宿主用不到的格子整条解绑**
+ * （与 GTM 未绑定 ProxyRHL 同语义：{@code handleRecipeInner} 原样返回、{@code getSize()==0}、
+ * {@code getContents()} 为空、优先级 LOW），于是它们既不会转发也不会订阅任何东西。
+ *
+ * <h3>代价（诚实记账）</h3>
+ * 低档总成（27）配这件镜像时，控制器里会多出 216-27=189 条**空** RHL —— 每次配方匹配/并行检查
+ * 都会各自被"试一次然后跳过"。同样的量级 GTM 自己也吃：{@code InternalSlotRecipeHandler}
+ * 是**一槽一条 RHL**，所以 216 档总成本来就有 216 条。语义上无影响（空 RHL 在
+ * {@code RecipeRunner#handleContents} 的 BUS_DISTINCT 循环里永远返回未消耗完的 left → continue，
+ * 在 {@code ItemRecipeCapability#getInputContents} 里因内容为空被跳过）。
+ * <p>
+ * 被否掉的另一条路：绑定时重建一个"正好等于宿主容量"的表，然后手动让控制器重收集
+ * （{@code MultiblockControllerMachine#checkPattern()} 是 public、{@code onStructureFormed()}
+ * 会 clear 两张表再收）。不做，因为：它要在**玩家插闪存**这一刻跑一次完整结构校验并重放
+ * 部件的成型/失效回调（{@code onStructureInvalid} → {@code recipeLogic.resetRecipeLogic()} 等），
+ * 而镜像**未必已经成型**（先绑后建是常规玩法），两条时序都得兜；相比之下"建大表"只是一点空遍历。
  *
  * @author rain fox
  */
@@ -68,18 +95,30 @@ public final class ETProxySlotRecipeHandler {
     private final List<RecipeHandlerList> proxySlotHandlers;
 
     /**
+     * 按 {@link ETPatternBufferCapacities#maxCapacity()}（= 所有已登记档位的最大样板槽位数）
+     * 建好整张表。
+     *
      * @param machine 镜像机器（转发器要挂在它身上：配方逻辑是按部件找 handler 的）
-     * @param slots   本档容量（= 镜像所配阶段的样板槽位数）
      */
-    public ETProxySlotRecipeHandler(MetaMachine machine, int slots) {
+    public ETProxySlotRecipeHandler(MetaMachine machine) {
+        int slots = ETPatternBufferCapacities.maxCapacity();
         proxySlotHandlers = new ArrayList<>(slots);
         for (int i = 0; i < slots; i++) {
             proxySlotHandlers.add(new ProxyRHL(machine, i));
         }
     }
 
+    /** 本表能转发多少个样板槽（= 已登记的最大容量，也是 {@code getProxySlotHandlers().size()}）。 */
+    public int getSlotCount() {
+        return proxySlotHandlers.size();
+    }
+
     /**
-     * 绑定宿主：第 i 个镜像槽 → 宿主第 i 个槽。
+     * 绑定宿主：第 i 个镜像槽 → 宿主第 i 个槽；**宿主没有的格子（i ≥ 宿主容量）整条解绑**。
+     *
+     * <p>因为表按最大容量建死，低档宿主天然只用到前面一段，剩下的格子保持"空代理"，
+     * 这正是 GTM 未绑定 ProxyRHL 的语义，不再需要按档警告（见
+     * {@code ETMEPatternBufferProxyPartMachine} 的类注释）。
      *
      * @param buffer 宿主总成（本 mod 的多阶段样板总成）
      */
@@ -127,6 +166,12 @@ public final class ETProxySlotRecipeHandler {
         }
 
         void bind(ETMEPatternBufferPartMachine buffer, @Nullable InternalSlot slot) {
+            // 宿主没有这一格（低档总成配这件通用镜像的常规情形）：整条解绑 ——
+            // 共享设施也不挂，免得给宿主的电路槽/共享库存白加几百个内容变化订阅。
+            if (slot == null) {
+                unbind();
+                return;
+            }
             // 宿主总成的三件共享设施：电路槽、共享库存、共享流体仓（与 GTM 的 SlotRHL 装的是同一批对象）
             circuit.setProxy(buffer.getCircuitInventory());
             sharedItem.setProxy(buffer.getShareInventory());
@@ -136,21 +181,20 @@ public final class ETProxySlotRecipeHandler {
             boundSlot = slot;
             slotItem.setSlot(slot);
             slotFluid.setSlot(slot);
-            if (slot != null) {
-                // ⚠️ InternalSlot 只有一个 onContentsChanged 回调位，GTM 自己的
-                // SlotItemRecipeHandler/SlotFluidRecipeHandler 也在这里装了回调（后装的把先装的顶掉）。
-                // 我们**套娃**而不是覆盖：先跑原有回调，再通知本镜像的两个转发器；
-                // 解绑时把这一层摘掉（GTM 那版是直接覆盖、解绑也不还原）。
-                var previous = slot.getOnContentsChanged();
-                Runnable layer = () -> {
-                    previous.run();
-                    slotItem.notifyListeners();
-                    slotFluid.notifyListeners();
-                };
-                boundSlotPreviousCallback = previous;
-                boundSlotCallback = layer;
-                slot.setOnContentsChanged(layer);
-            }
+
+            // ⚠️ InternalSlot 只有一个 onContentsChanged 回调位，GTM 自己的
+            // SlotItemRecipeHandler/SlotFluidRecipeHandler 也在这里装了回调（后装的把先装的顶掉）。
+            // 我们**套娃**而不是覆盖：先跑原有回调，再通知本镜像的两个转发器；
+            // 解绑时把这一层摘掉（GTM 那版是直接覆盖、解绑也不还原）。
+            var previous = slot.getOnContentsChanged();
+            Runnable layer = () -> {
+                previous.run();
+                slotItem.notifyListeners();
+                slotFluid.notifyListeners();
+            };
+            boundSlotPreviousCallback = previous;
+            boundSlotCallback = layer;
+            slot.setOnContentsChanged(layer);
         }
 
         void unbind() {
