@@ -13,6 +13,8 @@
       "GTM.MixinGTMaterialItems",
       "GTM.MixinGTMaterialOreBlocks",
       "GTM.MixinPowerSubstationMachine",
+      "GTM.MixinMEPatternBufferCapacity",
+      "GTM.IMEPatternBufferAccess",
       "GTMT.AdvancedTerminalBehaviorMixin",
       "GTMT.AdvancedBlockPatternMixin",
       "GTMT.AutoBuildSettingMixin"

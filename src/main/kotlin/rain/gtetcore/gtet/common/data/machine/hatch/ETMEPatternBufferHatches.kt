@@ -1,0 +1,197 @@
+package rain.gtetcore.gtet.common.data.machine.hatch
+
+import com.gregtechceu.gtceu.GTCEu
+import com.gregtechceu.gtceu.api.GTValues
+import com.gregtechceu.gtceu.api.data.RotationState
+import com.gregtechceu.gtceu.api.machine.MachineDefinition
+import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility
+import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
+import net.minecraft.network.chat.Component
+import net.minecraft.resources.ResourceLocation
+import rain.gtetcore.gtet.Gtetcore
+import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferPartMachine
+import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferProxyPartMachine
+import rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities
+import rain.gtetcore.gtet.util.lang.LangUtil
+
+/** GTM 的 AE 覆盖层命名空间：贴图在 GTM 自己的 jar 里，我们只引用。 */
+private const val GTCEU_NS = "gtceu"
+
+/** 总成正面覆盖层：与 GTM 的 `me_pattern_buffer` 用同一张。 */
+private const val OVERLAY_BUFFER = "block/overlay/appeng/me_buffer_hatch"
+
+/** 镜像正面覆盖层：与 GTM 的 `me_pattern_buffer_proxy` 用同一张。 */
+private const val OVERLAY_PROXY = "block/overlay/appeng/me_buffer_hatch_proxy"
+
+/**
+ * 一档「ME 样板总成 + 对应镜像」。
+ *
+ * 容量就是这一行的字面值：注册时既写进 [ETPatternBufferCapacities]（mixin 在父类构造期按
+ * 方块定义查它来决定样板槽位数），也写进名字与 tooltip。**一个容量只有一个来源**，
+ * 所以名字、面板、实际槽位三者不会打架。
+ *
+ * ⚠️ 容量按「9 列面板、余数不足半行舍去、达到半行补满整行」规整过：
+ * 64 → 63（= 7×9）、125 → 126（= 14×9）；27 与 216 本来就是整行。
+ *
+ * @param id       总成注册名（同时决定方块 id 与语言键 `block.gtetcore.<id>`）
+ * @param capacity 样板槽位数（9 列布局下行数 = 向上取整，见 [ETMEPatternBufferPartMachine]）
+ * @param tier     电压等级，决定外壳贴图；⚠️ 非能源部件不看 tier，这里纯外观与档位标识
+ * @param proxyId  镜像注册名（镜像与总成同档，容量逐档一致）
+ */
+data class PatternBufferStage(
+    val id: String,
+    val capacity: Int,
+    val tier: Int,
+    val proxyId: String
+)
+
+/**
+ * 「多阶段 ME 样板总成 / 镜像」注册入口：四档，进
+ * [rain.gtetcore.gtet.common.data.GTETCreativeModeTabs.MACHINE] 页。
+ *
+ * ## 这两件是什么 / 不是什么
+ *
+ * **是**：GTM 自带的 `me_pattern_buffer`（AE2 集成式样板供应器）**容量加大版** ——
+ * GTM 那份的容量写死 27（`MEPatternBufferPartMachine.MAX_PATTERN_COUNT`，且用在父类字段初始化里），
+ * 本族按档给 27 / 63 / 126 / 216，其余行为（四种能力、AE 终端、共享库存/流体仓、取回、闪存绑定）
+ * 全部沿用 GTM 实现。
+ *
+ * **不是**：不是重做整份样板总成。实现路线是把父类构造器里内联的 3 个 `27` 改成按档查表
+ * （mixin，见 `MixinMEPatternBufferCapacity` 与 [ETPatternBufferCapacities] 的类注释），
+ * **没有**复制 GTM 那 707 行 —— 复制版会跟着 GTM 版本漂移，而查表版在 GTM 改动那三处初始化时
+ * 会**启动即报错**（`require = 3`），不会静默退化成 27 格。
+ *
+ * ## 档位 / 能力 / 贴图
+ *
+ * - tier：LuV / UV / UEV / UXV（四档，逐个来自 [STAGES] 表）；
+ * - abilities：`IMPORT_ITEMS`、`IMPORT_FLUIDS`、`EXPORT_FLUIDS`、`EXPORT_ITEMS` **四条一起挂**，
+ *   与 GTM 的 `me_pattern_buffer` 逐项一致（它就是"一块挂四种能力"的部件）；
+ * - 贴图：GTM 的 `block/overlay/appeng/me_buffer_hatch`（总成）与 `..._proxy`（镜像），
+ *   已核实两张 png 确实在 GTM 的 jar 里（`assets/gtceu/textures/block/overlay/appeng/`），
+ *   走 `colorOverlayTieredHullModel`，所以外观与 GTM 自己那件**只有外壳电压等级不同**，
+ *   靠名字里的档位与容量区分。
+ *
+ * ## 显示
+ *
+ * 与 [ETTagFilterHatches] / [ETThreadHatches] 同一套约定：英文名走 `.langValue(...)`、
+ * 中文名走 [LangUtil.BLOCK_LANG]，**档位与容量并进名字**；tooltip 保留 GTM 那三条功能说明
+ * （`block.gtceu.pattern_buffer.desc.[0-2]`，它讲清了"闪存绑定镜像"的用法）+
+ * 一条本 mod 的容量说明（键带 `%s`，四档共用）+ GTM 的 `gtceu.part_sharing.enabled`。
+ *
+ * @author rain fox
+ */
+object ETMEPatternBufferHatches {
+
+    /**
+     * 四档的**唯一**来源：容量 / tier / 三个名字全部从这一行取。
+     *
+     * ⚠️ 顺序即注册顺序（影响物品栏与存档里的方块出现次序），加档请往末尾追加、
+     * 不要重排既有行、也不要改既有 id。
+     */
+    val STAGES: List<PatternBufferStage> = listOf(
+        PatternBufferStage("me_pattern_buffer_luv", 27, GTValues.LuV, "me_pattern_buffer_proxy_luv"),
+        PatternBufferStage("me_pattern_buffer_uv", 63, GTValues.UV, "me_pattern_buffer_proxy_uv"),
+        PatternBufferStage("me_pattern_buffer_uev", 126, GTValues.UEV, "me_pattern_buffer_proxy_uev"),
+        PatternBufferStage("me_pattern_buffer_uxv", 216, GTValues.UXV, "me_pattern_buffer_proxy_uxv"),
+    )
+
+    /** 容量说明的 tooltip 键（`%s` = 槽位数；四档共用一条键）。 */
+    private const val CAPACITY_TOOLTIP_KEY = "gtetcore.machine.me_pattern_buffer.capacity"
+
+    /**
+     * 注册八件（四档总成 + 四档镜像）。
+     *
+     * ⚠️ AE2 没装时**一件都不注册**（返回空表）：这些类继承 GTM 的 AE 部件、直接引用 `appeng.*`，
+     * AE2 缺失时连类都加载不了。这与 GTM 自己的做法一致（GTM 的 `GTMachines.init()` 里是
+     * `if (GTCEu.Mods.isAE2Loaded()) GTAEMachines.init();`），所以这里也必须用
+     * [GTCEu.Mods.isAE2Loaded] 把它挡在外面，而不是无条件调用。
+     *
+     * ⚠️ 每一档的容量在 `.register()` **之前**写进 [ETPatternBufferCapacities]：mixin 要按方块定义
+     * 查它，而机器实例只会在方块实体创建时构造（必然晚于注册），顺序是安全的。
+     *
+     * @param registrate GTET 的注册器（`OnlyETreg.ETRegistrate`）；用 GTET 自己的，否则方块会进 `gtceu:` 命名空间
+     * @return 按注册顺序排列的 [MachineDefinition]（总成、镜像、总成、镜像…）；AE2 缺失时是空表
+     */
+    @JvmStatic
+    fun register(registrate: GTRegistrate): List<MachineDefinition> {
+        if (!GTCEu.Mods.isAE2Loaded()) return emptyList()
+        registerLang()
+        return STAGES.flatMap { listOf(registerBuffer(registrate, it), registerProxy(registrate, it)) }
+    }
+
+    /** 一档总成：ME 样板总成，容量 = `stage.capacity`。 */
+    private fun registerBuffer(registrate: GTRegistrate, stage: PatternBufferStage): MachineDefinition {
+        val tierName = GTValues.VN[stage.tier]
+        registerCapacity(stage)
+        LangUtil.BLOCK_LANG[stage.id] = "ME 样板总成（$tierName · ${stage.capacity} 样板）"
+        return registrate
+            .machine(stage.id) { holder -> ETMEPatternBufferPartMachine(holder) }
+            // tier 必须最先设置：abilities 与分级外壳贴图都要读它
+            .tier(stage.tier)
+            .langValue("ME Pattern Buffer ($tierName, ${stage.capacity} Patterns)")
+            .rotationState(RotationState.ALL)
+            .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS,
+                PartAbility.EXPORT_ITEMS)
+            .colorOverlayTieredHullModel(gtmOverlay(OVERLAY_BUFFER))
+            .tooltips(
+                Component.translatable("block.gtceu.pattern_buffer.desc.0"),
+                Component.translatable("block.gtceu.pattern_buffer.desc.1"),
+                Component.translatable("block.gtceu.pattern_buffer.desc.2"),
+                Component.translatable(CAPACITY_TOOLTIP_KEY, stage.capacity),
+                Component.translatable("gtceu.part_sharing.enabled")
+            )
+            .register()
+    }
+
+    /**
+     * 一档镜像：贴别处、把配方输入转给宿主总成。
+     *
+     * ⚠️ 镜像**每档一件**（而不是做一件通用的）：镜像的槽级代理表在**构造期**就要按容量建好
+     * （多方块的处理器表有缓存，中途换长度不可靠），容量只能来自"这一档"；顺带每档自带
+     * 对应电压的外壳。四档共用同一个类，tier 与容量都从 [PatternBufferStage] 传进去。
+     * 跨档绑定仍可用（低档镜像配高档总成只转发前面的槽），运行时会打警告，见
+     * [ETMEPatternBufferProxyPartMachine]。
+     */
+    private fun registerProxy(registrate: GTRegistrate, stage: PatternBufferStage): MachineDefinition {
+        val tierName = GTValues.VN[stage.tier]
+        LangUtil.BLOCK_LANG[stage.proxyId] = "ME 样板总成镜像（$tierName）"
+        return registrate
+            .machine(stage.proxyId) { holder ->
+                ETMEPatternBufferProxyPartMachine(holder, stage.tier, stage.capacity)
+            }
+            .tier(stage.tier)
+            .langValue("ME Pattern Buffer Proxy ($tierName)")
+            .rotationState(RotationState.ALL)
+            .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS,
+                PartAbility.EXPORT_ITEMS)
+            .colorOverlayTieredHullModel(gtmOverlay(OVERLAY_PROXY))
+            .tooltips(
+                Component.translatable("block.gtceu.pattern_buffer_proxy.desc.0"),
+                Component.translatable("block.gtceu.pattern_buffer_proxy.desc.1"),
+                Component.translatable("block.gtceu.pattern_buffer_proxy.desc.2"),
+                Component.translatable(CAPACITY_TOOLTIP_KEY, stage.capacity),
+                Component.translatable("gtceu.part_sharing.enabled")
+            )
+            .register()
+    }
+
+    /**
+     * 把一档容量登记进 [ETPatternBufferCapacities]。
+     *
+     * ⚠️ 定义 id 必须与注册名逐字一致（注册器的命名空间就是本 mod 的 `gtetcore`），
+     * 否则运行时会走"查不到 → 按 27 建"的兜底分支并打警告。
+     * 镜像**不用**登记：它不构造样板总成，容量表只在总成构造期被查。
+     */
+    private fun registerCapacity(stage: PatternBufferStage) {
+        ETPatternBufferCapacities.register(Gtetcore.id(stage.id), stage.capacity)
+    }
+
+    /** GTM 的贴图路径 → `ResourceLocation`（命名空间固定 `gtceu`）。 */
+    private fun gtmOverlay(path: String): ResourceLocation =
+        ResourceLocation.fromNamespaceAndPath(GTCEU_NS, path)
+
+    /** 登记四档共用的那条容量说明（中英各一条，带一个 `%s` 槽位）。 */
+    private fun registerLang() {
+        LangUtil.add(CAPACITY_TOOLTIP_KEY, "Pattern slots: %s", "样板槽位：%s")
+    }
+}

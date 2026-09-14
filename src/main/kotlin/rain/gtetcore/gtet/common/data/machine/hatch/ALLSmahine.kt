@@ -3,13 +3,15 @@ package rain.gtetcore.gtet.common.data.machine.hatch
 import com.gregtechceu.gtceu.api.machine.MachineDefinition
 import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
+import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches
 import rain.gtetcore.gtet.common.data.machine.hatch.ETOverclockHatches
 import rain.gtetcore.gtet.common.data.machine.hatch.ETParallelHatches
 import rain.gtetcore.gtet.common.data.machine.hatch.ETTagFilterHatches
 import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches
 
 /**
- * 四种**部件仓**（超频仓 / 线程仓 / 并行仓 / ME 标签库存仓）的注册入口，进 [GTETCreativeModeTabs.MACHINE] 页。
+ * 五种**部件仓**（超频仓 / 线程仓 / 并行仓 / ME 标签库存仓 / ME 多阶段样板总成）的注册入口，
+ * 进 [GTETCreativeModeTabs.MACHINE] 页。
  *
  * ⚠️ 它**不含单方块机器** —— 名字里的 Machine 是历史叫法，这里只有部件仓。
  *
@@ -17,12 +19,12 @@ import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches
  */
 object ALLSmahine {
 
-    /** 注册四种部件仓。 */
+    /** 注册五种部件仓。 */
     fun init() {
         registerMachines()
     }
 
-    /** 四种部件仓 → [GTETCreativeModeTabs.MACHINE]。 */
+    /** 五种部件仓 → [GTETCreativeModeTabs.MACHINE]。 */
     fun registerMachines() {
         ETRegistrate.creativeModeTab(GTETCreativeModeTabs.MACHINE)
         OVERCLOCK_HATCHES = ETOverclockHatches.register(ETRegistrate)
@@ -31,6 +33,9 @@ object ALLSmahine {
         // ME 标签库存件：⚠️ AE2 没装时这里返回空表（那两件直接引用 appeng.*，装不上就加载不了，
         // 与 GTM 自己的 GTAEMachines 一样按 isAE2Loaded 挡在外面）
         TAG_FILTER_HATCHES = ETTagFilterHatches.register(ETRegistrate)
+        // ME 多阶段样板总成 + 镜像（四档）：同样按 isAE2Loaded 挡在外面；
+        // ⚠️ 它还会把每档容量登记进 ETPatternBufferCapacities（mixin 按方块定义查容量用）
+        PATTERN_BUFFER_HATCHES = ETMEPatternBufferHatches.register(ETRegistrate)
     }
 
     /** 「超频仓」部件方块（全部变体）。 */
@@ -47,5 +52,9 @@ object ALLSmahine {
 
     /** 「ME 标签库存输入总线 / 输入仓」两件（标签过滤 + 定量拉取）；AE2 缺失时为空表。 */
     var TAG_FILTER_HATCHES: List<MachineDefinition> = emptyList()
+        private set
+
+    /** 「ME 多阶段样板总成 / 镜像」八件（LuV 27 / UV 63 / UEV 126 / UXV 216，各配一份镜像）；AE2 缺失时为空表。 */
+    var PATTERN_BUFFER_HATCHES: List<MachineDefinition> = emptyList()
         private set
 }
