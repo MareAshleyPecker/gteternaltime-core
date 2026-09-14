@@ -56,6 +56,8 @@ public final class GTETConfig {
     /** 是否发送成型失败信息的默认值。 */
     public static final boolean DEFAULT_SEND_FORM_ERROR_MESSAGE = true;
 
+    public static final boolean DEFAULT_SEND_THREAD = false;
+
     /** 是否启用结构导出模式的默认值。 */
     public static final boolean DEFAULT_EXPORT_MODE_ENABLED = true;
 
@@ -123,6 +125,8 @@ public final class GTETConfig {
     @Bilingual(en = "Tiered Block Selector", cn = "分级方块选择栏")
     public static final ForgeConfigSpec.BooleanValue TIER_SELECT_ENABLED;
 
+    @Bilingual(en = "send thread diagnose", cn = "发送线程诊断")
+    public static final  ForgeConfigSpec.BooleanValue SEND_THREAD;
     // ---- 结构工具覆盖层颜色（客户端渲染） ----
 
     /** 选区导出覆盖层颜色：{@code R;G;B}，可再跟「线透明度;填充透明度」。 */
@@ -195,6 +199,10 @@ public final class GTETConfig {
                 .comment("是否在高级终端（GTMThings）里显示分级方块选择栏；关闭后只保留原版那几项设置。",
                         "Whether to show the tiered-block selector in the GTMThings advanced terminal.")
                 .define("tierSelectEnabled", DEFAULT_TIER_SELECT_ENABLED);
+
+        SEND_THREAD = BUILDER
+                .comment("是否在日志里发送线程诊断","")
+                        .define("sendThread", DEFAULT_SEND_THREAD);
 
         BUILDER.pop();
 
@@ -291,9 +299,13 @@ public final class GTETConfig {
         return booleanValue(SEND_FORM_ERROR_MESSAGE, DEFAULT_SEND_FORM_ERROR_MESSAGE);
     }
 
+    public static boolean SendThread() {
+        return booleanValue(SEND_THREAD,DEFAULT_SEND_THREAD);
+    }
+
     /** 结构导出工作模式是否启用（以 dev 配置块里的开关为准）。 */
     public static boolean exportModeEnabled() {
-        return booleanValue(EXPORT_MODE_ENABLED, DEFAULT_EXPORT_MODE_ENABLED);
+        return !booleanValue(EXPORT_MODE_ENABLED, DEFAULT_EXPORT_MODE_ENABLED);
     }
 
     /** 结构导出的输出目录。 */
@@ -303,7 +315,7 @@ public final class GTETConfig {
 
     /** 高级终端是否显示分级方块选择栏。 */
     public static boolean tierSelectEnabled() {
-        return booleanValue(TIER_SELECT_ENABLED, DEFAULT_TIER_SELECT_ENABLED);
+        return !booleanValue(TIER_SELECT_ENABLED, DEFAULT_TIER_SELECT_ENABLED);
     }
 
     /** 结构工具「选区导出」覆盖层颜色串（{@code R;G;B[;线透明度;填充透明度]}）。 */

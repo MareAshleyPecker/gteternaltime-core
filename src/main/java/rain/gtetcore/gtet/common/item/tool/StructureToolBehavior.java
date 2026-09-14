@@ -24,9 +24,6 @@ import net.minecraft.world.level.Level;
 
 import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.Gtetcore;
-import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior;
-import rain.gtetcore.gtet.common.item.tool.StructureWriteBehavior;
-import rain.gtetcore.gtet.common.item.tool.TerminalBehavior;
 import rain.gtetcore.gtet.util.lang.LangUtil;
 
 /**
@@ -83,7 +80,7 @@ public class StructureToolBehavior implements IInteractionItem, IItemUIFactory {
             WorkMode[] values = values();
             WorkMode candidate = values[(ordinal() + 1) % values.length];
             int guard = 0;
-            while (candidate == EXPORT && !GTETConfig.exportModeEnabled() && guard++ < values.length) {
+            while (candidate == EXPORT && GTETConfig.exportModeEnabled() && guard++ < values.length) {
                 candidate = values[(candidate.ordinal() + 1) % values.length];
             }
             return candidate;
@@ -94,7 +91,7 @@ public class StructureToolBehavior implements IInteractionItem, IItemUIFactory {
             WorkMode[] values = values();
             WorkMode candidate = values[(ordinal() - 1 + values.length) % values.length];
             int guard = 0;
-            while (candidate == EXPORT && !GTETConfig.exportModeEnabled() && guard++ < values.length) {
+            while (candidate == EXPORT && GTETConfig.exportModeEnabled() && guard++ < values.length) {
                 candidate = values[(candidate.ordinal() - 1 + values.length) % values.length];
             }
             return candidate;
@@ -142,7 +139,7 @@ public class StructureToolBehavior implements IInteractionItem, IItemUIFactory {
     /** 当前模式是否可用（导出模式可能被配置关掉）。 */
     public static WorkMode sanitize(ItemStack stack) {
         WorkMode mode = getMode(stack);
-        if (mode == WorkMode.EXPORT && !GTETConfig.exportModeEnabled()) return WorkMode.RECHECK;
+        if (mode == WorkMode.EXPORT && GTETConfig.exportModeEnabled()) return WorkMode.RECHECK;
         return mode;
     }
 

@@ -114,7 +114,7 @@ public class StructureWriteBehavior implements IItemUIFactory {
     @SuppressWarnings("all")
     private void export(HeldItemUIFactory.HeldItemHolder playerInventoryHolder) {
         // 配置里关掉导出模式时，导出按钮直接不做事
-        if (!GTETConfig.exportModeEnabled()) return;
+        if (GTETConfig.exportModeEnabled()) return;
         if (getPos(playerInventoryHolder.getHeld()) != null &&
                 playerInventoryHolder.getPlayer() instanceof ServerPlayer) {
             BlockPos[] blockPos = getPos(playerInventoryHolder.getHeld());

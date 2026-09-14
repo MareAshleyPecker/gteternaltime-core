@@ -20,6 +20,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine
+import rain.gtetcore.gtet.config.GTETConfig.SendThread
 
 /**
  * 「多线程配方逻辑内核」。
@@ -309,13 +310,15 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
             .joinToString(", ") { (slot, rec) ->
                 "#$slot ${rec.recipe.id ?: "?"} ×${rec.recipe.parallels} ${rec.percent}%"
             }
-        Gtetcore.LOGGER.info(
-            "[GTET][线程诊断] 在跑线程 {}/{}；同时处理次数合计 {}；样本：[{}]",
-            running,
-            threadLimit,
-            runningTotalRuns,
-            sample
-        )
+        if (!SendThread()) {
+                Gtetcore.LOGGER.info(
+                    "[GTET][线程诊断] 在跑线程 {}/{}；同时处理次数合计 {}；样本：[{}]",
+                    running,
+                    threadLimit,
+                    runningTotalRuns,
+                    sample
+                )
+            }
     }
 
     // ────────────────────────────────────────────────

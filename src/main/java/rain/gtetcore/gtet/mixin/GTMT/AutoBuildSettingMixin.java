@@ -29,8 +29,8 @@ import java.util.List;
  * 命中就把选中的方块<b>提到候选列表最前面</b> —— 既保证优先用它，
  * 又保留其余候选作为背包/AE 里的兜底。
  *
- * <p>⚠️ 只按组键取是不够的：终端右侧面板里那 5 类静态组（{@link TerminalSettings} 写入的
- * 线圈 / 能源仓 / 超频仓 / 线程仓 / 维护仓）算出来的键，与这里拿到的候选集算出来的键
+ * <p>⚠️ 只按组键取是不够的：终端右侧面板里那 6 类静态组（{@link TerminalSettings} 写入的
+ * 线圈 / 能源仓 / 超频仓 / 线程仓 / 并行仓 / 维护仓）算出来的键，与这里拿到的候选集算出来的键
  * <b>不保证相同</b>（典型是线圈：本方法上游会把候选的最后一档砍掉）。所以这里统一走
  * {@link TerminalSettings#lookupPreference} —— 它先试组键、再按「候选集包含关系」回退匹配。
  *
@@ -44,7 +44,7 @@ public abstract class AutoBuildSettingMixin {
 
     @Inject(method = "apply", at = @At("RETURN"), remap = false)
     private void gtetcore$applyTierPreference(BlockInfo[] infos, CallbackInfoReturnable<List<ItemStack>> cir) {
-        if (!GTETConfig.tierSelectEnabled()) return;
+        if (GTETConfig.tierSelectEnabled()) return;
 
         ItemStack terminal = TerminalContext.terminal();
         if (terminal.isEmpty()) return;
