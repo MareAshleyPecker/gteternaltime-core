@@ -11,8 +11,9 @@ import javax.annotation.ParametersAreNonnullByDefault;
  * 「ME 样板总成」的机器 UI 外壳：GTM 的 {@link FancyMachineUIWidget} + **底边贴屏**兜底。
  *
  * <h2>为什么需要它（用户口径："面板向上扩、底边固定在物品栏分割线"）</h2>
- * 总成的样板槽面板会随容量变高（12 行 = 232px，见
- * {@link ETMEPatternBufferPartMachine#createUIWidget()}）。而 LDLib 的窗口是**垂直居中**的：
+ * 总成的样板槽面板会随容量变高，最高的那一档 12 行 = 232px（见
+ * {@link ETMEPatternBufferPartMachine#createUIWidget()}；容量超过一页的 216 格之后面板**不再变高**，
+ * 改由翻页呈现，所以这里的上限就是 232px）。而 LDLib 的窗口是**垂直居中**的：
  * {@code ModularUI#getGuiTop()} 的实现是 {@code (screenHeight - height) / 2}（javap 本项目实际
  * 编译用的 ldlib deobf jar 可复核），{@code ModularUI#updateScreenSize} 再把它当成
  * {@code mainGroup} 的 {@code parentPosition}。于是窗口一高，**上下两头一起出屏**：
