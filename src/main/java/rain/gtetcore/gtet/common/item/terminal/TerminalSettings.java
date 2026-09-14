@@ -259,7 +259,7 @@ public final class TerminalSettings {
     public record GroupView(String key, List<String> candidates, String chosen) {}
 
     /**
-     * 把 {@link TerminalStaticGroups} 的 5 类静态组预置进终端 NBT，让界面**不扫描**也能列出可选部件。
+     * 把 {@link TerminalStaticGroups} 的 6 类静态组预置进终端 NBT，让界面**不扫描**也能列出可选部件。
      *
      * <p>⚠️ <b>只在服务端调</b>（见 {@link TerminalGroupSeeder}）：客户端写自己背包物品的 NBT
      * 不会同步回服务端，写了也白写，还会让两端界面用不同的数据建树。
@@ -334,7 +334,7 @@ public final class TerminalSettings {
      * <p>⚠️ 这里是「扫描结果」覆盖 {@code plan} 的唯一入口：分组 = <b>这次的扫描结果 ∪ 静态组</b>。
      * 语义与原来「整个替换成扫描结果」相比只有两点不同：
      * <ul>
-     *   <li>{@link TerminalStaticGroups} 的 5 类静态组不会被扫描结果清掉（面板要一直有这几类可选）；</li>
+     *   <li>{@link TerminalStaticGroups} 的 6 类静态组不会被扫描结果清掉（面板要一直有这几类可选）；</li>
      *   <li>上一次扫描留下的、这次没再出现的组会被丢掉（和原来的替换语义一致，不留陈旧分组）。</li>
      * </ul>
      */

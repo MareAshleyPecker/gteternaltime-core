@@ -143,6 +143,46 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
         return getPatternInventory().getSlots();
     }
 
+    /**
+     * <b>仓室隔离</b>：禁止这一件样板总成被两个多方块同时占用（防串配方）。
+     *
+     * <h2>为什么本件必须隔离（与上一批给 ME 库存件加的是同一条闸门）</h2>
+     * {@code IMultiPart#canShared()} 默认返回 {@code true}，全 GTM 只有一个消费点：
+     * {@code BlockPattern#checkPatternAt} 逐格匹配时，
+     * {@code if (part.isFormed() && !part.canShared() && !part.hasController(worldState.controllerPos))}
+     * → 该格判失败并把错误设成 {@code PatternStringError("multiblocked.pattern.error.share")}，
+     * 于是<b>第二个多方块结构成不了型</b>。语义与代价见
+     * {@link ETTagFilterStockBusPartMachine#canShared()} 的类注释。
+     *
+     * <h2>样板总成为什么也在这一列（用户口径 + GTM 自己的假设）</h2>
+     * <ul>
+     * <li><b>GTM 自己就假设「一件总成只属于一个控制器」</b>：父类
+     * {@code MEPatternBufferPartMachine#getTerminalGroup()} 直接取
+     * {@code getControllers().first()}（GTM 7.5.3 源码实测）—— 被两个控制器共享时，
+     * AE 终端里这块总成的分组名会变成"任取一个控制器"，玩家看不出自己那盘样板归谁；</li>
+     * <li><b>推入的原料是"这一件自己的"库存</b>：AE 合成推样板走
+     * {@code pushPattern} → {@code patternDetails.pushInputsToExternalInventory(inputHolder, this::add)}，
+     * 原料落在这一件自己的 {@code InternalSlot} 库存里，再由多方块的配方逻辑
+     * （{@code handleItemInternal} / {@code handleFluidInternal}）从这里取。</li>
+     * </ul>
+     * 两件控制器都把这件总成收进自己的部件表之后，控制器 A 的合成原料会摆在控制器 B 也能取用的同一个
+     * 库存里 —— 谁先跑谁吃掉，这正是「串配方」。
+     *
+     * <h2>不影响正常用法</h2>
+     * <ul>
+     * <li><b>「总成当宿主、镜像装在各机器里」</b>（本族的主要用法）不受影响：那时总成压根不在任何
+     * 成型的多方块里，{@code isFormed()} 为 false，这道闸门不参与判断；</li>
+     * <li>它只挡「同一格方块同时属于两个<b>已成型</b>结构」，同一结构里放两件各自独立的总成照旧允许。</li>
+     * </ul>
+     *
+     * <p>⚠️ 与本项目自己的 ME 库存件一样，这一条同时意味着 tooltip 必须写「禁止共享」
+     * （见 {@code ETMEPatternBufferHatches} 里换成 {@code gtceu.part_sharing.disabled}）。
+     */
+    @Override
+    public boolean canShared() {
+        return false;
+    }
+
     @Override
     public InternalInventory getTerminalPatternInventory() {
         return terminalPatternInventory;

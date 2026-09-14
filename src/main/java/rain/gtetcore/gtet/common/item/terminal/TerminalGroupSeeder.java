@@ -14,12 +14,12 @@ import rain.gtetcore.gtet.Gtetcore;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * 把 {@link TerminalStaticGroups} 的 5 类静态组预置进玩家手上的高级终端 NBT。
+ * 把 {@link TerminalStaticGroups} 的 6 类静态组预置进玩家手上的高级终端 NBT。
  *
  * <p>目的：GTMThings 高级终端右侧那两块列表面板读的是终端 NBT 里的分级组
  * （{@code gtet_terminal.plan.groups}），原来只有「Shift+右键控制器扫描过」才有内容。
  * 这里在服务端每 tick 看一眼主手物品，是高级终端就把静态组补进去，于是<b>不扫描也能直接列出</b>
- * 线圈 / 能源仓 / 超频仓 / 线程仓 / 维护仓这 5 类。
+ * 线圈 / 能源仓 / 超频仓 / 线程仓 / 并行仓 / 维护仓这 6 类。
  *
  * <p>⚠️ <b>必须服务端写</b>：客户端改自己背包物品的 NBT 不会同步回服务端（写了等于没写），
  * 还会让服务端与客户端用两份不同的 NBT 去建同一棵树（LDLib 按控件路径同步界面）。

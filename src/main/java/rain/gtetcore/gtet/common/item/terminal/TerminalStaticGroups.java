@@ -19,14 +19,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 高级终端右侧两块列表面板<b>默认</b>列出的 5 类可选部件（不依赖扫描）。
+ * 高级终端右侧两块列表面板<b>默认</b>列出的 6 类可选部件（不依赖扫描）。
  *
  * <p>为什么要有这张静态表：面板数据原来只来自「上次 Shift+右键控制器扫描出来的分级组」
  * （{@code gtet_terminal.plan.groups}），没扫过结构就只显示「先 Shift+右键控制器扫描结构」。
  * 这张表让面板一打开就能直接列出这几类候选，玩家不必先扫一次：
  *
  * <table>
- * <caption>5 类与候选来源</caption>
+ * <caption>6 类与候选来源</caption>
  * <tr><th>面板上的组</th><th>候选来源</th></tr>
  * <tr><td>线圈</td><td>{@link GTCEuAPI#HEATING_COILS} 的各级线圈方块（按等级排序，与
  * GTCEu {@code Predicates.heatingCoils()} 同序）</td></tr>
@@ -34,9 +34,13 @@ import java.util.Map;
  * {@link GTMachines#SUBSTATION_ENERGY_INPUT_HATCH}</td></tr>
  * <tr><td>超频仓</td><td>{@link ALLSmahine#getOVERCLOCK_HATCHES()}</td></tr>
  * <tr><td>线程仓</td><td>{@link ALLSmahine#getTHREAD_HATCHES()}</td></tr>
+ * <tr><td>并行仓</td><td>{@link ALLSmahine#getPARALLEL_HATCHES()}（GTET 自己的分级并行仓，IV ~ MAX）</td></tr>
  * <tr><td>维护仓</td><td>{@link GTMachines#MAINTENANCE_HATCH} / {@code CONFIGURABLE_MAINTENANCE_HATCH} /
  * {@code CLEANING_MAINTENANCE_HATCH} / {@code AUTO_MAINTENANCE_HATCH}</td></tr>
  * </table>
+ *
+ * <p><b>顺序</b>就是面板上的行序（线圈 / 能源仓 / 超频仓 / 线程仓 / 并行仓 / 维护仓）：
+ * GTET 自己的三种分级仓（超频 / 线程 / 并行）排在一起、维护仓垫底。
  *
  * <p>输入/输出总线、输入/输出仓<b>故意不在表里</b>（用户明确要求：这两类不需要出现在列表里）。
  *
@@ -55,12 +59,15 @@ public final class TerminalStaticGroups {
     /** 静态表的构建结果（懒加载 + 缓存）。 */
     private static Map<String, List<ItemStack>> cache;
 
+    /** 「6 类都齐了才算建好」的那个数（见 {@link #stacks()} 里的 ⚠️）。 */
+    private static final int CATEGORY_COUNT = 6;
+
     private TerminalStaticGroups() {}
 
     /**
-     * 5 类部件的候选（组键 → 物品 id），写进终端 NBT 的 {@code gtet_terminal.plan.groups}。
+     * 6 类部件的候选（组键 → 物品 id），写进终端 NBT 的 {@code gtet_terminal.plan.groups}。
      *
-     * <p>返回的顺序就是界面上的显示顺序（线圈 / 能源仓 / 超频仓 / 线程仓 / 维护仓）；
+     * <p>返回的顺序就是界面上的显示顺序（线圈 / 能源仓 / 超频仓 / 线程仓 / 并行仓 / 维护仓）；
      * 每个组内部的候选顺序 = 上表里的来源顺序（线圈按等级、仓按档位）。
      */
     public static synchronized Map<String, List<String>> groups() {
@@ -77,10 +84,10 @@ public final class TerminalStaticGroups {
     public static synchronized Map<String, List<ItemStack>> stacks() {
         if (cache == null) {
             Map<String, List<ItemStack>> built = build();
-            // ⚠️ 只在「5 类都齐」时才缓存：本类可能在注册还没跑完的时候被第一次调用
-            //    （例如 GTET 的机器注册窗口之前），那时超频仓/线程仓还是空表；
+            // ⚠️ 只在「6 类都齐」时才缓存：本类可能在注册还没跑完的时候被第一次调用
+            //    （例如 GTET 的机器注册窗口之前），那时超频仓/线程仓/并行仓还是空表；
             //    缓存住空表就永远补不回来了，所以拿不齐就每次重算。
-            if (built.size() >= 5) cache = built;
+            if (built.size() >= CATEGORY_COUNT) cache = built;
             return built;
         }
         return cache;
@@ -94,6 +101,7 @@ public final class TerminalStaticGroups {
         addIfTiered(all, energyHatches());
         addIfTiered(all, definitions(ALLSmahine.INSTANCE.getOVERCLOCK_HATCHES()));
         addIfTiered(all, definitions(ALLSmahine.INSTANCE.getTHREAD_HATCHES()));
+        addIfTiered(all, definitions(ALLSmahine.INSTANCE.getPARALLEL_HATCHES()));
         addIfTiered(all, maintenanceHatches());
         return all;
     }

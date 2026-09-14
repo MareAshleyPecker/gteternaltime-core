@@ -91,8 +91,13 @@ private const val PROXY_TIER = GTValues.LuV
  * 与 [ETTagFilterHatches] / [ETThreadHatches] 同一套约定：英文名走 `.langValue(...)`、
  * 中文名走 [LangUtil.BLOCK_LANG]，**档位与容量并进名字**；总成 tooltip 保留 GTM 那三条功能说明
  * （`block.gtceu.pattern_buffer.desc.[0-2]`，它讲清了"闪存绑定镜像"的用法）+
- * 一条本 mod 的容量说明（键带 `%s`，四档共用）+ GTM 的 `gtceu.part_sharing.enabled`；
+ * 一条本 mod 的容量说明（键带 `%s`，四档共用）+ GTM 的 `gtceu.part_sharing.disabled`；
  * 镜像那件换成 [PROXY_TIERS_TOOLTIP_KEY]（说明它能连所有档位）。
+ *
+ * ⚠️ 共享那一行写 `gtceu.part_sharing.disabled`：这两件的机器类
+ * （[ETMEPatternBufferPartMachine] / [ETMEPatternBufferProxyPartMachine]）现在都覆写了
+ * `IMultiPart#canShared() = false`（**仓室隔离**，防串配方），所以 tooltip 必须写「禁止」——
+ * 写成 enabled 就是在骗玩家。代价与依据见那两个类的 `canShared()` 注释。
  *
  * @author rain fox
  */
@@ -159,7 +164,7 @@ object ETMEPatternBufferHatches {
                 Component.translatable("block.gtceu.pattern_buffer.desc.1"),
                 Component.translatable("block.gtceu.pattern_buffer.desc.2"),
                 Component.translatable(CAPACITY_TOOLTIP_KEY, stage.capacity),
-                Component.translatable("gtceu.part_sharing.enabled")
+                Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()
     }
@@ -195,7 +200,7 @@ object ETMEPatternBufferHatches {
                 Component.translatable("block.gtceu.pattern_buffer_proxy.desc.1"),
                 Component.translatable("block.gtceu.pattern_buffer_proxy.desc.2"),
                 Component.translatable(PROXY_TIERS_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.enabled")
+                Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()
     }

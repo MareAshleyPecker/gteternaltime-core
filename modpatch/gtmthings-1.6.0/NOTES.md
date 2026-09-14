@@ -66,13 +66,13 @@
 
 ## 3. 右侧两块「方块列表」
 
-数据来源：**GTET 存在终端 NBT 里的分级方块组** —— 一份是 GTET 预置的 5 类静态组（线圈 / 能源仓 /
-超频仓 / 线程仓 / 维护仓，见 §9），一份是上次 Shift+右键扫描出来的真实分级组，两者在 NBT 里共存。
+数据来源：**GTET 存在终端 NBT 里的分级方块组** —— 一份是 GTET 预置的 6 类静态组（线圈 / 能源仓 /
+超频仓 / 线程仓 / 并行仓 / 维护仓，见 §9），一份是上次 Shift+右键扫描出来的真实分级组，两者在 NBT 里共存。
 
 | 面板   | 位置                 | 标题 lang 键                 | 每行                     | 行高 / 控件                                                                                                     |
 |------|--------------------|---------------------------|------------------------|-------------------------------------------------------------------------------------------------------------|
-| 上：切换 | (170, 20) 198×114  | `…panel.cycle`（分级方块（切换））  | 每组一行：方块图标 + 名字 + `[▶]` | 16px；图标 (4, y) 16×16、名字 (24, y+4)、`ButtonWidget(174, y+1, 18×14)`（`BUTTON`+`BUTTON_RIGHT`），点一下 `cycle` 到下一档 |
-| 下：勾选 | (170, 154) 198×114 | `…panel.choose`（分级方块（勾选）） | 每档一行：方块图标 + 名字 + `✓`   | 16px；图标 (4, y)、名字 (24, y+4)、`SwitchWidget(174, y+1, 14×14)`，勾上即 `setPreference(该组, 该档)`                     |
+| 上：切换 | (170, 20) 198×114  | `…panel.cycle`（分级方块（切换））  | 每组一行：方块图标 + 名字 + `[▶]` | 16px；**整行**铺一个透明 `ButtonWidget`（0, y, 170×16，tooltip `…panel.pick.tooltip`）= 选中这一组（见 §10）；图标 (4, y) 16×16、名字 (24, y+4)（行首带 `▶ ` 标记当前组）、`ButtonWidget(174, y+1, 18×14)`（`BUTTON`+`BUTTON_RIGHT`），点一下把这组设为"右下显示的那一组"并 `cycle` 到下一档 |
+| 下：勾选 | (170, 154) 198×114 | `…panel.choose`（分级方块（勾选）） | **只列右上选中的那一组**的每一档：方块图标 + 名字 + `✓`   | 16px；图标 (4, y)、名字 (24, y+4)、`SwitchWidget(174, y+1, 14×14)`，勾上即 `setPreference(该组, 该档)`                     |
 
 两块都是 `DraggableScrollableWidgetGroup`：背景 `DISPLAY`、y 滚动条宽 2、`setDraggable(false)`、
 `setUseScissor(true)`，行数多时自动出滚动条（原来 mixin 只是 `if (y > 150) break;` 硬截断）。
@@ -80,12 +80,16 @@
 超过 `NAME_MAX_CHARS = 14` 个字符就截断（完整名字在图标 tooltip 里）。
 一个组都没读到（NBT 里既没有静态组也没有扫描结果）时，面板里显示 `…panel.empty`（“先 Shift+右键控制器扫描结构”）。
 
+> ⚠️ **2026-09-13 第四轮**：下方那块从「所有组的所有候选混排成一长串」改成「只显示上方当前选中的那一组」，
+> 两块联动（点上面某一行 = 下面换成那一组）。状态、布局与 LDLib 的三条约束见 §10；坐标/尺寸**没有变**。
+
 ### 3.1 补丁读写的 GTET NBT 契约（⚠️ 两边必须一致）
 
 ```
 gtet_terminal: {
   plan:        { groups: [ { key: "<组键>", candidates: ["<物品id>", ...] } ] }   // 上次 Shift+右键扫描的结果
   group_prefs: [ { group: "<组键>", item: "<物品id>" } ]                          // 玩家选中的那一档
+  ui_group:    "<组键>"                                                           // 右下「勾选」块当前显示哪一组（第四轮新增）
 }
 ```
 
@@ -93,6 +97,8 @@ gtet_terminal: {
 - 补丁里手写了一遍（`AdvancedTerminalBehavior.TierGroups`），**不引用 GTET 的类**：
   补丁 jar 由 GTMThings 自己 build，编译期不能依赖 GTET；反过来 GTET 编译期也不能依赖补丁新增的类。
 - 只显示 `candidates.size() > 1` 的组（和 `TerminalSettings.cachedGroups` 的过滤一致）。
+- `ui_group` 由**补丁**读写（GTET 侧不碰它，`installStaticGroups` / `cachePlan` 都只写 `plan`，
+  所以这条不会被人顺手抹掉）；键在 `plan.groups` 里找不到时补丁退回第一组，不报错。
 
 ## 4. `AutoBuildSetting` 字段 ↔ 设置项 ↔ NBT
 
@@ -473,8 +479,8 @@ gradlew resfixGtmtJar              # 只做「补齐 + 体检 + 落盘」（不�
 `scripts/gtmt-resfix.ps1` 的三条硬约束（**改脚本时一条都不能松**）：
 
 - ⚠️ **输入 jar 里已有的条目一律原样拷贝、绝不覆盖** —— 这就天然保护了我们改过的
-  `assets/gtmthings/lang/en_us.json` / `zh_cn.json`（补丁版 417 键；原件只有 407 键），
-  也保护补丁类；
+  `assets/gtmthings/lang/en_us.json` / `zh_cn.json`（补丁版 **418** 键，第四轮加了
+  `…panel.pick.tooltip`；原件只有 407 键），也保护补丁类；
 - ⚠️ **绝不从参考里带进任何 `*.class`** —— 会覆盖补丁类；
 - ⚠️ **跳过 `.cache/`**（ForgeGradle 留在原件里的缓存垃圾）。
 
@@ -623,9 +629,12 @@ Execution failed for task ':resfixGtmtJar'.
 ### 9.1 现状与目标
 
 原来两块列表的数据只有一份来源：**上次 Shift+右键控制器扫描出来的分级组**
-（`gtet_terminal.plan.groups`）—— 没扫过就只显示 `…panel.empty`。目标：一打开终端就能直接选这 5 类。
+（`gtet_terminal.plan.groups`）—— 没扫过就只显示 `…panel.empty`。目标：一打开终端就能直接选这几类。
 
-### 9.2 5 类静态组写在哪、谁来写（GTET 侧）
+### 9.2 静态组写在哪、谁来写（GTET 侧）
+
+> 第三轮是 **5 类**；第四轮把 **并行仓**补成第 6 类（用户要求，见 §10.3）。下表是当前的 6 类，
+> 顺序 = 面板上的行序。
 
 | 面板里的组 | 候选来源（都是现成的注册表 / 定义表，不扫描） |
 |---|---|
@@ -633,6 +642,7 @@ Execution failed for task ':resfixGtmtJar'.
 | 能源仓 | `GTMachines.ENERGY_INPUT_HATCH` / `_4A` / `_16A` / `SUBSTATION_ENERGY_INPUT_HATCH` |
 | 超频仓 | `rain.gtetcore...ALLSmahine.OVERCLOCK_HATCHES`（`List<MachineDefinition>`，8 档） |
 | 线程仓 | `ALLSmahine.THREAD_HATCHES`（8 档） |
+| 并行仓（第四轮新增） | `ALLSmahine.PARALLEL_HATCHES`（`ETParallelHatches.VARIANTS`，IV ~ MAX 共 13 档） |
 | 维护仓 | `GTMachines.MAINTENANCE_HATCH` / `CONFIGURABLE_MAINTENANCE_HATCH`（= 用户说的「配置仓」）/ `CLEANING_MAINTENANCE_HATCH` / `AUTO_MAINTENANCE_HATCH` |
 
 - 实现：`src/main/java/rain/gtetcore/gtet/common/item/terminal/TerminalStaticGroups.java`
@@ -700,9 +710,9 @@ Execution failed for task ':resfixGtmtJar'.
 - 某组的键在 `plan.groups` 里找不到时（例如 NBT 是别的版本/别处写坏的）不做回退匹配 —— 宁可不生效；
 - 若同时存在两个「同类」组（理论上可能，实际没遇到），按交集最大挑，仍可能不是玩家的本意 ——
   这种情况下用「组键精确命中」那条路才是可靠的；
-- 面板里「切换」那块一个组只占一行，所以 5 类静态组就是 5 行（其余行是扫描出来的组）；
-  「勾选」那块是**每个候选一行**（线圈 11 档 + 能源仓数十档 + 超频/线程各 8 档 + 维护仓 4 档），
-  靠滚动条看 —— 放大之后一次可见 7 行。
+- 面板里「切换」那块一个组只占一行，所以 6 类静态组就是 6 行（其余行是扫描出来的组）；
+  「勾选」那块（第四轮起只显示**当前选中的那一组**）是**每个候选一行**，靠滚动条看 ——
+  一次可见 7 行。
 
 ### 9.4 怎么验证（本轮实际做了的）
 
@@ -711,12 +721,128 @@ Execution failed for task ':resfixGtmtJar'.
 - **字节码**：`javap -p` / `javap -c` 核 `AutoBuildSettingMixin` 与补丁的 `AutoBuildSetting` ——
   `apply(BlockInfo[])` 描述符与 `@At("RETURN")` 注入点不变（§5.2 那张表照旧成立，
   详细清单见 §5.3）；
-- ⚠️ **没能在游戏里跑**（本轮不允许起客户端）：所以「面板真的列出这 5 类」「选了之后搭建真的用那一档」
+- ⚠️ **没能在游戏里跑**（本轮不允许起客户端）：所以「面板真的列出这几类」「选了之后搭建真的用那一档」
   这两条**只有编译期与逻辑层证据，没有运行时证据**。要真验，需要一次 `runClient`：
-  Shift+右键/右键开终端看右侧两块是否有 5 类、选一档后搭建、看放置的是不是选中的那个方块。
+  Shift+右键/右键开终端看右侧两块是否有这几类、选一档后搭建、看放置的是不是选中的那个方块。
 
 ### 9.5 这一轮**没有**新增 lang 键
 
-面板上的显示仍然是「图标 + 候选物品名」（补丁原有做法），5 类部件的名字就是方块自己的名字，
-所以 `en_us` / `zh_cn` **一个键都没加**：仍是 417 键（与 §8.4 里的数字一致，两边键数保持相等）。
+面板上的显示仍然是「图标 + 候选物品名」（补丁原有做法），6 类部件的名字就是方块自己的名字，
+所以 `en_us` / `zh_cn` **一个键都没加**：本轮仍是 417 键（与 §8.4 里的数字一致，两边键数保持相等）。
 lang 文件在本轮构建前后与归档逐字节一致（`spotlessApply` 也没动它）。
+**第四轮加了一个键**（`…panel.pick.tooltip`，见 §10.4），两份都变成 418 键。
+
+---
+
+## 10. 第四轮：右侧两块面板联动 + 补「并行仓」（2026-09-13）
+
+> 用户实机验收后原话：**「该成选择后继续在右边弹出对应的分类，或者在右下块只显示选择的种类，
+> 把并行仓补上」**，并确认选「右下块只显示右上当前选中的那一组」这一种做法。
+
+### 10.1 改了什么
+
+| 位置 | 改动 |
+|---|---|
+| 补丁 `AdvancedTerminalBehavior`（**界面**） | 上方那块每行铺一个透明整行按钮 = 选中该组；`[▶]` 也顺手把该组设为"当前组"；下方那块**只显示当前组的候选**；行首用 `▶ ` 标出当前组 |
+| 补丁 `TierGroups`（NBT 读写） | 新读写 `gtet_terminal.ui_group`（当前组），见 §10.2 |
+| 补丁 lang（`lang/assets/gtmthings/lang/*.json`） | 新增 `…panel.pick.tooltip`（中英各一条，417 → 418 键） |
+| GTET `TerminalStaticGroups` | 补第 6 类**并行仓**：`ALLSmahine.PARALLEL_HATCHES`（IV ~ MAX 13 档），插在线程仓与维护仓之间；"几类都齐才缓存"的判据随之从 5 改成常量 `CATEGORY_COUNT = 6` |
+
+补丁侧**没有**硬编码任何类别（`TierGroups.read` 一直是"NBT 里有什么组就显示什么组"），
+所以补并行仓这一件事**只需要改 GTET 侧那一张静态表** —— 面板下次打开就多出一行「并行仓」。
+
+### 10.2 「当前选中的那一组」存在终端 NBT（服务端权威），不是界面本地状态
+
+```
+gtet_terminal.ui_group : "<组键>"      // 与 plan.groups 里的 key 同一套；空/找不到 → 退回第一组
+```
+
+- 点行 / 点 `[▶]` 时**只在服务端**写这个键（`TierGroups.setActive`；客户端的回调被
+  `isClientSide()` 挡掉，和本文件里其它所有写 NBT 的回调同一套写法）。
+  客户端在服务端写完后的下一个同步周期（物品 NBT 走槽位同步）就能看到新值，
+  这一点与本界面**既有**的 ✓ 勾选态是**同一条链路**（`TierGroups.chosen` 本来就在客户端读 NBT）。
+- **为什么不做成界面本地状态**：LDLib 的界面是**服务端与客户端各建一次**的（§9.2 第 2 条）。
+  本地字段只有点的那一端会变 —— 服务端那份永远停在第一组，两块面板就会各自显示不同的组；
+  而且它跨不了界面开关（关了再开又回到第一组）、也没法给「两个终端各选各组」提供独立性。
+  写 NBT 则天然是"服务端权威 + 随物品同步"，顺带解决上面两条。
+- **为什么不用"重建控件树"来实现联动**：控件树两端按**控件路径**同步数据，树结构在界面存活期间
+  必须一致（§10.2.1 第 1 条）。所以下面那块的做法是"每组建一个子容器、全都建出来"，
+  再按 `ui_group` 决定谁可见、谁被挪走。
+
+#### 10.2.1 三条 LDLib 事实（javap 打在**本项目实际编译用的** ldlib deobf jar 上）
+
+| 事实（证据） | 对写法的约束 |
+|---|---|
+| 控件树两端各建一次、数据按控件路径同步（既有结论，见 §9.2） | 树结构**任何时候**都得一致 ⇒ 不能"按选中的组建树"，只能"全建出来 + 只换可见性/位置" |
+| `WidgetGroup#detectAndSendChanges` 遍历子控件时只判 `isActive()`，**不看 `isVisible()`**（字节码） | `setVisible(false)` 不会掐断藏起来那几行的数据同步（✓ 勾选态照旧更新） |
+| `DraggableScrollableWidgetGroup#computeMax` 对**所有**子控件取 `height + selfY + scrollYOffset` 的最大值，**同样不看可见性**（字节码） | 光隐藏不挪位置 ⇒ 滚动条仍按"所有组加起来"的高度给出一大段空白。所以藏起来的容器被挪到 `HIDDEN_Y = -10000`，取 max 时贡献为负、自然被忽略 |
+| `WidgetGroup#mouseClicked` 从**后往前**遍历，遇到第一个"吃掉点击"的子控件就返回（`isVisible() && isActive()` 才会被考虑；字节码） | 整行透明按钮放在**最前面**：图标/文字不吃点击 ⇒ 整行可点；`[▶]` 按钮后加 ⇒ 它自己的点击不被抢 |
+| `ModularUIGuiContainer#containerTick()` → `mainGroup.updateScreen()`（字节码） | 客户端每 tick 能重算布局；服务端那条是 `ModularUIContainer` 的 `detectAndSendChanges` —— 两边都会走到 `TierListPanel#applyLayout` |
+| `DraggableScrollableWidgetGroup#computeMax` 的自动调用点只有"子控件尺寸/位置变化"（且被 `isInitialized()` 挡在 initWidget 之前；字节码） | 第一次布局发生在 `initWidget` 之前 ⇒ `applyLayout` 里必须**自己补算一次** `computeMax()`，否则滚动区最大高度停在 0，候选一多就滚不动（看得见、够不着） |
+
+#### 10.2.2 布局与"不顶出屏幕"
+
+窗口尺寸与两块面板的坐标**一个字都没改**（仍是 372×274 / 198×114，见 §2 §3），
+所以这次联动不会让面板或窗口长大。下方那块的内容高度从"所有组所有候选"降到"当前组"，
+滚动范围随之变小；换组时 `applyLayout` 会顺手把滚动条拉回顶部（否则会停在上一个组的滚动位置上）。
+
+### 10.3 并行仓（GTET 侧第 6 类）
+
+- 表里插在**线程仓与维护仓之间**（GTET 自己的三种分级仓排在一起、维护仓垫底）；
+- 来源 `ALLSmahine.PARALLEL_HATCHES`（Kotlin `var ... private set` ⇒ Java 侧 `getPARALLEL_HATCHES()`，
+  与已有的 `getOVERCLOCK_HATCHES()` / `getTHREAD_HATCHES()` 同一写法），13 档 IV ~ MAX；
+- ⚠️ `TerminalStaticGroups.stacks()` 里"拿齐了才缓存"的那个数必须跟着改成 6：
+  它本来就是为了"注册还没跑完时别把空表缓存住"，5 改成 6 之后语义不变（少一类就每次重算）；
+- 组键仍由 `StructureBuildPlanner.groupKey` 算（排序后的候选 id），与扫描/搭建两侧同一套（§9.3）。
+
+### 10.4 lang：只加了 1 条
+
+`item.gtmthings.advanced_terminal.panel.pick.tooltip`
+（en：`Click to show this tier group in the panel below.` / zh：`点击后下方面板改为显示这一组的分级方块。`），
+给整行按钮做 tooltip。两份 lang 从 417 → **418** 键（§8.4 里那个数字已同步改）。
+
+### 10.5 这一轮**没有改任何 mixin**（§5.2 / §5.3 那两张表照旧成立）
+
+- 补丁侧只加/改**私有**方法与一个**新的私有静态嵌套类** `TierListPanel`，
+  `createWidget` / `AutoBuildSetting` 的公开面一个字没动；
+- GTET 侧这一轮改的是 `TerminalStaticGroups`（静态表）与两个 `canShared()` 覆写（见 §10.6），
+  与三个 mixin 的注入目标无关。
+
+### 10.6 顺带：样板总成 / 镜像也加了 `canShared() = false`（**GTET 侧**，不在补丁里）
+
+`ETMEPatternBufferPartMachine` 与 `ETMEPatternBufferProxyPartMachine` 各加一条
+`canShared() = false`，`ETMEPatternBufferHatches.kt` 里那两处 tooltip 由 `gtceu.part_sharing.enabled`
+改成 `gtceu.part_sharing.disabled`。依据（GTM 7.5.3 源码）：
+
+- `MEPatternBufferPartMachine#getTerminalGroup()` 直接取 `getControllers().first()` ——
+  GTM 自己就假设「一件总成只属于一个控制器」，被两台共享时 AE 终端分组名会变成"任取一个"；
+- `pushPattern` 把原料推进**这一件自己**的 `InternalSlot` 库存
+  （`pushInputsToExternalInventory(inputHolder, this::add)`），而两个控制器的部件表都能取用这份库存 ⇒
+  谁先跑谁吃掉 = 串配方；镜像侧同理（转发链指向同一个宿主库存）。
+- 不影响主要用法：总成当宿主（不组进任何成型结构）时 `isFormed()` 为 false，这道闸门不参与判断；
+  「一个宿主 + 多台机器各自的镜像」也完全不碰它。
+
+⚠️ 这条闸门触发时 GTM 设的错误键是 `multiblocked.pattern.error.share` —— 该键 GTM/LDLib/GTMThings
+的语言文件里**都不存在**（GTM 那 7 份 lang 全库 grep `multiblocked` 零命中）。GTET 侧补它的位置与
+「GTM 7.5.3 里其实没有任何调用点会渲染这个键」这条**纠正**，写在
+`src/main/kotlin/rain/gtetcore/gtet/data/lang/Lang.kt` 的 KDoc 里（不在本补丁的 lang 里 ——
+补丁侧只管 `gtmthings` 自己那套键）。
+
+### 10.7 怎么验证（本轮实际做了的）
+
+| 步骤 | 命令 | 结果 |
+|---|---|---|
+| 补丁源码编译 | 外部 `gradlew spotlessApply build`（`D:\java\GTMThings-1.6.0`） | `BUILD SUCCESSFUL`，`spotlessCheck` 通过（补丁源码格式合规） |
+| 资源补齐 + 体检 + 落盘 | `gradlew resfixGtmtJar` | `to add = 782`，输出 `1239 entries, assets=1092, class=102`，体检通过后覆盖 `libs/jarjar` |
+| 产物自检 | `gradlew verifyPatchedJarjar` | `[OK] 补丁 GTMThings`（补丁内部类 + `assets ≥ 1080` 两条都过） |
+| 补丁类还在 | `javap` 打在**最终**那份 jar 上 | `AdvancedTerminalBehavior$TierListPanel` 在，且有 `detectAndSendChanges` / `updateScreen` / `applyLayout` |
+| 三个 mixin 的签名 | 同上 | `useOn(UseOnContext)` 不变；`AutoBuildSetting#apply(BlockInfo[])` 不变；`AdvancedBlockPattern#autoBuild(...)` 不变，且 `getGlobalCount`/`getLayerCount` **各 1 处共 2 处**（`@Redirect require=1` 的目标）不变 |
+| dev 实际加载的那份 | `gradlew classes` 后数 deobf 缓存 jar | 1239 / **assets=1092** / class=102 / 含 `TierListPanel` —— dev 里不再紫黑块、且是补丁版（内容是扁平坐标，指纹变了会自动重做，实测会） |
+| GTET 侧 | `gradlew classes` / `runData` / `build` | 三条都 `BUILD SUCCESSFUL` |
+
+⚠️ **没能在游戏里验证的部分**（本轮不允许起客户端）：联动交互本身（点上面某一行、下面换组、
+`▶` 同时换组与切档、滚动条回到顶部）、`ui_group` 经由物品 NBT 同步到客户端的那一拍延迟、
+并行仓那一行是否真的出现、`canShared()=false` 在双子结构下的实际表现、
+以及 `multiblocked.pattern.error.share` 的显示（GTM 7.5.3 里根本没有调用点会渲染它，
+这一点已在 §10.6 说明）。这些都需要一次 `runClient`。
+

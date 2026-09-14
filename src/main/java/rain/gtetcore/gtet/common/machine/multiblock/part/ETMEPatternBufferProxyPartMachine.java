@@ -200,6 +200,26 @@ public class ETMEPatternBufferProxyPartMachine extends TieredIOPartMachine
         return MANAGED_FIELD_HOLDER;
     }
 
+    /**
+     * <b>仓室隔离</b>：禁止这一件镜像被两个多方块同时占用（防串配方）。
+     *
+     * <h2>它挡的是哪一格</h2>
+     * 镜像是<b>装在消费侧多方块里</b>的那一件（{@link #getRecipeHandlers()} 把配方输入转发给宿主
+     * 总成的槽位）。所以"共享"在这里的含义是：同一格镜像方块同时算作两个已成型结构的一部分 ——
+     * 两个控制器从**同一条**转发链（也就是宿主总成里那同一批库存槽）取料。跟总成那边一样，
+     * 谁先跑谁吃掉，这就是串配方；而"哪台机器该拿到这批料"没有任何信息可判。
+     *
+     * <h2>不挡什么</h2>
+     * 「一个宿主总成挂多个镜像、多个机器各用各的镜像」这条<b>主要用法完全不受影响</b>：
+     * 每台机器的镜像都是各自那一格，{@code hasController(该控制器)} 永远成立；
+     * 这道闸门只在「同一格属于两个已成型结构」时才触发（判定见
+     * {@link ETTagFilterStockBusPartMachine#canShared()}）。
+     */
+    @Override
+    public boolean canShared() {
+        return false;
+    }
+
     @Override
     public void onMachineRemoved() {
         // 注意：这里**不**调宿主的 removeProxy —— 父类的 addProxy/removeProxy 只收 GTM 自己的

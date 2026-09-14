@@ -377,6 +377,7 @@
   "item.gtmthings.advanced_terminal.panel.cycle": "分级方块（切换）",
   "item.gtmthings.advanced_terminal.panel.cycle.tooltip": "切换到本分级组的下一个候选方块。",
   "item.gtmthings.advanced_terminal.panel.choose": "分级方块（勾选）",
+  "item.gtmthings.advanced_terminal.panel.pick.tooltip": "点击后下方面板改为显示这一组的分级方块。",
   "item.gtmthings.advanced_terminal.panel.empty": "先 Shift+右键控制器扫描结构",
   "item.gtmthings.wireless_energy_binding_tool": "无线能源绑定工具",
   "item.gtmthings.virtual_item_provider": "虚拟物品提供器",

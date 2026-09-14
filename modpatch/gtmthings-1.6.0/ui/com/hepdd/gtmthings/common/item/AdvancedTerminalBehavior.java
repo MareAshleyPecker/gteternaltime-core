@@ -63,10 +63,16 @@ import static com.hepdd.gtmthings.api.pattern.AdvancedBlockPattern.getAdvancedBl
  * <p>
  * 界面部分（{@link #createWidget}）改成模仿 GTOCore「高级终端设置」的样式：
  * 标题 + 右上角 X；左侧一列「标签在左、控件在右」的设置行（文本输入 / [◀] 值 [▶] 步进器 / ✓ 复选框）；
- * 右侧上下两块可滚动的分级方块列表（上：方块 + [▶] 循环切换，下：方块 + ✓ 勾选）。
+ * 右侧上下两块可滚动的分级方块列表：上为「一组一行：方块 + [▶]」，下为「一档一行：方块 + ✓」。
  *
  * <p>
- * <b>第二轮（本次）</b>把 GTO 高级终端里剩下的三项「搭建行为」设置补齐，这三个是<b>逻辑</b>改动，
+ * <b>第四轮（本次）</b>把右侧两块改成<b>联动</b>：点右上某一行（或那一行的 [▶]）即选中该组，
+ * 右下那块<b>只列当前选中的那一组的候选</b>（此前它把"所有组的所有候选"混在一起排成一长串）。
+ * 选中的组记在终端 NBT 的 {@code gtet_terminal.ui_group} 里（服务端权威、随物品同步到客户端），
+ * 布局与它的三条 LDLib 约束见 {@link TierListPanel}。
+ *
+ * <p>
+ * <b>第二轮</b>把 GTO 高级终端里剩下的三项「搭建行为」设置补齐，这三个是<b>逻辑</b>改动，
  * 不只是画几行控件（放置逻辑见 {@code AdvancedBlockPattern#autoBuild}）：
  * <ul>
  * <li>{@link AutoBuildSetting#getModule() 模块搭建}（NBT {@code Module}）——
@@ -76,7 +82,7 @@ import static com.hepdd.gtmthings.api.pattern.AdvancedBlockPattern.getAdvancedBl
  * 按结构把该位置的方块拆掉，不放置。</li>
  * </ul>
  * 语义与实现取舍（尤其是「GTM 7.5.3 没有 {@code getSubPattern}」这条）记在
- * {@code modpatch/gtmthings-1.6.0/NOTES.md} 第 6 节。
+ * {@code modpatch/gtmthings-1.6.0/NOTES.md} 第 6 节；面板那一轮的取舍记在第 10 节。
  */
 public class AdvancedTerminalBehavior implements IItemUIFactory {
 
@@ -113,6 +119,7 @@ public class AdvancedTerminalBehavior implements IItemUIFactory {
     private static final String PANEL_CYCLE = "item.gtmthings.advanced_terminal.panel.cycle";
     private static final String PANEL_CYCLE_TIP = "item.gtmthings.advanced_terminal.panel.cycle.tooltip";
     private static final String PANEL_CHOOSE = "item.gtmthings.advanced_terminal.panel.choose";
+    private static final String PANEL_PICK_TIP = "item.gtmthings.advanced_terminal.panel.pick.tooltip";
     private static final String PANEL_EMPTY = "item.gtmthings.advanced_terminal.panel.empty";
 
     public AdvancedTerminalBehavior() {}
@@ -275,12 +282,12 @@ public class AdvancedTerminalBehavior implements IItemUIFactory {
 
         group.addWidget(createSettingPanel(entityPlayer, handItem));
 
-        // 右侧上：方块 + [▶]（在候选里循环）
+        // 右侧上：方块 + [▶]（点行 = 选中该组，点 [▶] = 选中并切到下一档）
         group.addWidget(new AlignLabelWidget(LIST_X + 4, LIST1_TITLE_Y, PANEL_CYCLE));
-        group.addWidget(createTierList(entityPlayer, handItem, LIST1_Y, LIST1_H, true));
-        // 右侧下：方块 + ✓（逐档勾选，即原来 mixin 追加的那一栏）
+        group.addWidget(createCycleList(entityPlayer, handItem, LIST1_Y, LIST1_H));
+        // 右侧下：**只列右上当前选中的那一组**的候选，方块 + ✓（两块联动）
         group.addWidget(new AlignLabelWidget(LIST_X + 4, LIST2_TITLE_Y, PANEL_CHOOSE));
-        group.addWidget(createTierList(entityPlayer, handItem, LIST2_Y, LIST2_H, false));
+        group.addWidget(createChooseList(entityPlayer, handItem, LIST2_Y, LIST2_H));
 
         group.setBackground(GuiTextures.BACKGROUND_INVERSE);
         return group;
@@ -357,61 +364,103 @@ public class AdvancedTerminalBehavior implements IItemUIFactory {
     }
 
     /**
-     * 右侧分级方块列表（内容超出行高时可滚动）。
+     * 右上「分级方块（切换）」：一组一行「图标 + 名字 + [▶]」。
      *
      * <p>
      * ⚠️ 行数由终端 NBT 决定，而 LDLib 是按控件路径同步数据的：服务端和客户端必须在同一份
      * NBT 上建树，所以两边都读「玩家主手物品」（服务端每 tick 会把改动同步给客户端）。
      *
-     * @param cycle true = 每组一行「方块 + [▶]」，点▶循环到下一档；
-     *              false = 每档一行「方块 + ✓」，勾选即选定。
+     * <p>
+     * 点**行**（图标/名字那一带）= 把这一组设为右下块显示的那一组；点 **[▶]** = 做同样的事再切到下一档。
      */
-    private Widget createTierList(Player entityPlayer, ItemStack handItem, int y, int height, boolean cycle) {
-        var list = new DraggableScrollableWidgetGroup(LIST_X, y, LIST_W, height)
-                .setBackground(GuiTextures.DISPLAY)
-                .setYScrollBarWidth(2)
-                .setYBarStyle(null, ColorPattern.T_WHITE.rectTexture().setRadius(1))
-                .setDraggable(false)
-                .setUseScissor(true);
-
+    private Widget createCycleList(Player entityPlayer, ItemStack handItem, int y, int height) {
+        var list = new DraggableScrollableWidgetGroup(LIST_X, y, LIST_W, height);
+        style(list);
         List<TierGroups.Group> groups = TierGroups.read(handItem);
-        if (groups.isEmpty()) {
-            var hint = new AlignLabelWidget(4, 4, PANEL_EMPTY);
-            hint.setColor(0x808080);
-            list.addWidget(hint);
-            return list;
-        }
-
+        if (groups.isEmpty()) return emptyHint(list);
         int rowY = 0;
         for (TierGroups.Group group : groups) {
-            if (cycle) {
-                addCycleRow(list, entityPlayer, handItem, rowY, group);
-                rowY += ROW_H;
-            } else {
-                for (String candidate : group.candidates()) {
-                    addChooseRow(list, entityPlayer, handItem, rowY, group, candidate);
-                    rowY += ROW_H;
-                }
-            }
+            addCycleRow(list, entityPlayer, handItem, groups, rowY, group);
+            rowY += ROW_H;
         }
         return list;
     }
 
-    /** 「图标 + 名字 + [▶]」一行。 */
+    /**
+     * 右下「分级方块（勾选）」：**只列右上当前选中的那一组**的候选（两块联动）。
+     *
+     * <p>
+     * ⚠️ 这里**不是**「按当前选中的组建树」，而是「每组建一个子容器、全都建出来」，再由
+     * {@link TierListPanel} 按 NBT 里那个"当前组"决定谁可见、谁被挪出可视区 ——
+     * 原因是 LDLib 的控件树两端各建一次、数据按控件路径同步，树结构任何时候都必须一致。
+     * 三条 LDLib 事实与其后果写在 {@link TierListPanel} 的类注释里。
+     */
+    private Widget createChooseList(Player entityPlayer, ItemStack handItem, int y, int height) {
+        List<TierGroups.Group> groups = TierGroups.read(handItem);
+        var list = new TierListPanel(handItem, groups, y, height);
+        if (groups.isEmpty()) return emptyHint(list);
+        for (TierGroups.Group group : groups) {
+            // 一个组一个子容器：容器高度 = 这一组的候选行数（控件树固定，只换可见性与位置）
+            var container = new WidgetGroup(0, 0, LIST_W, group.candidates().size() * ROW_H);
+            int rowY = 0;
+            for (String candidate : group.candidates()) {
+                addChooseRow(container, entityPlayer, handItem, rowY, group, candidate);
+                rowY += ROW_H;
+            }
+            list.addGroup(container);
+        }
+        list.applyLayout();
+        return list;
+    }
+
+    /** 两块列表面板共用的外壳样式：背景 + 2 像素细滚动条 + 不拖动 + 裁剪。 */
+    private static void style(DraggableScrollableWidgetGroup list) {
+        list.setBackground(GuiTextures.DISPLAY);
+        list.setYScrollBarWidth(2);
+        list.setYBarStyle(null, ColorPattern.T_WHITE.rectTexture().setRadius(1));
+        list.setDraggable(false);
+        list.setUseScissor(true);
+    }
+
+    /** 一组都没读到（NBT 里既没有静态组也没有扫描结果）时的提示。 */
+    private static <T extends DraggableScrollableWidgetGroup> T emptyHint(T list) {
+        var hint = new AlignLabelWidget(4, 4, PANEL_EMPTY);
+        hint.setColor(0x808080);
+        list.addWidget(hint);
+        return list;
+    }
+
+    /** 点某一行 = 把这一组设为右下块显示的那一组。⚠️ 只在服务端写 NBT（客户端写了不会同步回去）。 */
+    private static void selectGroup(Player entityPlayer, ItemStack handItem, TierGroups.Group group) {
+        if (entityPlayer.level().isClientSide()) return;
+        TierGroups.setActive(handItem, group.key());
+    }
+
+    /** 「图标 + 名字 + [▶]」一行；整行可点（选中该组），[▶] 另外还能切档。 */
     private void addCycleRow(DraggableScrollableWidgetGroup list, Player entityPlayer, ItemStack handItem,
-                             int rowY, TierGroups.Group group) {
+                             List<TierGroups.Group> groups, int rowY, TierGroups.Group group) {
+        // ⚠️ 这个整行按钮必须**先**加：LDLib 的 WidgetGroup#mouseClicked 是从后往前找
+        // 第一个"吃掉"点击的控件（javap 实证），图标与文字控件不吃点击、[▶] 按钮要吃，
+        // 所以放在最底层既能覆盖整行、又不会抢走 [▶] 的点击。
+        list.addWidget(new ButtonWidget(0, rowY, LIST_CTRL_X - 4, ROW_H, IGuiTexture.EMPTY,
+                clickData -> selectGroup(entityPlayer, handItem, group))
+                .setHoverTooltips(PANEL_PICK_TIP));
         list.addWidget(new ItemIconWidget(4, rowY, () -> TierGroups.icon(TierGroups.chosen(handItem, group))));
-        list.addWidget(new AlignLabelWidget(24, rowY + 4, () -> TierGroups.name(TierGroups.chosen(handItem, group))));
+        // 行首标出"右下正在显示的那一组"；没选中的补同样宽度的空格，名字列不会左右跳
+        list.addWidget(new AlignLabelWidget(24, rowY + 4, () -> TierGroups.marker(handItem, groups, group) +
+                TierGroups.name(TierGroups.chosen(handItem, group))));
         list.addWidget(new ButtonWidget(LIST_CTRL_X, rowY + 1, 18, 14,
                 new GuiTextureGroup(GuiTextures.BUTTON, GuiTextures.BUTTON_RIGHT),
                 clickData -> {
                     if (entityPlayer.level().isClientSide()) return;
+                    // 按 ▶ 也把这一组设为"右下显示的那一组"：玩家的意图就是"我要调这一组"
+                    TierGroups.setActive(handItem, group.key());
                     TierGroups.cycle(handItem, group);
                 }).setHoverTooltips(PANEL_CYCLE_TIP));
     }
 
     /** 「图标 + 名字 + ✓」一行（勾上即把该档设为这一组的选择）。 */
-    private void addChooseRow(DraggableScrollableWidgetGroup list, Player entityPlayer, ItemStack handItem,
+    private void addChooseRow(WidgetGroup list, Player entityPlayer, ItemStack handItem,
                               int rowY, TierGroups.Group group, String candidate) {
         list.addWidget(new ItemIconWidget(4, rowY, () -> TierGroups.icon(candidate)));
         list.addWidget(new AlignLabelWidget(24, rowY + 4, () -> TierGroups.name(candidate)));
@@ -421,6 +470,104 @@ public class AdvancedTerminalBehavior implements IItemUIFactory {
         }).setTexture(checkboxTexture(false), checkboxTexture(true))
                 .setSupplier(() -> TierGroups.chosen(handItem, group).equals(candidate))
                 .setPressed(TierGroups.chosen(handItem, group).equals(candidate)));
+    }
+
+    /**
+     * 右下「勾选」块的外壳：**只显示右上选中的那一组**（两块联动的下半截）。
+     *
+     * <p>
+     * 三条 LDLib 事实决定了这里为什么写成"全都建出来、只换可见性 + 位置"（都是打在**本项目实际编译用的**
+     * ldlib deobf jar 上的 javap 实证，不是猜的）：
+     *
+     * <ol>
+     * <li><b>控件树两端各建一次、数据按控件路径同步</b> ⇒ 树结构在界面存活期间必须一致。
+     * 所以不能"按选中的组建树"：那样客户端换了组、服务端没换，两边的控件下标就对不上，
+     * 所有 {@code writeUpdateInfo} 都会错位。这里改成「每组建一个子容器、全都建出来」，
+     * 结构固定，只有 {@code setVisible}/位置在变。</li>
+     * <li>{@code WidgetGroup#detectAndSendChanges} 只按 {@code isActive()} 过滤子控件、
+     * <b>不看 {@code isVisible()}</b> ⇒ {@code setVisible(false)} 不会掐断被藏起来的那些行
+     * 的数据同步（勾选态照旧更新）。</li>
+     * <li>{@code DraggableScrollableWidgetGroup#computeMax} 对**所有**子控件取
+     * {@code height + selfY + scrollYOffset} 的最大值，同样不看可见性 ⇒ 光隐藏不挪位置，
+     * 滚动条仍按"所有组加起来"的高度给出一大段空白。所以藏起来的容器必须挪到 y 为负的位置
+     * （见 {@link #HIDDEN_Y}），被选中那个留在 y = 0。</li>
+     * </ol>
+     *
+     * <p>
+     * "当前是哪一组"读的是终端 NBT（{@link TierGroups#activeIndex}），不是这个控件里的本地字段：
+     * 界面两端各建一次，状态必须是两端共享的同一份（服务端权威、写完同步给客户端），
+     * 本地字段做不到（服务端那份会一直停在第一组）。
+     */
+    private static final class TierListPanel extends DraggableScrollableWidgetGroup {
+
+        /**
+         * 被藏起来的组容器挪到这么远的"上面"。
+         *
+         * <p>
+         * ⚠️ 不能只写 {@code setVisible(false)}：见类注释第 3 条，滚动区的最大高度是按**所有**子控件算的。
+         * 挪到负 y 之后它们的 {@code height + selfY} 是负数，取 max 时自然被忽略，滚动范围就等于
+         * 当前这一组的高度。
+         */
+        private static final int HIDDEN_Y = -10000;
+
+        private final ItemStack terminal;
+        private final List<TierGroups.Group> groups;
+        private final List<WidgetGroup> containers = new ArrayList<>();
+        /** 已经应用过的组下标（没变就不重复摆，免得每 tick 都动一次控件树）。 */
+        private int applied = Integer.MIN_VALUE;
+        /** 初始化之后有没有补算过一次滚动高度（见 {@link #applyLayout()} 里的 ⚠️）。 */
+        private boolean maxComputed;
+
+        private TierListPanel(ItemStack terminal, List<TierGroups.Group> groups, int y, int height) {
+            super(LIST_X, y, LIST_W, height);
+            this.terminal = terminal;
+            this.groups = groups;
+            style(this);
+        }
+
+        private void addGroup(WidgetGroup container) {
+            containers.add(container);
+            addWidget(container);
+        }
+
+        /** 服务端每 tick 都会走到（{@code ModularUIContainer} 那条链）。 */
+        @Override
+        public void detectAndSendChanges() {
+            super.detectAndSendChanges();
+            applyLayout();
+        }
+
+        /** 客户端每 tick 都会走到（{@code ModularUIGuiContainer#containerTick} → {@code mainGroup.updateScreen()}）。 */
+        @Override
+        @OnlyIn(Dist.CLIENT)
+        public void updateScreen() {
+            super.updateScreen();
+            applyLayout();
+        }
+
+        /** 按 NBT 里那个"当前组"摆位置：选中的留在 y = 0，其余藏起来并挪出滚动范围。 */
+        private void applyLayout() {
+            int active = TierGroups.activeIndex(terminal, groups);
+            boolean changed = active != applied;
+            if (changed) {
+                applied = active;
+                for (int i = 0; i < containers.size(); i++) {
+                    WidgetGroup container = containers.get(i);
+                    boolean shown = i == active;
+                    container.setVisible(shown);
+                    container.setSelfPosition(0, shown ? 0 : HIDDEN_Y);
+                }
+                setScrollYOffset(0);   // 换了组就把滚动条拉回顶部，别停在上一个组的滚动位置上
+            }
+            // ⚠️ 这一下不能省：{@code computeMax} 只在"子控件尺寸/位置变化"时被自动调用，
+            // 而这里第一次布局发生在 initWidget **之前**（那时被 isInitialized() 挡掉），
+            // 之后又因为"没变化"直接返回 —— 不补算一次，滚动区最大高度会一直停在 0，
+            // 候选一多就滚不动（下面的行看得见却够不着）。
+            if (isInitialized() && (changed || !maxComputed)) {
+                maxComputed = true;
+                computeMax();
+            }
+        }
     }
 
     /** 勾选框贴图：空框 / 金黄色 ✓。 */
@@ -642,6 +789,7 @@ public class AdvancedTerminalBehavior implements IItemUIFactory {
      * gtet_terminal: {
      *   plan: { groups: [ { key: "组键", candidates: ["物品id", ...] } ] }   // 上次 Shift+右键扫描的结果
      *   group_prefs: [ { group: "组键", item: "物品id" } ]                    // 玩家的选择
+     *   ui_group: "组键"                                                     // 右下「勾选」块当前显示哪一组
      * }
      * </pre>
      * 
@@ -658,6 +806,16 @@ public class AdvancedTerminalBehavior implements IItemUIFactory {
         private static final String PREFS = "group_prefs";
         private static final String PREF_KEY = "group";
         private static final String PREF_ITEM = "item";
+        /**
+         * 右下「勾选」块当前显示哪一组（右上点了哪一行）。
+         *
+         * <p>
+         * ⚠️ 这份状态**必须进终端 NBT**，不能做成界面里的本地字段：LDLib 的界面是服务端与客户端
+         * <b>各建一次</b>、按控件路径同步数据的，本地字段只有点的那一端会变（服务端那份永远停在第一组），
+         * 两块面板就会各自显示不同的组；写 NBT 则天然是"服务端权威 + 随物品同步到客户端"，
+         * 顺带还能跨界面开关保留、不同终端各自独立。
+         */
+        private static final String UI_GROUP = "ui_group";
 
         /** 物品 id → 图标 / 截断后的名字（每 tick 每行都会问一次，缓存一下省得反复建对象）。 */
         private static final Map<String, ItemStack> ICONS = new HashMap<>();
@@ -681,6 +839,47 @@ public class AdvancedTerminalBehavior implements IItemUIFactory {
                 if (candidates.size() > 1) groups.add(new Group(entry.getString(GROUP_KEY), candidates));
             }
             return groups;
+        }
+
+        /**
+         * 「右下块正在显示的那一组」在 {@code groups} 里的下标（两块联动的状态）。
+         *
+         * <p>
+         * 读的是终端 NBT 的 {@link #UI_GROUP}；NBT 里的键在当前组列表里找不到时（旧存档、
+         * 上次扫描出来的组被后来那次扫描覆盖掉、或者根本还没点过）→ 退回第一组，不报错。
+         *
+         * @return 组的下标；一组都没有时返回 {@code -1}
+         */
+        private static int activeIndex(ItemStack terminal, List<Group> groups) {
+            if (groups.isEmpty()) return -1;
+            CompoundTag root = rootTag(terminal);
+            String wanted = root == null ? "" : root.getString(UI_GROUP);
+            for (int i = 0; i < groups.size(); i++) {
+                if (groups.get(i).key().equals(wanted)) return i;
+            }
+            return 0;
+        }
+
+        /** 这一组是不是"右下块正在显示的那一组"。 */
+        private static boolean isActive(ItemStack terminal, List<Group> groups, Group group) {
+            int active = activeIndex(terminal, groups);
+            return active >= 0 && groups.get(active).key().equals(group.key());
+        }
+
+        /** 行首标记：当前组是 {@code ▶}、其余留同样宽度的空格（换组时名字列不会左右跳）。 */
+        private static String marker(ItemStack terminal, List<Group> groups, Group group) {
+            return isActive(terminal, groups, group) ? "▶ " : "  ";
+        }
+
+        /** 把某一组设为右下块显示的那一组。⚠️ 只在服务端调用（客户端改自己背包的 NBT 同步不回去）。 */
+        private static void setActive(ItemStack terminal, String groupKey) {
+            CompoundTag tag = terminal.getTag();
+            if (tag == null) {
+                tag = new CompoundTag();
+                terminal.setTag(tag);
+            }
+            if (!tag.contains(ROOT, Tag.TAG_COMPOUND)) tag.put(ROOT, new CompoundTag());
+            tag.getCompound(ROOT).putString(UI_GROUP, groupKey);
         }
 
         /** 该组当前选中的那一档（没选过就是第一档）。下面每 tick 都会被问到，所以不走 prefs() 建整张表。 */

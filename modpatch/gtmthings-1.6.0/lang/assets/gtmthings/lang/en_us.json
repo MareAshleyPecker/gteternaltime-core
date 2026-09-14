@@ -377,6 +377,7 @@
   "item.gtmthings.advanced_terminal.panel.cycle": "Tiered blocks (switch)",
   "item.gtmthings.advanced_terminal.panel.cycle.tooltip": "Switch to the next candidate block of this tier group.",
   "item.gtmthings.advanced_terminal.panel.choose": "Tiered blocks (choose)",
+  "item.gtmthings.advanced_terminal.panel.pick.tooltip": "Click to show this tier group in the panel below.",
   "item.gtmthings.advanced_terminal.panel.empty": "Shift+right-click a controller to scan the structure first",
   "item.gtmthings.wireless_energy_binding_tool": "Wireless Energy Binding Tool",
   "item.gtmthings.virtual_item_provider": "Virtual Item Provider",
