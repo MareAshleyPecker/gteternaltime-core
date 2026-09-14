@@ -5,10 +5,11 @@ import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.data.machine.hatch.ETOverclockHatches
 import rain.gtetcore.gtet.common.data.machine.hatch.ETParallelHatches
+import rain.gtetcore.gtet.common.data.machine.hatch.ETTagFilterHatches
 import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches
 
 /**
- * 三种**部件仓**（超频仓 / 线程仓 / 并行仓）的注册入口，进 [GTETCreativeModeTabs.MACHINE] 页。
+ * 四种**部件仓**（超频仓 / 线程仓 / 并行仓 / ME 标签库存仓）的注册入口，进 [GTETCreativeModeTabs.MACHINE] 页。
  *
  * ⚠️ 它**不含单方块机器** —— 名字里的 Machine 是历史叫法，这里只有部件仓。
  *
@@ -16,17 +17,20 @@ import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches
  */
 object ALLSmahine {
 
-    /** 注册三种部件仓。 */
+    /** 注册四种部件仓。 */
     fun init() {
         registerMachines()
     }
 
-    /** 三种部件仓 → [GTETCreativeModeTabs.MACHINE]。 */
+    /** 四种部件仓 → [GTETCreativeModeTabs.MACHINE]。 */
     fun registerMachines() {
         ETRegistrate.creativeModeTab(GTETCreativeModeTabs.MACHINE)
         OVERCLOCK_HATCHES = ETOverclockHatches.register(ETRegistrate)
         THREAD_HATCHES = ETThreadHatches.register(ETRegistrate)
         PARALLEL_HATCHES = ETParallelHatches.register(ETRegistrate)
+        // ME 标签库存件：⚠️ AE2 没装时这里返回空表（那两件直接引用 appeng.*，装不上就加载不了，
+        // 与 GTM 自己的 GTAEMachines 一样按 isAE2Loaded 挡在外面）
+        TAG_FILTER_HATCHES = ETTagFilterHatches.register(ETRegistrate)
     }
 
     /** 「超频仓」部件方块（全部变体）。 */
@@ -39,5 +43,9 @@ object ALLSmahine {
 
     /** GTET 自己的「并行仓」部件方块（IV ~ MAX）。 */
     var PARALLEL_HATCHES: List<MachineDefinition> = emptyList()
+        private set
+
+    /** 「ME 标签库存输入总线 / 输入仓」两件（标签过滤 + 定量拉取）；AE2 缺失时为空表。 */
+    var TAG_FILTER_HATCHES: List<MachineDefinition> = emptyList()
         private set
 }

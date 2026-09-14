@@ -1,5 +1,7 @@
-// 1.20.1	2026-09-13T08:27:08.1676844	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+// 1.20.1	2026-09-14T18:37:42.3414353	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
 a7dcf5c825b57e02bd9804e9b0c9fe62dbab5c6b assets/gtetcore/blockstates/cupronickel_coil_block.json
+8208119555915276846360356b223339ee7c46e5 assets/gtetcore/blockstates/me_tag_filter_stocking_bus.json
+b69035d88a196335aa300bfd4adfb071f779f1ec assets/gtetcore/blockstates/me_tag_filter_stocking_hatch.json
 9c066c4c664bfbf509b2e09667321d07ea19c78e assets/gtetcore/blockstates/modular_test_machine.json
 28f2db0224cce881443b4053bb494818761168a7 assets/gtetcore/blockstates/overclock_hatch_1024x_saving_max.json
 e940bcbfa275b3b46d881db21cdd3645c3f5d938 assets/gtetcore/blockstates/overclock_hatch_16x_lossy2.json
@@ -37,9 +39,11 @@ ed46eb99bf6f59c7d50331a15ac1a76430382b41 assets/gtetcore/blockstates/parallel_ha
 377a90cb887f99f54cef50bd6b33be9f0302a409 assets/gtetcore/blockstates/thread_hatch_uv.json
 760989def8536bc1d5508f04c9325b3ca93a30da assets/gtetcore/blockstates/thread_hatch_uxv.json
 6253b6f74a68977eacf43e410e1efa8acb90cec9 assets/gtetcore/blockstates/thread_hatch_zpm.json
-bbcc7e03e93bc31640bd46268cb3530b75fa8387 assets/gtetcore/lang/en_ud.json
-a2b3f812de8204284699e393cef697a765faa72a assets/gtetcore/lang/en_us.json
+b0e96bf0ad990a10fb177c0e1bfbe4dc687e764c assets/gtetcore/lang/en_ud.json
+b9554b6879232f165255bd0016f27b08d6e0bba1 assets/gtetcore/lang/en_us.json
 ddc420c21556153569bb22b6c3827212af9b9b86 assets/gtetcore/models/block/cupronickel_coil_block.json
+5162723b82dc2d660f2cb0fb50bffc729cec5daa assets/gtetcore/models/block/machine/me_tag_filter_stocking_bus.json
+e8a46f8bc619526b4c47c4cd00a89f64b192083e assets/gtetcore/models/block/machine/me_tag_filter_stocking_hatch.json
 796df483a63e81b31a6b614b25ebea110fcb6e27 assets/gtetcore/models/block/machine/modular_test_machine.json
 9cffeb739d7ae63c798664ecc3dc58979324b407 assets/gtetcore/models/block/machine/overclock_hatch_1024x_saving_max.json
 06fbe4a9b35551d719d915c6e65fb4b2ca3c4d69 assets/gtetcore/models/block/machine/overclock_hatch_16x_lossy2.json
@@ -78,6 +82,8 @@ f51344826c65d582d8f4fdf89028697ca69fc37d assets/gtetcore/models/block/machine/th
 0d99bcd5de0948d1994a68f6d3f95bb7abb7ab72 assets/gtetcore/models/block/machine/thread_hatch_uxv.json
 80ddcbd2f75e92f82e6268d6f3cd99712fc3c3cf assets/gtetcore/models/block/machine/thread_hatch_zpm.json
 76f2fef0482ca185107c86d7dbe87c80ff877b6d assets/gtetcore/models/item/cupronickel_coil_block.json
+38602bdafb2365d177c55443ff4a46da24ac15d6 assets/gtetcore/models/item/me_tag_filter_stocking_bus.json
+940a3c56c5566cae03da2c7ae2c818cd7712fe4e assets/gtetcore/models/item/me_tag_filter_stocking_hatch.json
 3345e5134b2655908e0ec3e8110eeba747bb1d7a assets/gtetcore/models/item/modular_test_machine.json
 260bedad593f4073b3830113d9be56886e538c59 assets/gtetcore/models/item/overclock_hatch_1024x_saving_max.json
 7d5d037a77355b1e8725d47fb7f2ed77c7c48733 assets/gtetcore/models/item/overclock_hatch_16x_lossy2.json
