@@ -106,6 +106,7 @@ object ETTagFilterHatches {
                 Component.translatable("gtceu.machine.item_bus.import.tooltip"),
                 Component.translatable("gtceu.machine.me.stocking_item.tooltip.0"),
                 Component.translatable(TAG_FILTER_TOOLTIP_KEY),
+                Component.translatable(SHARE_TOOLTIP_KEY),
                 Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()
@@ -125,6 +126,7 @@ object ETTagFilterHatches {
                 Component.translatable("gtceu.machine.fluid_hatch.import.tooltip"),
                 Component.translatable("gtceu.machine.me.stocking_fluid.tooltip.0"),
                 Component.translatable(TAG_FILTER_TOOLTIP_KEY),
+                Component.translatable(SHARE_TOOLTIP_KEY),
                 Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()
@@ -132,6 +134,15 @@ object ETTagFilterHatches {
 
     /** 一件功能的 tooltip 键（两件共用，中英各一条）。 */
     private const val TAG_FILTER_TOOLTIP_KEY = "gtetcore.machine.et_tag_filter.tooltip"
+
+    /**
+     * 「多方块共享」那条 tooltip 的键（三件 ME 库存件共用）。
+     *
+     * ⚠️ 三件的共享开关**默认关（隔离）**、可在「标签过滤」面板里切换，所以
+     * 光留 GTM 的 `gtceu.part_sharing.disabled`（"Multiblock Sharing §4Disabled"）会让玩家以为改不了 ——
+     * 那条保留（它描述的正是默认状态），后面再补这一条说明「可以切」。
+     */
+    const val SHARE_TOOLTIP_KEY: String = "gtetcore.machine.et_tag_filter.share.tooltip"
 
     /** GTM 的贴图路径 → `ResourceLocation`（命名空间固定 gtmOverlay 的 `gtceu`）。 */
     private fun gtmOverlay(path: String): ResourceLocation =
@@ -141,9 +152,13 @@ object ETTagFilterHatches {
      * 登记面板与 tooltip 的全部双语键。
      *
      * ⚠️ 说明行刻意写得短：面板宽 150px，LDLib 的 `LabelWidget` 不换行，太长会画出面板外。
+     * 共享开关的 4 条 tooltip 不受这个限制（tooltip 会自己折行），所以那里把语义写全。
      */
     private fun registerLang() {
         LangUtil.add(TAG_FILTER_TOOLTIP_KEY, "AE tag filtering + batch pull", "AE 标签过滤 + 定量拉取")
+        LangUtil.add(SHARE_TOOLTIP_KEY,
+            "Multiblock sharing: isolated by default, toggle in the Tag Filter panel",
+            "多方块共享：默认隔离，可在「标签过滤」面板里切换")
 
         LangUtil.add(ETTagFilterConfigurator.LANG_TITLE, "Tag Filter", "标签过滤")
         LangUtil.add(ETTagFilterConfigurator.LANG_WHITE, "Whitelist (blank = no limit)", "白名单（留空 = 不限制）")
@@ -153,5 +168,23 @@ object ETTagFilterHatches {
         LangUtil.add(ETTagFilterConfigurator.LANG_HINT_1, "Also accepts , and #", "也认 , 与 # 前缀")
         LangUtil.add(ETTagFilterConfigurator.LANG_HINT_2, "Phantom slot fills tags", "幻影槽放样本自动填标签")
         LangUtil.add(ETTagFilterConfigurator.LANG_HINT_3, "N must be >= min count", "N 需不小于保底数量")
+
+        // 多方块共享开关（第四行）。⚠️ 状态文字必须短：LabelWidget 不换行，写长了会画出面板外；
+        // 两个方向与时序全部放在 tooltip 里（tip.1 / tip.2 / tip.3）。
+        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE, "Multiblock sharing", "多方块共享")
+        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_ON, "Allowed", "允许共享")
+        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_OFF, "Isolated", "隔离")
+        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_TIP_0,
+            "Whether other multiblocks may occupy this part",
+            "本件能不能被别的多方块占用")
+        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_TIP_1,
+            "Off (isolated): if this part already belongs to a formed multiblock, another structure's check fails here. Prevents recipe mixups.",
+            "关（隔离）：本件已属于某个已成型多方块时，别的结构检查到这一格就判失败 —— 防止两个结构串配方")
+        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_TIP_2,
+            "On (allowed): another structure must be re-formed (checked again) to take this part; already formed structures do not change by themselves.",
+            "开（允许共享）：别的结构要重新成型（重新检查一次结构）才会占用本件；已成型结构不会自己变化")
+        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_TIP_3,
+            "Toggling re-checks this part's own multiblocks at once; the change takes effect on structure re-check.",
+            "拨动开关会立刻让本件所属的多方块复检一次；改动在结构重新检查后生效")
     }
 }

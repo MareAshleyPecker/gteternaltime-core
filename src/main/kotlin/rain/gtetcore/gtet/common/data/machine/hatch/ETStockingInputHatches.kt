@@ -74,11 +74,16 @@ private const val OVERLAY_ME_INPUT_HATCH = "block/overlay/appeng/me_input_hatch"
  * 与 [ETTagFilterHatches] / [ETThreadHatches] 同一套约定：英文名走 `.langValue(...)`、
  * 中文名走 [LangUtil.BLOCK_LANG]；tooltip 保留 GTM 对应件那几条功能说明 + 一条本 mod 的功能说明。
  *
- * ⚠️ 多方块共享那一行写 `gtceu.part_sharing.disabled`：这三件的机器类
- * （`ETTagFilterStockBusPartMachine` / `ETTagFilterStockHatchPartMachine` / `ETMEDualStockingPartMachine`）
- * 现在都覆写了 `IMultiPart#canShared() = false`（**仓室隔离**，防串配方），所以 tooltip 必须写「禁止」——
- * 之前写 `enabled` 是因为当时没有覆写；行为变了，提示跟着改，两边不再打架。
- * 第一批那两件（[ETTagFilterHatches]）本来就是写 `disabled`，现在两批一致。
+ * ⚠️ 多方块共享那两行：GTM 的 `gtceu.part_sharing.disabled`（"Multiblock Sharing §4Disabled"）
+ * 描述的是**默认状态**，三件的机器类（`ETTagFilterStockBusPartMachine` /
+ * `ETTagFilterStockHatchPartMachine` / `ETMEDualStockingPartMachine`）现在返回的都是
+ * `canShared() = shareEnabled`，而 `shareEnabled` 默认 `false` = 隔离（防串配方，与上手写死的
+ * `false` 行为一致），所以这一行照旧写「禁止」不算骗人；紧跟其后那条
+ * [ETTagFilterHatches.SHARE_TOOLTIP_KEY] 才是新增的信息：**默认隔离、但玩家能在
+ * 「标签过滤」面板里打开**。开关两个方向分别发生什么、以及「改动在结构重新检查后生效」
+ * 都写在开关的 tooltip 里（见 `ETTagFilterConfigurator` 的 LANG_SHARE_TIP_*）。
+ * ⚠️ 一台机器只有**一个**开关（`canShared()` 是机器级的一个方法）：二合一件的流体侧那块面板
+ * 不画这一行（`SideConfigurator` 传 `showShareSwitch = false`）。
  *
  * ## 注册位置
  *
@@ -198,6 +203,7 @@ object ETStockingInputHatches {
                 Component.translatable("gtceu.machine.me.stocking_fluid.tooltip.0"),
                 Component.translatable(DUAL_TOOLTIP_KEY),
                 Component.translatable(DUAL_HINT_KEY),
+                Component.translatable(ETTagFilterHatches.SHARE_TOOLTIP_KEY),
                 Component.translatable("gtceu.part_sharing.disabled")
             )
             .register()

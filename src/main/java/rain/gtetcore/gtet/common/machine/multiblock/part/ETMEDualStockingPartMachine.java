@@ -159,19 +159,28 @@ public class ETMEDualStockingPartMachine extends ETTagFilterStockBusPartMachine 
     }
 
     /**
-     * <b>仓室隔离</b>：显式再写一遍 {@code false}。
+     * <b>仓室隔离（玩家可切换）</b>：直接用父类那一份实现（字段 {@code shareEnabled} + 拨动后的结构复检）。
      *
      * <p>
-     * 行为上父类 {@link ETTagFilterStockBusPartMachine#canShared()} 已经是 {@code false}，这一份是**冗余**的，
-     * 但本件比单侧件更需要它：一块方块同时挂在 {@code IMPORT_ITEMS} 与 {@code IMPORT_FLUIDS} 两条能力链上，
+     * ⚠️ 这里**不再**像上一版那样写死 {@code false}：那样会让父类的开关对本件失效（覆写掉就再也回不去），
+     * 而玩家的诉求正是「自己决定要不要共享」。显式再写一遍是为了把「本件只有一个开关」这件事钉在这里。
+     *
+     * <p>
+     * ⚠️ **一块方块只有一个开关，不是物品侧 / 流体侧各一个**：{@code canShared()} 是机器级的一个方法
+     * （{@code IMultiPart} 上就一个），没有任何「按侧分别判定」的时机 —— 结构检查问的是
+     * 「这一格方块能不能被别的多方块占用」，答案只有一个。所以面板上物品侧那块（共用的「标签过滤」）
+     * 显示开关，流体侧那块（「标签过滤（流体侧）」）不显示（见 {@link #attachConfigurators}），
+     * 免得玩家以为要拨两次。
+     *
+     * <p>
+     * 本件比单侧件更需要隔离：一块方块同时挂在 {@code IMPORT_ITEMS} 与 {@code IMPORT_FLUIDS} 两条能力链上，
      * 两侧各有一套标签 / 定量 / 库存列表（物品侧在父类字段、流体侧在本类字段），
      * 一旦被两个多方块共享，两个控制器会同时读**同一份两侧配置**，串配方比单侧件更严重。
-     * 显式写出来是为了：以后若有人重构父类（例如把隔离逻辑挪走、或让父类改成 {@code true}），
-     * 本件不会**静默**失去隔离。语义与运行时影响见父类同名方法的注释。
+     * 完整语义与拨动开关两个方向的效果见父类 {@link ETTagFilterStockBusPartMachine#canShared()}。
      */
     @Override
     public boolean canShared() {
-        return false;
+        return canBeShared();
     }
 
     // ///////////////////////////////
@@ -486,6 +495,7 @@ public class ETMEDualStockingPartMachine extends ETTagFilterStockBusPartMachine 
     @Override
     public void attachConfigurators(ConfiguratorPanel configuratorPanel) {
         // 父类一行把该有的都挂上了：自动拉取按钮、去重开关、电路槽、GTM 的库存保底面板、物品侧的标签面板
+        //（物品侧那块标签面板里带「多方块共享」开关 —— 全机就这一个，是本件唯一的共享开关）
         super.attachConfigurators(configuratorPanel);
         // 再补流体侧那块标签面板（标题带「流体侧」，用来和上面那块没标侧别的区分）
         configuratorPanel.attachConfigurators(new SideConfigurator(fluidSide, true, LANG_TITLE_FLUIDS));
@@ -504,7 +514,9 @@ public class ETMEDualStockingPartMachine extends ETTagFilterStockBusPartMachine 
         private final String titleKey;
 
         SideConfigurator(IMEStockingHost host, boolean fluid, String titleKey) {
-            super(host, fluid);
+            // ⚠️ 第三参 false = 这块面板**不画**「多方块共享」开关：
+            //    本件只有一个开关（物品侧那块面板里），两侧都画会让玩家以为要拨两次。
+            super(host, fluid, false);
             this.titleKey = titleKey;
         }
 
@@ -704,6 +716,18 @@ public class ETMEDualStockingPartMachine extends ETTagFilterStockBusPartMachine 
         @Override
         public boolean testConfiguredInOtherPart(@Nullable GenericStack config) {
             return machine.testConfiguredInOtherPart(config);
+        }
+
+        // ⚠️ 共享开关**两侧共用机器那一个**（canShared() 是机器级的方法），所以这里只是转发，
+        //    不是「流体侧自己有一个开关」。流体侧那块面板不显示这个开关，见机器类的 attachConfigurators。
+        @Override
+        public boolean canBeShared() {
+            return machine.canBeShared();
+        }
+
+        @Override
+        public void setCanBeShared(boolean shared) {
+            machine.setCanBeShared(shared);
         }
     }
 

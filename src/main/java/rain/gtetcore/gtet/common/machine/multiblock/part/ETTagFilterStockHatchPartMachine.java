@@ -13,6 +13,7 @@ import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEFluidSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAESlot;
 import com.gregtechceu.gtceu.integration.ae2.utils.AEUtil;
 
+import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
@@ -32,6 +33,8 @@ import org.jetbrains.annotations.Nullable;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilter;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator;
 import rain.gtetcore.gtet.integration.ae2.IMEStockingHost;
+
+import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -77,6 +80,21 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
     @Persisted
     private int batchSize = 0;
 
+    /**
+     * 「允许多方块共享」开关，**默认 false = 隔离**（与本族其他件一致）。
+     *
+     * <p>
+     * ⚠️ 默认值不能改成 true：流体侧的标签 / 定量 / 库存列表同样是每件独立的配置，
+     * 两个控制器读同一份 {@code stock} 就是串配方（详见物品版
+     * {@link ETTagFilterStockBusPartMachine#canShared()} 的完整说明）。
+     *
+     * <p>
+     * ⚠️ 带 {@code @DescSynced}（理由见物品版同名字段）：开关面板要在客户端读这个值。
+     */
+    @DescSynced
+    @Persisted
+    private boolean shareEnabled = false;
+
     public ETTagFilterStockHatchPartMachine(IMachineBlockEntity holder, Object... args) {
         super(holder, args);
         applyTagFilter();
@@ -102,18 +120,34 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
     // ////////////////////////////////
 
     /**
-     * <b>仓室隔离</b>：禁止本件被两个多方块同时占用（防串配方）。
+     * <b>仓室隔离（玩家可切换）</b>：默认禁止、面板开关打开后放行，返回值就是 {@link #shareEnabled}。
      *
      * <p>
      * 语义、运行时影响（{@code BlockPattern#checkPatternAt} 里
-     * {@code isFormed() && !canShared() && !hasController(...)} 那一处判定）与「为什么本件必须隔离」
-     * 的完整说明见物品版 {@link ETTagFilterStockBusPartMachine#canShared()} —— 流体侧的配置
+     * {@code isFormed() && !canShared() && !hasController(...)} 那一处判定）、拨动开关两个方向分别发生什么、
+     * 以及「为什么默认必须隔离」的完整说明见物品版
+     * {@link ETTagFilterStockBusPartMachine#canShared()} —— 流体侧的配置
      * （{@link #tagWhite} / {@link #tagBlack} / {@code batchSize}）同样是每件独立的，
      * 共享会让两个控制器的配方匹配读到同一份 {@code stock}。
      */
     @Override
     public boolean canShared() {
-        return false;
+        return shareEnabled;
+    }
+
+    @Override
+    public boolean canBeShared() {
+        return shareEnabled;
+    }
+
+    /** 同物品版：服务端改值 + 让本件所属的每个多方块立刻复检结构（⚠️ 先复制再遍历，理由见物品版）。 */
+    @Override
+    public void setCanBeShared(boolean shared) {
+        if (isRemote()) return;
+        shareEnabled = shared;
+        for (IMultiController controller : List.copyOf(getControllers())) {
+            controller.requestCheck();
+        }
     }
 
     // ///////////////////////////////
@@ -237,11 +271,21 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
     /** 定量上限在数据棒 / 拆方块里的键名。 */
     private static final String NBT_BATCH_SIZE = "ETBatchSize";
 
+    /**
+     * 共享开关在数据棒 / 拆方块里的键名。
+     *
+     * <p>
+     * ⚠️ 必须显式写这一对键（理由见物品版 {@code NBT_SHARE}）：{@code @Persisted} 只管方块实体存档，
+     * 掉落物走的是 {@code saveToItem} / {@code loadFromItem}。缺键时不动，默认 false = 隔离。
+     */
+    private static final String NBT_SHARE = "ETShareEnabled";
+
     @Override
     protected CompoundTag writeConfigToTag() {
         CompoundTag tag = super.writeConfigToTag();
         writeTagFilter(tag);
         tag.putInt(NBT_BATCH_SIZE, batchSize);
+        tag.putBoolean(NBT_SHARE, shareEnabled);
         return tag;
     }
 
@@ -250,6 +294,7 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
         super.readConfigFromTag(tag);
         readTagFilter(tag);
         if (tag.contains(NBT_BATCH_SIZE)) setBatchSize(tag.getInt(NBT_BATCH_SIZE));
+        if (tag.contains(NBT_SHARE)) setCanBeShared(tag.getBoolean(NBT_SHARE));
     }
 
     @Override
@@ -257,6 +302,7 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
         IDropSaveMachine.super.saveToItem(tag);
         writeTagFilter(tag);
         tag.putInt(NBT_BATCH_SIZE, batchSize);
+        tag.putBoolean(NBT_SHARE, shareEnabled);
     }
 
     @Override
@@ -264,6 +310,7 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
         IDropSaveMachine.super.loadFromItem(tag);
         readTagFilter(tag);
         if (tag.contains(NBT_BATCH_SIZE)) setBatchSize(tag.getInt(NBT_BATCH_SIZE));
+        if (tag.contains(NBT_SHARE)) setCanBeShared(tag.getBoolean(NBT_SHARE));
     }
 
     // ///////////////////////////////

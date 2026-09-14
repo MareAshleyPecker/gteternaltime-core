@@ -4,6 +4,7 @@ import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.gui.fancy.IFancyConfigurator;
 import com.gregtechceu.gtceu.api.gui.widget.PhantomFluidWidget;
 import com.gregtechceu.gtceu.api.gui.widget.PhantomSlotWidget;
+import com.gregtechceu.gtceu.api.gui.widget.ToggleButtonWidget;
 import com.gregtechceu.gtceu.api.transfer.fluid.CustomFluidTank;
 import com.gregtechceu.gtceu.api.transfer.item.CustomItemStackHandler;
 
@@ -28,9 +29,10 @@ import appeng.api.stacks.AEItemKey;
 import java.util.function.Consumer;
 
 /**
- * 「标签过滤 + 定量拉取」面板：白名单输入框、黑名单输入框各配一个**幻影槽**，再加一个「每次拉 N 个」的数字框。
+ * 「标签过滤 + 定量拉取 + 多方块共享」面板：白名单输入框、黑名单输入框各配一个**幻影槽**，
+ * 一个「每次拉 N 个」的数字框，再加一个「能不能被别的多方块共享」的开关。
  *
- * <h2>三行控件</h2>
+ * <h2>四行控件</h2>
  * <ol>
  * <li><b>白名单</b>：输入框（留空 = 不限制）+ 幻影槽；</li>
  * <li><b>黑名单</b>：输入框（留空 = 不限制）+ 幻影槽；</li>
@@ -38,6 +40,11 @@ import java.util.function.Consumer;
  * 范围 0 ~ {@code BATCH_MAX}，<b>0 = 不限制</b>（默认，行为与 GTM 原版库存部件一致）。
  * N 必须 ≥ 本仓的「保底数量」（GTM 自带的 {@code min_item_count} / {@code min_fluid_count}），否则备出来的量
  * 永远达不到保底，本仓会一直空着 —— 这是定量模式与保底语义的固有冲突，提示行里写明了。</li>
+ * <li><b>多方块共享开关</b>（{@link #Y_SHARE_ROW}）：复用 GTM 的 {@code ToggleButtonWidget}，
+ * 右侧一行短状态文字。<b>默认关 = 隔离</b>（防串配方）；两个方向分别发生什么、
+ * 以及「改动在结构重新检查后生效」全部写在这个开关的 tooltip 里（4 条，中英各一份，见
+ * {@link #LANG_SHARE_TIP_0} ~ {@link #LANG_SHARE_TIP_3}）。
+ * ⚠️ 一台机器只有**一个**开关：二合一件的流体侧那块面板不画这一行（{@code showShareSwitch=false}）。</li>
  * </ol>
  *
  * <h2>⚠️ 这一行为什么不用 GTM 的 {@code IntInputWidget}</h2>
@@ -83,6 +90,20 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
     public static final String LANG_BLACK = "gtetcore.machine.et_tag_filter.black";
     /** 定量模式行标题。 */
     public static final String LANG_BATCH = "gtetcore.machine.et_tag_filter.batch";
+    /** 多方块共享开关行标题。 */
+    public static final String LANG_SHARE = "gtetcore.machine.et_tag_filter.share";
+    /** 共享开关的「开」状态文字（紧跟开关右侧）。 */
+    public static final String LANG_SHARE_ON = "gtetcore.machine.et_tag_filter.share.on";
+    /** 共享开关的「关」状态文字。 */
+    public static final String LANG_SHARE_OFF = "gtetcore.machine.et_tag_filter.share.off";
+    /** 开关悬停说明 0：这个开关管什么。 */
+    public static final String LANG_SHARE_TIP_0 = "gtetcore.machine.et_tag_filter.share.tip.0";
+    /** 开关悬停说明 1：关（隔离）方向。 */
+    public static final String LANG_SHARE_TIP_1 = "gtetcore.machine.et_tag_filter.share.tip.1";
+    /** 开关悬停说明 2：开（允许共享）方向。 */
+    public static final String LANG_SHARE_TIP_2 = "gtetcore.machine.et_tag_filter.share.tip.2";
+    /** 开关悬停说明 3：时序（什么时候生效）。 */
+    public static final String LANG_SHARE_TIP_3 = "gtetcore.machine.et_tag_filter.share.tip.3";
     /** 说明行 0：运算符。 */
     public static final String LANG_HINT_0 = "gtetcore.machine.et_tag_filter.hint.0";
     /** 说明行 1：{@code ,} 与 {@code #} 的便利写法。 */
@@ -100,11 +121,16 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
      * 再宽就会盖住主界面的配置槽区。
      *
      * <p>
-     * ⚠️ 高度必须**等于内容底边**（现在最后一行说明的底边正好是 150）：fancy 浮层的高度是
-     * 「内容高 + 24（图标行）+ 4」，多留的空白会变成浮层底部的一大块空区，少留则内容越界。
+     * ⚠️ 高度必须**等于内容底边**（带开关行时最后一行说明的底边正好是 186；不带开关行时是 150）。
+     * fancy 浮层的高度是「内容高 + 24（图标行）+ 4」，多留的空白会变成浮层底部的一大块空区，少留则内容越界。
+     * ⚠️ 高度是**往下长**的（浮层顶边 = 图标行处，见 {@code ConfiguratorPanel.Tab#expand}），
+     * 所以加一行只会让浮层底部更靠下，不会压到别的东西；但超过屏幕高度时 GTM 会把浮层整体上移。
      */
     private static final int PANEL_WIDTH = 150;
-    private static final int PANEL_HEIGHT = 150;
+    /** 带「多方块共享」开关行时的面板高 = 末行说明底边 176 + 10。 */
+    private static final int PANEL_HEIGHT = 186;
+    /** 不带开关行时（二合一件的流体侧那块）的面板高 = 末行说明底边 140 + 10，与原布局一致。 */
+    private static final int PANEL_HEIGHT_NO_SHARE = 150;
 
     // 各行控件的 Y 与尺寸 —— 改布局只动这里，别在 addWidget 里散落魔数
     /** 白名单：标题 / 输入框（输入框右侧留 18px 给幻影槽）。 */
@@ -116,8 +142,20 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
     /** 定量行：标题在 74，数字框与 -/+ 按钮同在 86。 */
     private static final int Y_BATCH_LABEL = 74;
     private static final int Y_BATCH_ROW = 86;
-    /** 说明块首行 Y 与行距（4 行，末行底边 140 + 10 = 150 = 面板高）。 */
-    private static final int Y_HINT = 110;
+    /**
+     * 多方块共享行：标题在 110，开关与状态文字同在 122（高 18，与上面几行的控件同高）。
+     *
+     * <p>
+     * ⚠️ 这一行是**新加的一整行**（原布局里定量行的底边 104 之后直接是说明块 110）：
+     * 加行就要把说明块整体下移 36px（见 {@link #Y_HINT}）并把面板高同步加上，
+     * 否则说明块会与开关行压在一起（本面板上一版踩过的坑正是「控件实际高度比声明的高 4px → 叠字」）。
+     */
+    private static final int Y_SHARE_LABEL = 110;
+    private static final int Y_SHARE_ROW = 122;
+    /** 说明块首行 Y（带开关行时）与行距（4 行，末行底边 176 + 10 = 186 = 面板高）。 */
+    private static final int Y_HINT = 146;
+    /** 不带开关行时的说明块首行 Y（= 原布局的 110，末行底边 140 + 10 = 150 = 面板高）。 */
+    private static final int Y_HINT_NO_SHARE = 110;
     private static final int HINT_LINE_HEIGHT = 10;
 
     /** 表达式输入框宽度：右边要留出 18px 的幻影槽。 */
@@ -128,8 +166,12 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
     private static final int PHANTOM_X = 120;
     /** 第三行「-」按钮的 X（紧接数字框右侧）。 */
     private static final int BATCH_MINUS_X = 98;
-    /** 第三行控件统一高 18，与幻影槽同高。 */
+    /** 第三行与共享行控件统一高 18，与幻影槽同高。 */
     private static final int ROW_HEIGHT = 18;
+    /** 共享开关的 X（与上面几行控件左对齐）。 */
+    private static final int SHARE_TOGGLE_X = 4;
+    /** 共享开关右侧状态文字的 X（开关 18 宽 + 4px 间隙）。 */
+    private static final int SHARE_LABEL_X = 26;
     /** 表达式最长字符数，够自动填 16 个标签。 */
     private static final int MAX_EXPRESSION_LENGTH = 512;
     /** 数字框最长字符数：{@code BATCH_MAX} = 1000000 是 7 位。 */
@@ -141,10 +183,25 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
     private final IMEStockingHost machine;
     /** true = 流体部件（幻影槽收流体、N 的单位是 mB），false = 物品部件。 */
     private final boolean fluid;
+    /**
+     * 是否画出「多方块共享」开关行。
+     *
+     * <p>
+     * ⚠️ 只有二合一件的流体侧那块面板会传 false（一台机器有两块面板、但只有一个开关，
+     * 画两次会让玩家以为要拨两次）。不带这一行时说明块上移、面板高也同步缩短
+     * （见 {@link #hintY()} / {@link #panelHeight()}），不留空尾。
+     */
+    private final boolean showShareSwitch;
 
+    /** 物品 / 流体两件单独部件用的构造器：带开关行（每件一个开关）。 */
     public ETTagFilterConfigurator(IMEStockingHost machine, boolean fluid) {
+        this(machine, fluid, true);
+    }
+
+    public ETTagFilterConfigurator(IMEStockingHost machine, boolean fluid, boolean showShareSwitch) {
         this.machine = machine;
         this.fluid = fluid;
+        this.showShareSwitch = showShareSwitch;
     }
 
     @Override
@@ -160,7 +217,8 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
 
     @Override
     public Widget createConfigurator() {
-        WidgetGroup group = new WidgetGroup(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
+        WidgetGroup group = new WidgetGroup(0, 0, PANEL_WIDTH, panelHeight());
+        int hintY = hintY();
 
         // 白名单行
         group.addWidget(new LabelWidget(4, Y_WHITE_LABEL, LANG_WHITE));
@@ -186,13 +244,84 @@ public class ETTagFilterConfigurator implements IFancyConfigurator {
         group.addWidget(createStepButton(BATCH_MINUS_X, "-", -1));
         group.addWidget(createStepButton(PHANTOM_X, "+", 1));
 
+        // 多方块共享行（二合一件的流体侧那块面板不画这一行）
+        if (showShareSwitch) {
+            group.addWidget(new LabelWidget(4, Y_SHARE_LABEL, LANG_SHARE));
+            group.addWidget(createShareToggle());
+            group.addWidget(createShareStateLabel());
+        }
+
         // 说明
-        group.addWidget(new LabelWidget(4, Y_HINT, LANG_HINT_0));
-        group.addWidget(new LabelWidget(4, Y_HINT + HINT_LINE_HEIGHT, LANG_HINT_1));
-        group.addWidget(new LabelWidget(4, Y_HINT + HINT_LINE_HEIGHT * 2, LANG_HINT_2));
-        group.addWidget(new LabelWidget(4, Y_HINT + HINT_LINE_HEIGHT * 3, LANG_HINT_3));
+        group.addWidget(new LabelWidget(4, hintY, LANG_HINT_0));
+        group.addWidget(new LabelWidget(4, hintY + HINT_LINE_HEIGHT, LANG_HINT_1));
+        group.addWidget(new LabelWidget(4, hintY + HINT_LINE_HEIGHT * 2, LANG_HINT_2));
+        group.addWidget(new LabelWidget(4, hintY + HINT_LINE_HEIGHT * 3, LANG_HINT_3));
 
         return group;
+    }
+
+    /** 说明块首行 Y：带开关行时是 {@link #Y_HINT}，不带时是 {@link #Y_HINT_NO_SHARE}。 */
+    private int hintY() {
+        return showShareSwitch ? Y_HINT : Y_HINT_NO_SHARE;
+    }
+
+    /**
+     * 面板高：必须等于内容底边 —— 即「说明块首行 Y + 4 行 × 行距」，
+     * 也就是 {@link #Y_HINT} + 40 = 186 与 {@link #Y_HINT_NO_SHARE} + 40 = 150，
+     * 与 {@link #PANEL_HEIGHT} / {@link #PANEL_HEIGHT_NO_SHARE} 一一对应（改布局时两边要一起改）。
+     */
+    private int panelHeight() {
+        return showShareSwitch ? PANEL_HEIGHT : PANEL_HEIGHT_NO_SHARE;
+    }
+
+    /**
+     * 「能不能被别的多方块共享」开关：直接用 GTM 自己的 {@link ToggleButtonWidget}
+     * （{@code SwitchWidget} 的子类），贴图借 GTM 的 `button_public_private.png`。
+     *
+     * <h2>为什么用 {@code BUTTON_PUBLIC_PRIVATE}、为什么不用 {@code setShouldUseBaseBackground()}</h2>
+     * 那张 png 是 **18×36 = 上下两半各 18×18**（已核实文件尺寸），正好是 {@code ToggleButtonWidget}
+     * 认的「未按下 / 已按下」两张贴图 —— 于是图标本身随状态变化（与 GTM 的
+     * {@code SimpleItemFilter} 用 {@code BUTTON_BLACKLIST} 的用法一致）。
+     * 刻意**不**加 {@code setShouldUseBaseBackground()}：那个会把「整张」png（两半叠在一起）
+     * 再套一层底板画出来，图标会被压扁。上半 = 未按下（= 默认的「隔离」），下半 = 已按下（= 允许共享）。
+     *
+     * <h2>为什么放在这一行、这个尺寸</h2>
+     * <ul>
+     * <li>X = {@link #SHARE_TOGGLE_X}（4）：与上面三行的控件左对齐，成一条竖线；</li>
+     * <li>Y = {@link #Y_SHARE_ROW}（122）：紧接定量行（底边 104）下方，自己在标题 110 之下；</li>
+     * <li>18×18：与幻影槽 / 步进按钮同高（{@link #ROW_HEIGHT}），不会比声明的框高出几个像素而压到下一行。</li>
+     * </ul>
+     *
+     * <h2>⚠️ 同步与方向</h2>
+     * {@code SwitchWidget} 的点击是「客户端发 client action → 服务端 {@code handleClientAction} 回调」，
+     * 所以 {@link IMEStockingHost#setCanBeShared(boolean)} 是在**服务端**调的（正确：该值服务端权威）；
+     * 开关自身的按下状态由它自己的 {@code supplier} + {@code updateScreen()} 每 tick 拉回来。
+     */
+    private Widget createShareToggle() {
+        return new ToggleButtonWidget(SHARE_TOGGLE_X, Y_SHARE_ROW, ROW_HEIGHT, ROW_HEIGHT,
+                GuiTextures.BUTTON_PUBLIC_PRIVATE, machine::canBeShared, machine::setCanBeShared)
+                .setHoverTooltips(Component.translatable(LANG_SHARE_TIP_0),
+                        Component.translatable(LANG_SHARE_TIP_1),
+                        Component.translatable(LANG_SHARE_TIP_2),
+                        Component.translatable(LANG_SHARE_TIP_3));
+    }
+
+    /**
+     * 开关右侧的状态文字：用「(读 supplier)」的 {@link LabelWidget}，值变了由 LDLib 自己推给客户端
+     * （{@code LabelWidget#detectAndSendChanges} 比对字符串后 {@code writeUpdateInfo}），不必手动同步。
+     *
+     * <p>
+     * ⚠️ supplier 返回的是**语言键本身**（不是 {@code Component.translatable(...).getString()}）：
+     * {@code LabelWidget} 画的时候会自己过一遍 {@code LocalizationUtils.format}，
+     * 与 GTM 自己写 {@code () -> isOnline ? "gtceu.gui.me_network.online" : ...} 的用法一致。
+     *
+     * <p>
+     * ⚠️ 文案必须短：LDLib 的 {@code LabelWidget} 不换行，英文一旦写长（例如
+     * "Allowed (click to isolate)"）就会画出面板右边缘。说明写在 tooltip 里。
+     */
+    private Widget createShareStateLabel() {
+        return new LabelWidget(SHARE_LABEL_X, Y_SHARE_ROW + 4,
+                () -> machine.canBeShared() ? LANG_SHARE_ON : LANG_SHARE_OFF);
     }
 
     /**

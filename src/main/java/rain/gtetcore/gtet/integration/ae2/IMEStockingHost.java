@@ -72,4 +72,32 @@ public interface IMEStockingHost extends IETTagFilterPart {
         int size = getBatchSize();
         return size <= 0 ? Long.MAX_VALUE : size;
     }
+
+    /**
+     * 「本件能不能被别的多方块占用」—— 就是 {@code IMultiPart#canShared()} 的返回值来源。
+     *
+     * <p>
+     * ⚠️ 这是**整个部件一个**开关，不是「每一侧一个」：{@code canShared()} 是机器级的一个方法，
+     * 二合一那条总成虽然物品 / 流体各有一套标签与定量，共享开关也只有一个（见
+     * {@code ETMEDualStockingPartMachine#canShared()}）。
+     *
+     * <p>
+     * ⚠️ 只在**结构检查那一刻**被读（全 GTM 唯一消费点是 {@code BlockPattern#checkPatternAt}），
+     * 所以这个值改了以后，已成型结构不会凭空变化 —— 见 {@link #setCanBeShared(boolean)} 的说明。
+     */
+    boolean canBeShared();
+
+    /**
+     * 拨动共享开关（true = 允许别的多方块占用本件，false = 隔离）。
+     *
+     * <p>
+     * ⚠️ 实现方应当**在服务端**改值，并顺手让本件所属的每个多方块立刻复检一次结构
+     * （{@code IMultiController#requestCheck()}）—— 否则玩家拨完开关要等下一次结构复检
+     * （周期检查 / 方块变化）才看得到效果。两个方向的效果不一样，见 {@link #canBeShared()}。
+     *
+     * <p>
+     * ⚠️ 与 {@link #setBatchSize(int)} 不同，这里的值**不能**由客户端自己写：它是
+     * {@code @Persisted} 字段，客户端改了会在下一次同步时被服务端覆盖（和定量框一样）。
+     */
+    void setCanBeShared(boolean shared);
 }

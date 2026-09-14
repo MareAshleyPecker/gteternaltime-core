@@ -11,6 +11,9 @@ import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemList;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAESlot;
 
+import com.lowdragmc.lowdraglib.gui.widget.Widget;
+import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
+import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
 
@@ -28,6 +31,8 @@ import org.jetbrains.annotations.Nullable;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilter;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator;
 import rain.gtetcore.gtet.integration.ae2.IMEStockingHost;
+
+import java.util.List;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -99,6 +104,23 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
     @Persisted
     private int batchSize = 0;
 
+    /**
+     * 「允许多方块共享」开关，**默认 false = 隔离**（与上手写死的 {@code canShared() = false} 行为一致）。
+     *
+     * <p>
+     * ⚠️ 默认值不能改成 true：本件的标签 / 定量 / 库存列表都是每件独立的，一旦被两个多方块共享，
+     * 两个控制器会读同一份 {@code stock} 与同一套标签闸门 —— 这就是「串配方」，
+     * 也正是当初写死 {@code false} 的原因（见 {@link #canShared()}）。
+     *
+     * <p>
+     * ⚠️ 带 {@code @DescSynced}（而不是只有 {@code @Persisted}）：开关面板在客户端要读这个值来画
+     * 按下状态与状态文字，只写 {@code @Persisted} 的话客户端拿到的是默认值。
+     * GTM 自己的 {@code MEStockingBusPartMachine#autoPull} 就是 {@code @DescSynced @Persisted} 两件套。
+     */
+    @DescSynced
+    @Persisted
+    private boolean shareEnabled = false;
+
     public ETTagFilterStockBusPartMachine(IMachineBlockEntity holder, Object... args) {
         super(holder, args);
         applyTagFilter();
@@ -114,7 +136,23 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
     // ////////////////////////////////
 
     /**
-     * <b>仓室隔离</b>：禁止本件被两个多方块同时占用（防串配方）。
+     * <b>仓室隔离（玩家可切换）</b>：默认禁止本件被两个多方块同时占用（防串配方），
+     * 面板上的「多方块共享」开关打开后放行。返回值就是 {@link #shareEnabled}。
+     *
+     * <h2>⚠️ 时序：这个值只在「结构检查那一刻」被读</h2>
+     * 全 GTM 唯一的消费点是 {@code BlockPattern#checkPatternAt}（下面详述），也就是说拨动开关
+     * <b>不会</b>让已经成型的结构凭空变化。两个方向的实际差别：
+     * <table border="1">
+     * <caption>开关两个方向</caption>
+     * <tr><th>方向</th><th>立刻发生什么</th><th>玩家要做什么</th></tr>
+     * <tr><td>隔离 → 允许共享</td><td>本件所属结构复检仍然通过（{@code hasController} 那一项放行自己）；
+     * 别家结构当时并没有在检查，所以什么都没发生</td>
+     * <td>想让另一个多方块占用本件，必须让**那个**结构重新成型（重新检查一次结构）</td></tr>
+     * <tr><td>允许共享 → 隔离</td><td>本件所属的**每个**控制器都会复检（见
+     * {@link #setCanBeShared(boolean)}），共享的那一方该格判失败 → 它当次就散架</td>
+     * <td>不用做什么；被挤掉的结构的控制器界面会显示 {@code multiblocked.pattern.error.share}</td></tr>
+     * </table>
+     * 这两段话同时写在面板开关的 tooltip 里（中英各一份），不靠玩家猜。
      *
      * <h2>这道闸门在运行时到底卡住了什么</h2>
      * {@code IMultiPart#canShared()} 的默认实现返回 {@code true}（GTM 源码：接口里就一句
@@ -141,13 +179,14 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
      * {@code autoAbilities(...)} 里的具体 {@code blocks(...)} 候选，不是通配，所以照卡。</li>
      * </ul>
      *
-     * <h2>为什么本件必须隔离</h2>
+     * <h2>为什么默认必须隔离</h2>
      * 「标签 / 定量 / 库存列表」全是**每件独立**的配置（{@link #tagWhite}、{@link #tagBlack}、
      * {@code batchSize}、{@code stock}）。被两个多方块共享时，两个控制器会读同一份 {@code stock} 与同一套标签闸门，
      * 配方匹配会互相看见对方的料 —— 这就是「串配方」。
      * 同族先例：本项目自己的 {@code ThreadHatchPartMachine} / {@code OverclockHatchPartMachine} /
      * {@code ETParallelHatchPartMachine} 都写了这一条，GTM 自己的 {@code ParallelHatchPartMachine} /
      * {@code TankValvePartMachine} / {@code MaintenanceHatchPartMachine}（接口默认方法里覆写）同样如此。
+     * 所以开关默认关（= 隔离），只有玩家明确知道代价时才打开。
      *
      * <p>
      * ⚠️ 这**不是**「一个结构里只能放一件」：它只挡「同一格方块同时属于两个已成型结构」，
@@ -156,7 +195,43 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
      */
     @Override
     public boolean canShared() {
-        return false;
+        return shareEnabled;
+    }
+
+    @Override
+    public boolean canBeShared() {
+        return shareEnabled;
+    }
+
+    /**
+     * 拨动共享开关，并让本件所属的每个多方块**立刻复检一次结构**。
+     *
+     * <p>
+     * ⚠️ 必须主动复检：{@code canShared()} 只在 {@code BlockPattern#checkPatternAt} 那一刻被读，
+     * 光改字段的话玩家要等到下一次结构复检（周期检查 / 方块变化）才看得到效果。复检用的是 GTM
+     * 自己的入口 {@code IMultiController#requestCheck()} —— 它不是接口里那句简单的默认实现，
+     * {@code MultiblockControllerMachine} 把它覆写成「拿锁 → {@code checkPatternWithLock()} →
+     * 通过就 {@code onStructureFormed()}，不通过就 {@code onStructureInvalid()}」，
+     * 内部自带 {@code !checking && isFormed && ServerLevel} 三道守卫，
+     * GTM 自己在 {@code setFrontFacing} / {@code setUpwardsFacing} / {@code MultiblockState} 里都这么调。
+     *
+     * <p>
+     * ⚠️ **先复制再遍历**：{@code requestCheck()} 不通过时会走 {@code onStructureInvalid()} →
+     * 每个部件的 {@code removedFromController()}，而 {@code MultiblockPartMachine#removedFromController}
+     * 会直接 {@code controllers.remove(controller)}；{@code getControllers()} 返回的是那个集合的
+     * **不可修改视图**（不是快照），边遍历边删会抛 {@code ConcurrentModificationException}。
+     *
+     * <p>
+     * ⚠️ 只由服务端改：{@code shareEnabled} 是 {@code @Persisted} 字段（服务端权威），
+     * 客户端自己赋值会在下一次同步时被覆盖，看起来像「点了没用」（与定量框同理）。
+     */
+    @Override
+    public void setCanBeShared(boolean shared) {
+        if (isRemote()) return;
+        shareEnabled = shared;
+        for (IMultiController controller : List.copyOf(getControllers())) {
+            controller.requestCheck();
+        }
     }
 
     // ///////////////////////////////
@@ -291,16 +366,81 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
         configuratorPanel.attachConfigurators(new ETTagFilterConfigurator(this, false));
     }
 
+    /**
+     * 主页面：GTM 那一页（`LabelWidget` + `AEItemConfigWidget`）**原样**装在下面，只是把页高从 84 抬到 100。
+     *
+     * <h2>⚠️ 为什么要抬这 16px：左侧那 26px 的竖槽被两列控件共用，本件正好顶到阈值</h2>
+     * fancy 界面的左边距里挤着**两列**控件（都在 `FancyMachineUIWidget` 的负 x 上）：
+     * <ul>
+     * <li><b>侧栏页签列</b>（{@code VerticalTabsWidget}）：固定 (-20, 0)、宽 24 → x ∈ [-20, 4]，
+     * 图标**自顶向下**排，第 0 个占 y ∈ [8, 32]；</li>
+     * <li><b>配置器列</b>（{@code ConfiguratorPanel}）：固定 x = -(24+2) = -26、宽 24 → x ∈ [-26, -2]，
+     * 高度 = {@code 26 * 配置器个数 - 2}，位置由 GTM 钉在
+     * {@code y = 界面高 - 列高 - 4}（**自底向上**长）。</li>
+     * </ul>
+     * 两列在 x ∈ [-20, -2] 上重叠 18px，且配置器列画在后面（子控件顺序：pageContainer → 物品栏 →
+     * 标题栏 → 侧栏页签 → tooltip 面板 → 配置器面板），所以**配置器列会盖住侧栏页签**。
+     *
+     * <p>
+     * 本件的界面高 H = 页容器高 + 物品栏高 86，页容器高 = max(86, 页高 + 8)。GTM 原来的页高是 84
+     * （`AEItemConfigWidget` 是 144×74、摆在 y=10 → 动态尺寸组算出 3+144 = 147 宽、10+74 = 84 高），
+     * 于是 H = 92 + 86 = 178，配置器列顶边 = 178 - (26n - 2) - 4 = 176 - 26n：
+     * <ul>
+     * <li>GTM 自己的 `me_stocking_input_bus` 有 5 个配置器（电源 / 去重 / 电路 / 自动拉取 / 库存保底）
+     * → 顶边 = 46，比侧栏页签底边 32 还低 14px，**安全**；</li>
+     * <li>本件多挂了一块「标签过滤」= 第 6 个 → 列高 154 → 顶边 = <b>20</b>，
+     * 于是它**盖住侧栏第 0 个页签的下半 12px**（24px 的按钮里正好一半）——
+     * 这就是玩家看到的「最上面那个侧栏图标只露出一半」。</li>
+     * </ul>
+     * 要让 6 个配置器不越过页签，需要配置器列顶边 ≥ 32：
+     * {@code H - 158 ≥ 32 → H ≥ 190 → 页容器高 ≥ 104 → 页高 ≥ 96}。这里取 **100**（留 4px 余量：
+     * 顶边 = 194 - 158 = 36，页签按钮底边 32、图标像素底边 28，都不碰）。
+     *
+     * <h2>代价与为什么这么修</h2>
+     * 代价是本件主页面底部多出 16px 空白（GTM 的配置控件本身底部就留了 18px 不画东西的行位，
+     * 所以观感上就是「槽区下面空一点」）。之所以不去动别的：侧栏页签列与配置器列的位置都是
+     * {@code FancyMachineUIWidget} 里写死的全局布局，动它们会波及**所有**机器的界面；
+     * 而把它做成「本件自己的页高」是本件唯一可控、且不影响他人的那一维。
+     * 本件所属的二合一件覆盖了自己的 {@code createUIWidget()}（150×168 的固定页，H = 262，
+     * 7 个配置器的顶边 = 78，本来就安全），所以这条修正只作用于单件物品总线。
+     *
+     * <p>
+     * ⚠️ GTM 的页是**动态尺寸**组（{@code new WidgetGroup(new Position(0,0))}），所以这里不能改它的尺寸，
+     * 只能在外面套一个固定尺寸组当外框 —— 直接 `setSize` 会在下一次 `onChildSizeUpdate` 时被重算掉。
+     */
+    @Override
+    public Widget createUIWidget() {
+        WidgetGroup page = new WidgetGroup(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
+        page.addWidget(super.createUIWidget());
+        return page;
+    }
+
+    // ///////////////////////////////
+    // ********** 主页面尺寸 *******//
+    // ///////////////////////////////
+
+    /** 主页面宽：继承 GTM 动态组的宽度（3 + 144），显式写出来是为了让外框与内容一致。 */
+    private static final int PANEL_WIDTH = 147;
+    /**
+     * 主页面高：GTM 的 84 + 16 = 100。
+     *
+     * <p>
+     * ⚠️ 别改小：96 是「第 6 个配置器不压侧栏页签」的下限（推导见 {@link #createUIWidget()}），
+     * 再小就回到那个 12px 的重叠；改大只会让底部空白更多（界面按内容反推，窗口会一起变高）。
+     */
+    private static final int PANEL_HEIGHT = 100;
+
     // ////////////////////////////////
     // ****** Configuration ******//
     // ////////////////////////////////
 
-    /** 数据棒：在 GTM 原有的配置之外，把标签与定量一起带走。 */
+    /** 数据棒：在 GTM 原有的配置之外，把标签、定量与共享开关一起带走。 */
     @Override
     protected CompoundTag writeConfigToTag() {
         CompoundTag tag = super.writeConfigToTag();
         writeTagFilter(tag);
         tag.putInt(NBT_BATCH_SIZE, batchSize);
+        tag.putBoolean(NBT_SHARE, shareEnabled);
         return tag;
     }
 
@@ -309,14 +449,16 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
         super.readConfigFromTag(tag);
         readTagFilter(tag);
         if (tag.contains(NBT_BATCH_SIZE)) setBatchSize(tag.getInt(NBT_BATCH_SIZE));
+        if (tag.contains(NBT_SHARE)) setCanBeShared(tag.getBoolean(NBT_SHARE));
     }
 
-    /** 拆方块：标签与定量要能存进掉落物，换位置装回去不丢。 */
+    /** 拆方块：标签、定量与共享开关要能存进掉落物，换位置装回去不丢。 */
     @Override
     public void saveToItem(CompoundTag tag) {
         IDropSaveMachine.super.saveToItem(tag);
         writeTagFilter(tag);
         tag.putInt(NBT_BATCH_SIZE, batchSize);
+        tag.putBoolean(NBT_SHARE, shareEnabled);
     }
 
     @Override
@@ -324,10 +466,23 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
         IDropSaveMachine.super.loadFromItem(tag);
         readTagFilter(tag);
         if (tag.contains(NBT_BATCH_SIZE)) setBatchSize(tag.getInt(NBT_BATCH_SIZE));
+        if (tag.contains(NBT_SHARE)) setCanBeShared(tag.getBoolean(NBT_SHARE));
     }
 
     /** 定量上限在数据棒 / 拆方块里的键名。 */
     private static final String NBT_BATCH_SIZE = "ETBatchSize";
+
+    /**
+     * 共享开关在数据棒 / 拆方块里的键名。
+     *
+     * <p>
+     * ⚠️ 与定量 / 标签不同，这里**必须**显式写这一对键（而不是只靠 {@code @Persisted}）：
+     * {@code @Persisted} 只管方块实体的存档，拆下来的掉落物走的是
+     * {@code saveToItem} / {@code loadFromItem} 这条另一条路（GTM 自己的
+     * {@code minStackSize} / {@code ticksPerCycle} 就是 {@code @DropSaved} + 这两个方法）。
+     * 缺键时不动（老存档 / 老数据棒），默认值 false = 隔离，与旧行为一致。
+     */
+    private static final String NBT_SHARE = "ETShareEnabled";
 
     // ///////////////////////////////
     // ******* 库存实现 *************//
