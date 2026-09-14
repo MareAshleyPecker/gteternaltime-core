@@ -1,5 +1,6 @@
-// 1.20.1	2026-09-14T18:55:33.272339	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+// 1.20.1	2026-09-14T19:18:35.0345344	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
 a7dcf5c825b57e02bd9804e9b0c9fe62dbab5c6b assets/gtetcore/blockstates/cupronickel_coil_block.json
+b6f81a187068f7be4d0e8c0923e93054859a8304 assets/gtetcore/blockstates/me_dual_stocking_input.json
 b1fedd08c7924d3e4038f93d517eb0f900b81299 assets/gtetcore/blockstates/me_pattern_buffer_luv.json
 e05212fb336987def6310bb58f92f92792986dcc assets/gtetcore/blockstates/me_pattern_buffer_proxy_luv.json
 1a97f5a2dd10c6774c363f29ab2d4fff5813ab7c assets/gtetcore/blockstates/me_pattern_buffer_proxy_uev.json
@@ -8,6 +9,8 @@ e05212fb336987def6310bb58f92f92792986dcc assets/gtetcore/blockstates/me_pattern_
 07919db93771e59c86646e9760675a0d922fb71d assets/gtetcore/blockstates/me_pattern_buffer_uev.json
 fc79b8dc6cb25953859f67703892cb1ce106843e assets/gtetcore/blockstates/me_pattern_buffer_uv.json
 e398d87d04b98d6a552be5fe4b0be9da31037fb9 assets/gtetcore/blockstates/me_pattern_buffer_uxv.json
+062dc6eb859ac148c5fc292d52c571eb192b5c72 assets/gtetcore/blockstates/me_stocking_input_bus.json
+d8f45d5c89ac091d0292159dea92972d32b5da9a assets/gtetcore/blockstates/me_stocking_input_hatch.json
 8208119555915276846360356b223339ee7c46e5 assets/gtetcore/blockstates/me_tag_filter_stocking_bus.json
 b69035d88a196335aa300bfd4adfb071f779f1ec assets/gtetcore/blockstates/me_tag_filter_stocking_hatch.json
 9c066c4c664bfbf509b2e09667321d07ea19c78e assets/gtetcore/blockstates/modular_test_machine.json
@@ -47,9 +50,10 @@ ed46eb99bf6f59c7d50331a15ac1a76430382b41 assets/gtetcore/blockstates/parallel_ha
 377a90cb887f99f54cef50bd6b33be9f0302a409 assets/gtetcore/blockstates/thread_hatch_uv.json
 760989def8536bc1d5508f04c9325b3ca93a30da assets/gtetcore/blockstates/thread_hatch_uxv.json
 6253b6f74a68977eacf43e410e1efa8acb90cec9 assets/gtetcore/blockstates/thread_hatch_zpm.json
-bafebdf29b71506c955902f974829637bd9d1c87 assets/gtetcore/lang/en_ud.json
-0b01c7bf9b613934788e27ac0713cf8ec118d5db assets/gtetcore/lang/en_us.json
+b86588d547488ef8746897fb2979d9af5fc498cb assets/gtetcore/lang/en_ud.json
+60fd1f61967478a1d0e34673cb64c50e0be69b79 assets/gtetcore/lang/en_us.json
 ddc420c21556153569bb22b6c3827212af9b9b86 assets/gtetcore/models/block/cupronickel_coil_block.json
+e281a24a51a759a20c73ce83304ce09da34d1c03 assets/gtetcore/models/block/machine/me_dual_stocking_input.json
 968a05dc821cb77c5b7008cde29f7d77970d332a assets/gtetcore/models/block/machine/me_pattern_buffer_luv.json
 50aeb12c8a17b98b07ba3201d424f157a3fd9fe3 assets/gtetcore/models/block/machine/me_pattern_buffer_proxy_luv.json
 07e833ef963332f0472d27d4fa23de67fc8c1256 assets/gtetcore/models/block/machine/me_pattern_buffer_proxy_uev.json
@@ -58,6 +62,8 @@ ddc420c21556153569bb22b6c3827212af9b9b86 assets/gtetcore/models/block/cupronicke
 ef87f058099dac279394feb035afea510801ecc0 assets/gtetcore/models/block/machine/me_pattern_buffer_uev.json
 52db47c02ded14898950d4688a7ba91163bda763 assets/gtetcore/models/block/machine/me_pattern_buffer_uv.json
 a860cc58d706acbe3cbb84caafadbaa5901eec6b assets/gtetcore/models/block/machine/me_pattern_buffer_uxv.json
+15055ac1c49c64a712d18b5d8dc5ff70e19f8f1b assets/gtetcore/models/block/machine/me_stocking_input_bus.json
+4d7ad6a48abf1c70264b894039461c298bcb08dd assets/gtetcore/models/block/machine/me_stocking_input_hatch.json
 5162723b82dc2d660f2cb0fb50bffc729cec5daa assets/gtetcore/models/block/machine/me_tag_filter_stocking_bus.json
 e8a46f8bc619526b4c47c4cd00a89f64b192083e assets/gtetcore/models/block/machine/me_tag_filter_stocking_hatch.json
 796df483a63e81b31a6b614b25ebea110fcb6e27 assets/gtetcore/models/block/machine/modular_test_machine.json
@@ -98,6 +104,7 @@ f51344826c65d582d8f4fdf89028697ca69fc37d assets/gtetcore/models/block/machine/th
 0d99bcd5de0948d1994a68f6d3f95bb7abb7ab72 assets/gtetcore/models/block/machine/thread_hatch_uxv.json
 80ddcbd2f75e92f82e6268d6f3cd99712fc3c3cf assets/gtetcore/models/block/machine/thread_hatch_zpm.json
 76f2fef0482ca185107c86d7dbe87c80ff877b6d assets/gtetcore/models/item/cupronickel_coil_block.json
+98adc24b44edefb2bf459d4d98f1e62033369d17 assets/gtetcore/models/item/me_dual_stocking_input.json
 62ffd0c335c06f3a2b539db7645f234ad6cd1306 assets/gtetcore/models/item/me_pattern_buffer_luv.json
 7627324936166412a85fa0ba5629c34063c4b3c2 assets/gtetcore/models/item/me_pattern_buffer_proxy_luv.json
 f49f64d8242736230f1198eb930260e00d0aa3b1 assets/gtetcore/models/item/me_pattern_buffer_proxy_uev.json
@@ -106,6 +113,8 @@ f49f64d8242736230f1198eb930260e00d0aa3b1 assets/gtetcore/models/item/me_pattern_
 6cfce70cd31e78eea6a720d66b096ecce8f6089b assets/gtetcore/models/item/me_pattern_buffer_uev.json
 b7c62b312a271af21f4580b640c89589d0dc10e9 assets/gtetcore/models/item/me_pattern_buffer_uv.json
 774bff0e96b02b4c02e6158bdcc014d318be0e54 assets/gtetcore/models/item/me_pattern_buffer_uxv.json
+cdb751c73d11f6174aedc66b35c8acbaedf7320a assets/gtetcore/models/item/me_stocking_input_bus.json
+5729eb4f55a7118d362e7886b8421b1f99196138 assets/gtetcore/models/item/me_stocking_input_hatch.json
 38602bdafb2365d177c55443ff4a46da24ac15d6 assets/gtetcore/models/item/me_tag_filter_stocking_bus.json
 940a3c56c5566cae03da2c7ae2c818cd7712fe4e assets/gtetcore/models/item/me_tag_filter_stocking_hatch.json
 3345e5134b2655908e0ec3e8110eeba747bb1d7a assets/gtetcore/models/item/modular_test_machine.json
