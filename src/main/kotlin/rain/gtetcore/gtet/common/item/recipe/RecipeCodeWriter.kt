@@ -322,16 +322,25 @@ object RecipeCodeWriter {
         val key = ForgeRegistries.FLUIDS.getKey(stack.fluid)
             ?: return "FluidIngredient.EMPTY /* 未注册流体 */"
         val ref = FLUID_CONSTANTS[stack.fluid]
-            ?: "ForgeRegistries.FLUIDS.getValue(new ResourceLocation(\"${key.namespace}\", \"${key.path}\"))"
+            ?: "RegistriesUtil.getFluid(\"${key.namespace}:${key.path}\")"
         return "FluidIngredient.of($ref, ${stack.amount})"
     }
 
     /** define(...) 的第二个参数（既可以是物品也可以是标签，这里统一给物品常量）。 */
     private fun itemKey(stack: ItemStack): String = itemExpr(stack)
 
-    /** 注册表查询 —— 拿不到常量时的兜底写法。 */
+    /**
+     * 注册表查询 —— 拿不到常量时的兜底写法。
+     *
+     * 走本 mod 的 `RegistriesUtil.getItem("ns:path")`，而不是
+     * `ForgeRegistries.ITEMS.getValue(new ResourceLocation(...))`：表达式短，
+     * 且 id 写错时由它自己打 error 日志并回 `Items.AIR`，比"悄悄拿到 null"更早暴露。
+     *
+     * ⚠️ 导出的是**代码片段、不带 import**：用到这条兜底时记得在目标类里
+     * `import rain.gtetcore.gtet.util.RegistriesUtil;`。
+     */
     private fun registryItem(key: ResourceLocation): String =
-        "ForgeRegistries.ITEMS.getValue(new ResourceLocation(\"${key.namespace}\", \"${key.path}\"))"
+        "RegistriesUtil.getItem(\"${key.namespace}:${key.path}\")"
 
     /** 方块物品对应的方块常量（`Blocks.X` / `GTBlocks.X` / `ETBlock.X`）。 */
     private fun blockConstant(stack: ItemStack): Ref? =
