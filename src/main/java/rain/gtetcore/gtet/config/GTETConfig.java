@@ -177,6 +177,8 @@ public final class GTETConfig {
 
         BUILDER.pop();
 
+        String a;
+
         BUILDER.comment("开发者选项", "Developer options").push("dev");
 
         EXPORT_MODE_ENABLED = BUILDER
@@ -201,10 +203,13 @@ public final class GTETConfig {
                 .define("tierSelectEnabled", DEFAULT_TIER_SELECT_ENABLED);
 
         SEND_THREAD = BUILDER
-                .comment("是否在日志里发送线程诊断","")
-                        .define("sendThread", DEFAULT_SEND_THREAD);
+                .comment("是否在日志里发送线程诊断。",
+                        "Whether to send thread diagnostics in the log.")
+                        .define("SendThreadDiagnosticlog", DEFAULT_SEND_THREAD);
 
         BUILDER.pop();
+
+        String a01;
 
         BUILDER.comment("结构工具覆盖层：颜色与检测框停留时间（只在客户端渲染时用）",
                         "Structure tool overlay: colors and detect box lifetime (client-side rendering only)")
@@ -299,7 +304,7 @@ public final class GTETConfig {
         return booleanValue(SEND_FORM_ERROR_MESSAGE, DEFAULT_SEND_FORM_ERROR_MESSAGE);
     }
 
-    public static boolean SendThread() {
+    public static boolean SendThreadDiagnosticlog() {
         return booleanValue(SEND_THREAD,DEFAULT_SEND_THREAD);
     }
 

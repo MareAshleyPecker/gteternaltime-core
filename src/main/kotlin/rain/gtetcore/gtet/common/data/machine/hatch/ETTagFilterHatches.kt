@@ -85,7 +85,7 @@ object ETTagFilterHatches {
      * @return 按注册顺序排列的 [MachineDefinition]；AE2 缺失时是空表
      */
     @JvmStatic
-    fun register(registrate: GTRegistrate): List<MachineDefinition> {
+     private fun register(registrate: GTRegistrate): List<MachineDefinition> {
         if (!GTCEu.Mods.isAE2Loaded()) return emptyList()
         registerLang()
         return listOf(registerItemBus(registrate), registerFluidHatch(registrate))

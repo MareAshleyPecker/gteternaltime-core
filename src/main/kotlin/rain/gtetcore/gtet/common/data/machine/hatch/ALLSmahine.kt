@@ -33,7 +33,7 @@ object ALLSmahine {
         PARALLEL_HATCHES = ETParallelHatches.register(ETRegistrate)
         // ME 标签库存件：⚠️ AE2 没装时这里返回空表（那两件直接引用 appeng.*，装不上就加载不了，
         // 与 GTM 自己的 GTAEMachines 一样按 isAE2Loaded 挡在外面）
-        TAG_FILTER_HATCHES = ETTagFilterHatches.register(ETRegistrate)
+//        TAG_FILTER_HATCHES = ETTagFilterHatches.register(ETRegistrate)
         // ME 多阶段样板总成（四档）+ 通用镜像（一件，能连所有档位）：同样按 isAE2Loaded 挡在外面；
         // ⚠️ 它还会把每档容量登记进 ETPatternBufferCapacities（mixin 按方块定义查容量用，
         //    通用镜像的代理表也按那张表的最大值建）

@@ -294,7 +294,7 @@ object RecipeCodeWriter {
 
     /**
      * GT 配方用的物品表达式 —— **已经带数量**，按优先级挑写法：
-     * Registrate 条目 `GTItems.X.asStack(n)` → 原版 `new ItemStack(Items.X[, n])` / `new ItemStack(Blocks.X[, n])`
+     * Registrate 条目 `GTItems.X.asStack(n)` → 原版 `ItemStack(Items.X[, n])` / `ItemStack(Blocks.X[, n])`
      * → 材料 `ChemicalHelper.get(TagPrefix.dust, GTMaterials.Iron[, n])` → 注册表查询。
      *
      * ⚠️ 方块**必须**包进 `ItemStack`：`inputItems(Object, int)` 不认 `Block`，直接写 `Blocks.GLASS` 会静默丢掉这个输入。
@@ -304,9 +304,9 @@ object RecipeCodeWriter {
         blockConstant(stack)?.let { return stackExpr(it, stack.count) }
         // 带 NBT 的物品不写材料形式（材料形式描述不了 NBT），直接走注册表
         if (!stack.hasTag()) materialItemExpr(stack)?.let { return it }
-        val key = ForgeRegistries.ITEMS.getKey(stack.item) ?: return "new ItemStack(Items.AIR) /* 未注册物品 */"
+        val key = ForgeRegistries.ITEMS.getKey(stack.item) ?: return "ItemStack(Items.AIR) /* 未注册物品 */"
         val ref = registryItem(key)
-        return if (stack.count > 1) "new ItemStack($ref, ${stack.count})" else ref
+        return if (stack.count > 1) "ItemStack($ref, ${stack.count})" else ref
     }
 
     /**
@@ -350,7 +350,7 @@ object RecipeCodeWriter {
     private fun stackExpr(ref: Ref, count: Int): String = if (ref.registrate) {
         if (count > 1) "${ref.text}.asStack($count)" else "${ref.text}.asStack()"
     } else {
-        if (count > 1) "new ItemStack(${ref.text}, $count)" else "new ItemStack(${ref.text})"
+        if (count > 1) "ItemStack(${ref.text}, $count)" else "ItemStack(${ref.text})"
     }
 
     /**
@@ -483,28 +483,15 @@ object RecipeCodeWriter {
     private fun <T : Any> holderFields(type: Class<T>, vararg holderNames: String): Map<T, Ref> {
         val map = HashMap<T, Ref>()
         for (name in holderNames) {
-            val owner = try {
-                Class.forName(name)
-            } catch (e: Throwable) {
-                null
-            } ?: continue
+            val owner = try { Class.forName(name) } catch (e: Throwable) { null } ?: continue
             for (field in owner.declaredFields) {
                 if (!Modifier.isStatic(field.modifiers)) continue
-                val raw = try {
-                    field.isAccessible = true
-                    field.get(null)
-                } catch (e: Throwable) { // 含 IllegalAccessException 与类初始化失败
-                    null
-                } ?: continue
+                val raw = try { field.isAccessible = true;field.get(null) } catch (e: Throwable) { null } ?: continue // 含 IllegalAccessException 与类初始化失败
                 val registrate = raw is RegistryEntry<*>
                 val value: T = when {
                     type.isInstance(raw) -> type.cast(raw)
-                    registrate -> try {
-                        (raw as RegistryEntry<*>).get()?.takeIf { type.isInstance(it) }?.let { type.cast(it) }
-                    } catch (e: Throwable) {
-                        null
-                    }
-                    else -> null
+                    registrate                 -> try { raw.get().takeIf { type.isInstance(it) }?.let { type.cast(it) } } catch (e: Throwable) { null }
+                    else                       -> null
                 } ?: continue
                 map.putIfAbsent(value, Ref("${owner.simpleName}.${field.name}", registrate))
             }

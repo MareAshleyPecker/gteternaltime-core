@@ -4,6 +4,7 @@ import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.addon.GTAddon
 import com.gregtechceu.gtceu.api.addon.IGTAddon
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
+import net.minecraft.data.recipes.FinishedRecipe
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent
@@ -15,6 +16,7 @@ import rain.gtetcore.gtet.common.data.block.ETBlock
 import rain.gtetcore.gtet.common.data.item.ETItems
 import rain.gtetcore.gtet.common.data.machine.multiblock.ALLMmchine
 import rain.gtetcore.gtet.common.data.material.ETElements
+import rain.gtetcore.gtet.data.recipes.ALLRecipes
 import java.util.function.Consumer
 
 /**
@@ -56,6 +58,7 @@ open class ETGTAddon : IGTAddon {
             "GTET 的机器没有被注册：GTM 的 GTCEuAPI.RegisterEvent 没有触发 CommonProxy.registerMachines"
         }
         hideGtmParallelHatchesFromCreativeTabs()
+        hideGtmAssemblylineFromCreativeTabs()
     }
 
     /** 返回本模组的 MODID。 */
@@ -66,6 +69,32 @@ open class ETGTAddon : IGTAddon {
     /** 注册自定义化学元素。 */
     override fun registerElements() {
         ETElements.init()
+    }
+
+    /**
+     * 注册本模组的全部配方 —— GTET 的配方入口。
+     *
+     * ## 为什么走这个钩子而不是 datagen
+     *
+     * GTM 的配方**不走 MC 的 datagen**，而是每次资源重载时由
+     * `GTRecipes.recipeAddition(Consumer<FinishedRecipe>)` 现算一遍，塞进运行时动态数据包
+     * （`GTDynamicDataPack::addRecipe`，由 `AddPackFindersEvent` 挂成 `gtceu:dynamic_data`）；
+     * 这个方法就是 GTM 暴露给插件的那个回调（`GTRecipes.java:99`
+     * `AddonFinder.getAddons().forEach(addon -> addon.addRecipes(consumer))`）。
+     *
+     * ⚠️ 试过在 `GTETDatagen.init` 里补一个 `RecipeProvider` 走 datagen，**会直接崩**：
+     *      `RecipeProvider` 落盘 → `GTRecipeBuilder.toJson()` → `GTRegistries.builtinRegistry()`
+     *      → `GTCEu.isClientThread()` → `Minecraft.getInstance()` 在 datagen 里是 null ⇒ NPE
+     *      （`GTRecipeBuilder.java:1599` / `GTRegistries.java:119` / `GTCEu.java:120`）。
+     *      详细堆栈见 [rain.gtetcore.gtet.data.GTETDatagen.init] 的注释。
+     *      所以配方**不会**出现在 `src/generated/resources/` 里，也不会产出 recipe JSON ——
+     *      它每次进游戏/重载资源时现场生成，游戏内立刻生效。
+     *
+     * 同族的 [removeRecipes] 早就在用同一个钩子（GTET 自己接管并行仓时剔掉 GTM 那 4 条配方），
+     * 这里只是把「加」的那一半补上。
+     */
+    override fun addRecipes(provider: Consumer<FinishedRecipe>) {
+        ALLRecipes.init(provider)
     }
 
     /**
@@ -84,6 +113,7 @@ open class ETGTAddon : IGTAddon {
      */
     override fun removeRecipes(consumer: Consumer<ResourceLocation>) {
         GTM_PARALLEL_HATCH_RECIPE_NAMES.forEach { consumer.accept(GTCEu.id("shaped/$it")) }
+        GTM_ASSEMBLY_LINE_RECIPE_NAMES_.forEach { consumer.accept(GTCEu.id("assembly_line/$it")) }
     }
 
     /**
@@ -114,6 +144,17 @@ open class ETGTAddon : IGTAddon {
         })
     }
 
+    private fun hideGtmAssemblylineFromCreativeTabs(){
+        val container = ModList.get().getModContainerById(Gtetcore.MODID).orElse(null) as? FMLModContainer ?: return
+        container.eventBus.addListener(Consumer<BuildCreativeModeTabContentsEvent> { event ->
+            for (name in GTM_ASSEMBLY_LINE_RECIPE_NAMES_) {
+                // 取不到注册项（GTM 没装/被改）时 getValue 返回 null，直接跳过，别把空栈塞进表里
+                val item = ForgeRegistries.ITEMS.getValue(GTCEu.id(name)) ?: continue
+                event.entries.remove(ItemStack(item))
+            }
+        })
+    }
+
     companion object {
 
         /** GTM 自带并行仓的方块注册名（IV / LuV / ZPM / UV 四档）。 */
@@ -131,5 +172,11 @@ open class ETGTAddon : IGTAddon {
             "parallel_hatch_mk3",
             "parallel_hatch_mk4",
         )
+
+        private val GTM_ASSEMBLY_LINE_RECIPE_NAMES_ = listOf(
+            "me_pattern_buffer",
+            "me_pattern_buffer_proxy"
+        )
+
     }
 }

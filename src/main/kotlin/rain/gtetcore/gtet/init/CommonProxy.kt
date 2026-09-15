@@ -29,6 +29,7 @@ import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleHostMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleMachine
 import rain.gtetcore.gtet.common.data.material.ETElementMaterials
+import rain.gtetcore.gtet.common.data.material.ETMaterialRegister
 import rain.gtetcore.gtet.data.GTETDatagen
 import rain.gtetcore.gtet.integration.jade.GTETJadeLang
 
@@ -52,6 +53,17 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
     protected fun kotlinInit() {
         // 配置：config/gtetcore/gtetcore-common.toml（ForgeConfigSpec，COMMON 类型）
         GTETConfig.init(context)
+        initLang()
+        // 结构工具的网络包（客户端滚轮切模式 → 服务端改 NBT）
+        ToolNetwork.register()
+        GTETCreativeModeTabs.init()
+        ETItems.init()
+        ETBlock.init()
+        // 机器不在这里注册：由 [registerMachines] 在 GTM 的机器注册窗口里经 MachineRegister 注册
+        // （那是 GTM 唯一允许往机器表里加东西的时刻）。
+    }
+
+    fun initLang(){
         // 高级终端扩展用到的双语条目（必须在数据生成前注册）
         TerminalLang.init()
         // 线程状态文本（机器 UI 与 GTET 的 Jade provider 共用；⚠️ 必须赶在数据生成之前登记 —— Jade 插件类加载太晚）
@@ -66,13 +78,6 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         // GTET 的 Jade provider 也要在 Jade 的插件配置界面里有翻译键：Jade 会遍历所有 provider 的 uid 并断言
         // `config.jade.plugin_<ns>.<uid>` 存在，缺一条就在标题界面抛 AssertionError 崩客户端 —— 同上，必须赶在数据生成前
         GTETJadeLang.initLang()
-        // 结构工具的网络包（客户端滚轮切模式 → 服务端改 NBT）
-        ToolNetwork.register()
-        GTETCreativeModeTabs.init()
-        ETItems.init()
-        ETBlock.init()
-        // 机器不在这里注册：由 [registerMachines] 在 GTM 的机器注册窗口里经 MachineRegister 注册
-        // （那是 GTM 唯一允许往机器表里加东西的时刻）。
     }
 
     /** Forge 通用设置阶段回调。 */
@@ -121,6 +126,7 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
     @SubscribeEvent
     fun registerMaterials(event: MaterialEvent?) {
         ETElementMaterials.register()
+        ETMaterialRegister.register()
     }
 
     /**
