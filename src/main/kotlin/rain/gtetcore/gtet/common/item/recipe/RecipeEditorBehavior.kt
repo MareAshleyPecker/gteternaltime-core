@@ -1,3 +1,4 @@
+@file:Suppress("UNCHECKED_CAST", "DEPRECATION","unused")
 package rain.gtetcore.gtet.common.item.recipe
 
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity
@@ -210,7 +211,7 @@ object RecipeEditorBehavior : IItemUIFactory {
         )
 
         // 流体量：拖进来的流体自带的量通常是一桶 1000，但 GT 配方里 144 / 576 / 2000 都常见，
-        // 所以给个字段，往槽里放流体时按它覆盖（已放好的槽不受影响，要改就重放一次）。
+        // 所以给个字段，往槽里放流体时按它覆盖（已放好的槽不受影响：要单独改某一个槽的量就中键点它）。
         pageRecipe.addWidget(label(232, 42) { "§7流体量 (mB)" })
         pageRecipe.addWidget(
             IntInputWidget(232, 54, 108, 14, { draft.fluidAmount }, { value ->
@@ -240,6 +241,7 @@ object RecipeEditorBehavior : IItemUIFactory {
                 draft.fluidInputs, i, 0, 0, FLUID_SLOT_SIZE, FLUID_SLOT_SIZE,
                 fluidGetter(draft.fluidInputs, i),
                 fluidSetter(draft.fluidInputs, i, { draft.fluidAmount }) { touch() },
+                amountSetter = fluidAmountSetter(draft.fluidInputs, i),
                 onAmountChanged = { touch() },
             ).setBackground(GuiTextures.FLUID_SLOT)
         }
@@ -248,6 +250,7 @@ object RecipeEditorBehavior : IItemUIFactory {
                 draft.fluidOutputs, i, 0, 0, FLUID_SLOT_SIZE, FLUID_SLOT_SIZE,
                 fluidGetter(draft.fluidOutputs, i),
                 fluidSetter(draft.fluidOutputs, i, { draft.fluidAmount }) { touch() },
+                amountSetter = fluidAmountSetter(draft.fluidOutputs, i),
                 onAmountChanged = { touch() },
             ).setBackground(GuiTextures.FLUID_SLOT)
         }
@@ -461,6 +464,17 @@ object RecipeEditorBehavior : IItemUIFactory {
         tanks.setFluid(index, stack, amount())
         onChanged()
     }
+
+    /**
+     * 幽灵流体槽的「**只改量**」写回 —— 中键输入框确认时用（见 `FluidCountSlotWidget#applyAmount`）。
+     *
+     * ⚠️ 不能复用 [fluidSetter]：那个是给"点击 / 拖入装填"用的，会按「流体量 (mB)」字段的值
+     * **覆盖**掉刚写进去的量，中键填的数字当场被打回原样 —— 这就是"中键改不了流体量"的根因。
+     * 这里走 [DraftFluidTanks.setFluid] 的 `amount` 形参按指定量写同一个槽
+     * （`setFluid` 内部 `copy()`，不会把草稿里那份共享实例改脏）。
+     */
+    private fun fluidAmountSetter(tanks: DraftFluidTanks, index: Int): (Int) -> Unit =
+        { value -> tanks.setFluid(index, tanks.getFluid(index), value) }
 
     private fun button(x: Int, y: Int, w: Int, h: Int, text: () -> String, onClick: () -> Unit) = ButtonWidget(
         x, y, w, h,
