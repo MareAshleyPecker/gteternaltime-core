@@ -10,6 +10,6 @@ object ETRecipesTypes {
     const val MULTIBLOCK: String = "multiblock"
     const val DUMMY: String = "dummy"
 
-    val STELLMAKING_FURNACE : GTRecipeType = GTRecipeTypes.register("steelmaking_furnace",MULTIBLOCK)
-        .setMaxIOSize(3,3,2,2)
+    val STELLMAKING_FURNACE: GTRecipeType = GTRecipeTypes.register("steelmaking_furnace", MULTIBLOCK)
+        .setMaxIOSize(3, 3, 2, 2)
 }

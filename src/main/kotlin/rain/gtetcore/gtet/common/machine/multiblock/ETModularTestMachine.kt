@@ -2,7 +2,7 @@ package rain.gtetcore.gtet.common.machine.multiblock
 
 import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.GTValues
-import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper
+import com.gregtechceu.gtceu.api.data.tag.TagPrefix
 import com.gregtechceu.gtceu.api.gui.GuiTextures
 import com.gregtechceu.gtceu.api.gui.widget.SlotWidget
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity
@@ -17,17 +17,24 @@ import com.lowdragmc.lowdraglib.gui.widget.Widget
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup
 import com.lowdragmc.lowdraglib.utils.BlockInfo
 import net.minecraft.network.chat.Component
-import net.minecraft.world.item.ItemStack
+import rain.gtetcore.gtet.common.machine.multiblock.ETModularTestMachine.Companion.MODULE_SLOT_AREA
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleTiers
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /**
  * 模块化多方块试验台 —— [ETModularMachine] 的活样本，同时也是「结构喂数据」的样本。
  *
- * - **模块物品决定等级**：金 = MK1、钛 = MK2、中子素 = MK3，换模块会换结构（3³ / 5³ / 7³）；
+ * - **模块物品决定等级**：金锭 = MK1、钛锭 = MK2、中子素锭 = MK3，换模块会换结构（3³ / 5³ / 7³）。
+ *   判定不写在这里了，而是登记进全局规则表 [ETModuleTiers]（见 `companion object` 的 `init`）；
  * - **结构决定规模**：中间层机壳墙会被 [ETStructureData] 收集成「模块方块」，数量每 8 个把配方电压等级上限抬 1 档
  *   （3³ 有 8 个 → +1、5³ 有 16 个 → +2、7³ 有 24 个 → +3）；
  * - **面板右侧有模块槽**（[createUIWidget]），不然玩家没地方放模块。
+ *
+ * ⚠️ 改用规则表的 tagprefix 方式（材料 + 形态）之后**只有锭形态算模块**：旧实现直接比
+ * `ChemicalHelper.getMaterialStack(stack).material()`，同一种材料的**任意形态**（粉 / 粒 / 块…）都会命中；
+ * 规则表的三种登记方式里没有「只看材料」这一种，所以这里是**有意收窄**。想让别的形态也算，
+ * 在 `init` 里继续 `prefix(...)` 登记即可。
  *
  * @author rain fox
  */
@@ -38,13 +45,6 @@ class ETModularTestMachine(holder: IMachineBlockEntity) : ETModularMachine(holde
         private set
 
     private val patterns = HashMap<Int, BlockPattern>()
-
-    override fun tierOfModule(stack: ItemStack): Int = when (ChemicalHelper.getMaterialStack(stack).material()) {
-        GTMaterials.Gold -> 1
-        GTMaterials.Titanium -> 2
-        GTMaterials.Neutronium -> 3
-        else -> 0
-    }
 
     /** 基准档位 + 模块方块数带来的加成（结构越大，允许的配方电压越高）。 */
     override fun maxRecipeTier(): Int {
@@ -57,7 +57,8 @@ class ETModularTestMachine(holder: IMachineBlockEntity) : ETModularMachine(holde
         return (base + moduleBlocks / MODULE_BLOCKS_PER_TIER).coerceAtMost(GTValues.MAX)
     }
 
-    override fun patternOfTier(tier: Int): BlockPattern = patterns.getOrPut(tier) { boxPattern(sizeOfTier(tier), definition) }
+    override fun patternOfTier(tier: Int): BlockPattern =
+        patterns.getOrPut(tier) { boxPattern(sizeOfTier(tier), definition) }
 
     override fun onStructureFormed() {
         super.onStructureFormed()
@@ -76,7 +77,10 @@ class ETModularTestMachine(holder: IMachineBlockEntity) : ETModularMachine(holde
         textList += Component.translatable("gtetcore.machine.$ID.modules", moduleBlocks)
         val cap = maxRecipeTier()
         if (cap >= 0) {
-            textList += Component.translatable("gtetcore.machine.$ID.cap", GTValues.VN[cap.coerceIn(0, GTValues.VN.size - 1)])
+            textList += Component.translatable(
+                "gtetcore.machine.$ID.cap",
+                GTValues.VN[cap.coerceIn(0, GTValues.VN.size - 1)]
+            )
         }
     }
 

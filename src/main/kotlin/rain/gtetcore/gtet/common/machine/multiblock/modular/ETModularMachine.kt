@@ -2,6 +2,7 @@ package rain.gtetcore.gtet.common.machine.multiblock.modular
 
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.capability.recipe.IO
+import com.gregtechceu.gtceu.api.data.tag.TagPrefix
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler
@@ -15,13 +16,15 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /**
  * 「模块物品决定等级」的模块化多方块基类（写法照 GTO 的 PCB 工厂）。
  *
  * 机制：模块槽里的物品 → [moduleTier] → ① 换结构（[patternOfTier]）② 卡配方电压等级（[maxRecipeTier]）。
- * 子类只需要回答两件事：**什么物品算哪个等级**、**每个等级长什么样**。
+ * 子类只需要回答两件事：**什么物品算哪个等级**（登记进 [ETModuleTiers]，或覆写 [tierOfModule] 自己算）、
+ * **每个等级长什么样**（[patternOfTier]）。
  *
  * ⚠️ 等级 0（没模块 / 模块不合法）时 [checkPattern] 直接不通过 —— 「等级不合法」自然表现为
  * 「结构不成型」，不需要另外写报错。
@@ -44,9 +47,13 @@ abstract class ETModularMachine(holder: IMachineBlockEntity) : WorkableElectricM
     var moduleTier: Int = 0
         private set
 
-    /** 模块物品 → 等级；返回 0 表示这个物品不是合法模块。 */
-    protected abstract fun tierOfModule(stack: ItemStack): Int
-
+    /**
+     * 模块物品 → 等级；返回 0 表示这个物品不是合法模块。
+     *
+     * 默认走全局规则表 [ETModuleTiers]（支持「物品 / 标签 / tagprefix」三种登记方式，
+     * 查询顺序：**物品 → tagprefix → 标签**）。想完全自定义算法的子类照旧 `override` 本方法。
+     */
+    protected open fun tierOfModule(stack: ItemStack): Int = ETModuleTiers.tierOf(stack)
     /** 等级 → 结构图案。 */
     protected abstract fun patternOfTier(tier: Int): BlockPattern
 
