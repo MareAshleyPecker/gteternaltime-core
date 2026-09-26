@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # =============================================================================
 #  gtmt-resfix.sh —— 给「刚 build 出来的补丁 GTMThings jar」补齐 datagen 资源
 #                    （Linux / macOS 版；Windows 用同目录的 gtmt-resfix.ps1，两者参数与防线一致）

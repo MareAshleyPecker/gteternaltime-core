@@ -39,7 +39,7 @@ object ETBlockReg {
     /** 玻璃机壳。 */
     fun createGlassCasingBlock(name: String, cn: String, texture: ResourceLocation?): BlockEntry<GlassBlock?> {
         LangUtil.BLOCK_LANG[name] = cn
-        return ETRegistrate.block(name) { name: BlockBehaviour.Properties? -> GlassBlock(name!!) }
+        return OnlyETreg.ETRegistrate.block(name) { name: BlockBehaviour.Properties? -> GlassBlock(name!!) }
             .initialProperties(NonNullSupplier { Blocks.GLASS })
             .properties { p: BlockBehaviour.Properties? -> p!!.isValidSpawn { state: BlockState?, level: BlockGetter?, pos: BlockPos?, ent: EntityType<*>? -> false } }
             .addLayer { Supplier { RenderType.cutoutMipped() } }
@@ -54,7 +54,7 @@ object ETBlockReg {
 
     fun createGlassCasingBlock(name: String, cn: String, texture: ResourceLocation?, type: Supplier<Supplier<RenderType?>?>): BlockEntry<GlassBlock?> {
         LangUtil.BLOCK_LANG[name] = cn
-        return ETRegistrate.block(name) { name: BlockBehaviour.Properties? -> GlassBlock(name!!) }
+        return OnlyETreg.ETRegistrate.block(name) { name: BlockBehaviour.Properties? -> GlassBlock(name!!) }
             .initialProperties(NonNullSupplier { Blocks.GLASS })
             .properties { p: BlockBehaviour.Properties? -> p!!.isValidSpawn { state: BlockState?, level: BlockGetter?, pos: BlockPos?, ent: EntityType<*>? -> false } }
             .addLayer(type)
@@ -69,7 +69,7 @@ object ETBlockReg {
     /** 目录型机壳：目录里只有 side.png + top.png，用 cubeColumn 拼。 */
     fun createSidedCasingBlock(name: String, cn: String, texture: ResourceLocation?): BlockEntry<Block?> {
         LangUtil.BLOCK_LANG[name] = cn
-        return ETRegistrate.block(name) { p: BlockBehaviour.Properties -> Block(p) }
+        return OnlyETreg.ETRegistrate.block(name) { p: BlockBehaviour.Properties -> Block(p) }
             .initialProperties(NonNullSupplier { Blocks.IRON_BLOCK })
             .properties { p: BlockBehaviour.Properties? -> p!!.isValidSpawn { _: BlockState?, _: BlockGetter?, _: BlockPos?, _: EntityType<*>? -> false } }
             .addLayer { Supplier { RenderType.solid() } }
@@ -99,7 +99,7 @@ object ETBlockReg {
                           type: Supplier<Supplier<RenderType?>?>
     ): BlockEntry<Block?> {
         LangUtil.BLOCK_LANG[name] = cn
-        return ETRegistrate.block(name, blockSupplier)
+        return OnlyETreg.ETRegistrate.block(name, blockSupplier)
             .initialProperties(properties)
             .properties { p: BlockBehaviour.Properties? -> p!!.isValidSpawn { _: BlockState?, _: BlockGetter?, _: BlockPos?, _: EntityType<*>? -> false } }
             .addLayer(type)

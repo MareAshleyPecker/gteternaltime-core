@@ -59,10 +59,10 @@ flatDir **忽略 group、只按 `<name>-<version>.jar` 匹配文件名**，所�
 
 ## sha256（校验/dev 自检用）
 
-| 文件                                 | 大小 (B)   | sha256                                                             |
-|------------------------------------|----------|--------------------------------------------------------------------|
+| 文件 | 大小 (B) | sha256 |
+| --- | --- | --- |
 | `maven/.../gtceu-1.20.1-7.5.3.jar` | 18216233 | `d29d038f5f7f13b64b7326b954573adcf873aa48da682d17bc26790e93e2cef0` |
-| `gtmthings-1.6.0-forge.jar`        | 930790   | `afdc2e7e07d3e6ab1a6304b631aec0b109c314131c06e13dac10eee70768b46c` |
+| `gtmthings-1.6.0-forge.jar` | 930790 | `afdc2e7e07d3e6ab1a6304b631aec0b109c314131c06e13dac10eee70768b46c` |
 
 对照：官方未打补丁的 GTM 7.5.3 是 18209988 B —— 大小相近，所以**不要靠体积判断是不是补丁版**，
 判据是 jar 内 `com/gregtechceu/gtceu/api/machine/multiblock/MultiblockControllerMachine.class`
@@ -73,10 +73,10 @@ flatDir **忽略 group、只按 `<name>-<version>.jar` 匹配文件名**，所�
 两份 jar 都由 `scripts/patches.gradle` 从**外部源码检出**构建（本仓库内绝不编译它们的补丁源码），
 产物已在则走快路径跳过。外部检出的路径与构建 JDK 写死在该文件顶部的三个属性：
 
-| 属性         | 含义                   |
-|------------|----------------------|
-| `gtmRepo`  | GTM 补丁源码检出目录         |
-| `gtmtRepo` | GTMThings 补丁源码检出目录   |
+| 属性 | 含义 |
+| --- | --- |
+| `gtmRepo` | GTM 补丁源码检出目录 |
+| `gtmtRepo` | GTMThings 补丁源码检出目录 |
 | `patchJdk` | 上面两个外部检出构建时用的 JDK 17 |
 
 ```powershell
