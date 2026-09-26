@@ -1,4 +1,4 @@
-// 1.20.1	2026-09-25T15:34:02.0831351	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+// 1.20.1	2026-09-26T21:47:25.3554567	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
 57375fd1dd4f83da9450300914e600351f266292 assets/gtetcore/blockstates/abs_black_casing.json
 05b4585ed8fb47eef6b0b7eeb576ff25e4581b8c assets/gtetcore/blockstates/abs_blue_casing.json
 e898d78548a15a903b06c13012efea35e48825ac assets/gtetcore/blockstates/abs_brown_casing.json
@@ -289,8 +289,8 @@ e3f934d8264c99a036bd51c4a7705825e46bf171 assets/gtetcore/blockstates/vacuum_cham
 c284137e985d999c28241bc1b27b60acb6a12a9d assets/gtetcore/blockstates/vacuum_chamber_protection_casing.json
 4702b0f7a4f53833a0750095e17b3bb63b83330b assets/gtetcore/blockstates/vibrant_photovoltaic_block.json
 dea1cadb7aab786f814fa619b5827139b7a11be7 assets/gtetcore/blockstates/zirconia_ceramic_high_strength_bending_resistance_mechanical_block.json
-5e80d33cee111e5255fe8fb3320bdc114273563a assets/gtetcore/lang/en_ud.json
-b4c36733fe32ee4baf012351aba7ba336ddcfb5a assets/gtetcore/lang/en_us.json
+876c6c084dcd267fd67ae47f0679e1a595efac5e assets/gtetcore/lang/en_ud.json
+561858927eb219db3350f11eac48998029401b2c assets/gtetcore/lang/en_us.json
 a3e5be219240789ffe6fbb05d051292c0d928df5 assets/gtetcore/models/block/abs_black_casing.json
 de571bbc8b5c50ea45312b4efa8ae7346d311b5a assets/gtetcore/models/block/abs_blue_casing.json
 f3597b8d3a9bb06573c4f0bf5e9b90d22cb2fd82 assets/gtetcore/models/block/abs_brown_casing.json
@@ -876,7 +876,7 @@ d540e29794d62391ae328909ab18cae1cecc1ba4 assets/gtetcore/models/item/vacuum_cham
 e713ea94b4ec4d3b21c59b980e240d72bde06014 assets/gtetcore/models/item/vacuum_chamber_protection_casing.json
 190665145e9bb5b31605d3799a3850fa382d58b5 assets/gtetcore/models/item/vibrant_photovoltaic_block.json
 27210291c381e8aff6b1d6cca0028d2a06a8e570 assets/gtetcore/models/item/zirconia_ceramic_high_strength_bending_resistance_mechanical_block.json
-f7203b5f2c99378eff7461aaf0987ef926b9015b data/gtceu/tags/blocks/mineable/pickaxe_or_wrench.json
+294bcbf39cb7ccfd06ea807412669b2f7c0f2b2b data/gtceu/tags/blocks/mineable/pickaxe_or_wrench.json
 3450637c3dfc16d9f1ebb70666f6f6226bde75c7 data/gtetcore/loot_tables/blocks/abs_black_casing.json
 8e3cea4de9efa74d517e1eafbd05e7fe46e809b2 data/gtetcore/loot_tables/blocks/abs_blue_casing.json
 4a8576d6ca1ce71a2db7d725482c6eccc2dd2445 data/gtetcore/loot_tables/blocks/abs_brown_casing.json

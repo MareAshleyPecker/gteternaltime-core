@@ -99,7 +99,7 @@ object ETBlockReg {
                           type: Supplier<Supplier<RenderType?>?>
     ): BlockEntry<Block?> {
         LangUtil.BLOCK_LANG[name] = cn
-        return OnlyETreg.ETRegistrate.block(name, blockSupplier)
+        return ETRegistrate.block(name, blockSupplier)
             .initialProperties(properties)
             .properties { p: BlockBehaviour.Properties? -> p!!.isValidSpawn { _: BlockState?, _: BlockGetter?, _: BlockPos?, _: EntityType<*>? -> false } }
             .addLayer(type)

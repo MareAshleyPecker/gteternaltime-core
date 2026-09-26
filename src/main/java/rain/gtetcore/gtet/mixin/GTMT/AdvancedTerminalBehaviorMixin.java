@@ -49,7 +49,7 @@ public abstract class AdvancedTerminalBehaviorMixin {
     @Inject(method = "useOn", at = @At("RETURN"), remap = false)
     private void gtetcore$cachePlan(UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
         TerminalContext.clear();
-        if (GTETConfig.tierSelectEnabled()) return;
+        if (!GTETConfig.tierSelectEnabled()) return;
         Player player = context.getPlayer();
         if (player == null || context.getLevel().isClientSide) return;
 

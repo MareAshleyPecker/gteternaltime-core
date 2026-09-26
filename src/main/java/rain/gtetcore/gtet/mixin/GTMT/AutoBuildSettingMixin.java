@@ -41,7 +41,7 @@ public abstract class AutoBuildSettingMixin {
 
     @Inject(method = "apply", at = @At("RETURN"), remap = false)
     private void gtetcore$applyTierPreference(BlockInfo[] infos, CallbackInfoReturnable<List<ItemStack>> cir) {
-        if (GTETConfig.tierSelectEnabled()) return;
+        if (!GTETConfig.tierSelectEnabled()) return;
 
         ItemStack terminal = TerminalContext.terminal();
         if (terminal.isEmpty()) return;

@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraftforge.fml.DistExecutor
 import net.minecraftforge.fml.common.Mod
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
+import org.openjdk.nashorn.internal.codegen.Namespace
 import org.slf4j.Logger
 import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
 import rain.gtetcore.gtet.data.GTETDatagen
@@ -45,6 +46,11 @@ class Gtetcore(context: FMLJavaModLoadingContext) {
         @JvmStatic
         fun id(name: String): ResourceLocation {
             return ResourceLocation.tryBuild(MODID, name)!!
+        }
+
+        @JvmStatic
+        fun id(pNamespace: String,name: String): ResourceLocation {
+            return ResourceLocation.tryBuild(pNamespace, name)!!
         }
     }
 

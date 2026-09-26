@@ -307,7 +307,7 @@ public final class GTETConfig {
     }
 
     /** 结构导出工作模式是否启用（以 dev 配置块里的开关为准）。 */
-    public static boolean exportModeEnabled() {return !booleanValue(EXPORT_MODE_ENABLED, DEFAULT_EXPORT_MODE_ENABLED);}
+    public static boolean exportModeEnabled() {return booleanValue(EXPORT_MODE_ENABLED, DEFAULT_EXPORT_MODE_ENABLED);}
 
     /** 结构导出的输出目录。 */
     public static String exportDirectory() {
@@ -315,7 +315,7 @@ public final class GTETConfig {
     }
 
     /** 高级终端是否显示分级方块选择栏。 */
-    public static boolean tierSelectEnabled() { return !booleanValue(TIER_SELECT_ENABLED, DEFAULT_TIER_SELECT_ENABLED);}
+    public static boolean tierSelectEnabled() { return booleanValue(TIER_SELECT_ENABLED, DEFAULT_TIER_SELECT_ENABLED);}
 
     /** 结构工具「选区导出」覆盖层颜色串（{@code R;G;B[;线透明度;填充透明度]}）。 */
     public static String writeOverlayColor() {

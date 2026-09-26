@@ -386,6 +386,7 @@
   "item.gtetcore.structure_tools.tooltip.2": "右键空气打开导出 GUI",
   "itemGroup.gtetcore.block": "GTET 方块",
   "itemGroup.gtetcore.fluid": "GTET 流体",
+  "itemGroup.gtetcore.gtoblock": "GTO的方块",
   "itemGroup.gtetcore.item": "GTET 物品",
   "itemGroup.gtetcore.machine": "GTET 机器",
   "itemGroup.gtetcore.multiblock": "GTET 多方块",
