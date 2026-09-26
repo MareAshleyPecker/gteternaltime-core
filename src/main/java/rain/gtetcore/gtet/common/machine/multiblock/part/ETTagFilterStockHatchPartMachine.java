@@ -1,5 +1,11 @@
 package rain.gtetcore.gtet.common.machine.multiblock.part;
 
+import appeng.api.config.Actionable;
+import appeng.api.networking.security.IActionSource;
+import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.AEKey;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.MEStorage;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -12,31 +18,20 @@ import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEFluidList;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEFluidSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAESlot;
 import com.gregtechceu.gtceu.integration.ae2.utils.AEUtil;
-
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
-
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-
-import appeng.api.config.Actionable;
-import appeng.api.networking.security.IActionSource;
-import appeng.api.stacks.AEFluidKey;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
-import appeng.api.storage.MEStorage;
 import org.jetbrains.annotations.Nullable;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilter;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator;
 import rain.gtetcore.gtet.integration.ae2.IMEStockingHost;
 
-import java.util.List;
-
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 /**
  * 「ME 标签库存输入仓」：GTM 的 {@code me_stocking_input_hatch}（ME 库存输入仓）+ 标签过滤 + 定量拉取。
@@ -204,9 +199,9 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
 
     /**
      * 换掉 GTM 的流体库存列表（理由见物品版类注释）。
-     *
+     * <p>
      * ⚠️ 构造期被调用，槽只持有 {@code this} 视图，不在构造期读字段。
-     *
+     * <p>
      * ⚠️ {@code CONFIG_SIZE} 用 {@link MEHatchPartMachine#CONFIG_SIZE}（= 16，protected）而不是
      * {@code MEStockingHatchPartMachine.CONFIG_SIZE}（那个是 private）；
      * 两者数值一致 —— GTM 给本仓构造时传的就是 {@code MEHatchPartMachine.CONFIG_SIZE}。

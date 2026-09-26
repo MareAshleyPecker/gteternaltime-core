@@ -11,16 +11,11 @@ import com.gregtechceu.gtceu.api.recipe.RecipeHelper
 import com.lowdragmc.lowdraglib.gui.util.ClickData
 import com.lowdragmc.lowdraglib.gui.widget.ComponentPanelWidget
 import net.minecraft.network.chat.Component
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleMachine.Companion.HOST_RANGE
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleMachine.Companion.RECHECK_INTERVAL
 import rain.gtetcore.gtet.util.lang.LangUtil
+import kotlin.math.sqrt
 
-/** 单元从哪取电。 */
-enum class ETPowerSource {
-    /** 自己的能源仓。 */
-    SELF,
-
-    /** 主机的能源仓（GTO 净化水单元的写法：单元不自己耗电，主机统一供电）。 */
-    HOST,
-}
 
 /**
  * 模块化多方块的**单元（子机）**：认一台主机，可以从自己的或主机的能源仓取电。
@@ -38,6 +33,13 @@ enum class ETPowerSource {
  * @author rain fox
  */
 abstract class ETModuleMachine(holder: IMachineBlockEntity) : WorkableElectricMultiblockMachine(holder) {
+    /** 单元从哪取电。 */
+    enum class ETPowerSource {
+        /** 自己的能源仓。 */
+        SELF,
+        /** 主机的能源仓（GTO 净化水单元的写法：单元不自己耗电，主机统一供电）。 */
+        HOST,
+    }
 
     /** 对接上的主机（服务端瞬态；重进世界后由 [onModuleTick] 的周期重查重新接上）。 */
     var host: ETModuleHostMachine? = null
@@ -97,7 +99,7 @@ abstract class ETModuleMachine(holder: IMachineBlockEntity) : WorkableElectricMu
         if (linked == null) {
             textList += Component.translatable(LANG_NO_HOST, HOST_RANGE)
         } else {
-            val distance = Math.sqrt(linked.pos.distSqr(pos).toDouble()).toInt()
+            val distance = sqrt(linked.pos.distSqr(pos)).toInt()
             textList += Component.translatable(LANG_HOST_LINKED, distance)
         }
 

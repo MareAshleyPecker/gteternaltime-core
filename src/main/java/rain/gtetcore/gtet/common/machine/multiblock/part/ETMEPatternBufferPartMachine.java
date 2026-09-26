@@ -1,12 +1,15 @@
 package rain.gtetcore.gtet.common.machine.multiblock.part;
 
+import appeng.api.implementations.blockentities.PatternContainerGroup;
+import appeng.api.inventories.InternalInventory;
+import appeng.api.stacks.AEItemKey;
+import appeng.crafting.pattern.EncodedPatternItem;
 import com.gregtechceu.gtceu.api.capability.recipe.IO;
 import com.gregtechceu.gtceu.api.gui.GuiTextures;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.AETextInputButtonWidget;
 import com.gregtechceu.gtceu.integration.ae2.gui.widget.slot.AEPatternViewSlotWidget;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEPatternBufferPartMachine;
-
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
 import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
@@ -14,26 +17,18 @@ import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.utils.Position;
-
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities;
+import rain.gtetcore.gtet.mixin.GTM.IMEPatternBufferAccess;
 
-import appeng.api.implementations.blockentities.PatternContainerGroup;
-import appeng.api.inventories.InternalInventory;
-import appeng.api.stacks.AEItemKey;
-import appeng.crafting.pattern.EncodedPatternItem;
-
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import javax.annotation.ParametersAreNonnullByDefault;
-
-import rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities;
-import rain.gtetcore.gtet.mixin.GTM.IMEPatternBufferAccess;
 
 /**
  * 「多阶段 ME 样板总成」：容量大于 GTM 原生 27 的样板总成，四个阶段各一件（LuV/UV/UEV/UXV）。
@@ -451,6 +446,6 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
      * 唯一变更处理入口）。cast 走 {@code Object} 是因为编译期看不见 mixin 加在父类上的接口。
      */
     private IMEPatternBufferAccess access() {
-        return (IMEPatternBufferAccess) (Object) this;
+        return (IMEPatternBufferAccess) this;
     }
 }

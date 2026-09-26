@@ -1,7 +1,6 @@
 package rain.gtetcore.gtet.common.item.terminal;
 
 import com.gregtechceu.gtceu.common.block.CoilBlock;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.Registries;
@@ -10,9 +9,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;

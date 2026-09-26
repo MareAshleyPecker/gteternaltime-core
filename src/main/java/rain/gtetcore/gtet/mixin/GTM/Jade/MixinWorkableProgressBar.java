@@ -2,16 +2,13 @@ package rain.gtetcore.gtet.mixin.GTM.Jade;
 
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.integration.jade.provider.WorkableBlockProvider;
-
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine;
 import rain.gtetcore.gtet.integration.jade.provider.ThreadedRecipeLogicProvider;
 import snownee.jade.api.BlockAccessor;

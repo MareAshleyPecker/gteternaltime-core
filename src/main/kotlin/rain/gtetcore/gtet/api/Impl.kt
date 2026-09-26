@@ -1,7 +1,7 @@
 package rain.gtetcore.gtet.api
 
 interface Impl {
-    fun Impl(){
+    fun Impl() {
         TODO()
     }
 }

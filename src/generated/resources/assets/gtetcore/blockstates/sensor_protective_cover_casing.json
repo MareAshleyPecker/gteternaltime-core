@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/sensor_protective_cover_casing"
+    }
+  }
+}

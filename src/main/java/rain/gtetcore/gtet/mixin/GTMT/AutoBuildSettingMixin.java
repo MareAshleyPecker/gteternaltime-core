@@ -1,22 +1,19 @@
 package rain.gtetcore.gtet.mixin.GTMT;
 
-import com.hepdd.gtmthings.common.item.AdvancedTerminalBehavior;
-
 import com.gregtechceu.gtceu.common.block.CoilBlock;
+import com.hepdd.gtmthings.common.item.AdvancedTerminalBehavior;
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
-
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.common.item.terminal.StructureBuildPlanner;
 import rain.gtetcore.gtet.common.item.terminal.TerminalContext;
 import rain.gtetcore.gtet.common.item.terminal.TerminalSettings;
+import rain.gtetcore.gtet.config.GTETConfig;
 
 import java.util.List;
 
@@ -56,7 +53,7 @@ public abstract class AutoBuildSettingMixin {
         String wanted = TerminalSettings.lookupPreference(terminal, groupKey, candidates);
         if (wanted == null) return;
 
-        int index = indexOf(candidates, wanted);
+        int index = gteternaltime_core$indexOf(candidates, wanted);
         if (index == 0) return;                 // 已经在最前面，不用动
         if (index > 0) {
             candidates.add(0, candidates.remove(index));
@@ -69,14 +66,15 @@ public abstract class AutoBuildSettingMixin {
         // 于是玩家在面板里选了最高级线圈，这里根本取不到那一档 —— 不补回来就等于没选。
         // 线圈谓词（GTCEu 的 Predicates.heatingCoils）本来就接受任何一级线圈，补回来是安全的；
         // 其它格子的候选是谓词给的完整列表，往里塞谓词不接受的方块只会让结构永远不成型。
-        if (allCoils(candidates)) {
+        if (gteternaltime_core$allCoils(candidates)) {
             ItemStack extra = StructureBuildPlanner.itemStackOf(wanted);
             if (extra != null && !extra.isEmpty()) candidates.add(0, extra);
         }
     }
 
     /** 候选里注册名等于 {@code itemId} 的下标；没有返回 -1。 */
-    private static int indexOf(List<ItemStack> candidates, String itemId) {
+    @Unique
+    private static int gteternaltime_core$indexOf(List<ItemStack> candidates, String itemId) {
         for (int i = 0; i < candidates.size(); i++) {
             if (itemId.equals(StructureBuildPlanner.itemId(candidates.get(i)))) return i;
         }
@@ -84,7 +82,8 @@ public abstract class AutoBuildSettingMixin {
     }
 
     /** 整格候选是不是全是线圈方块。 */
-    private static boolean allCoils(List<ItemStack> candidates) {
+    @Unique
+    private static boolean gteternaltime_core$allCoils(List<ItemStack> candidates) {
         for (ItemStack candidate : candidates) {
             if (!(candidate.getItem() instanceof BlockItem blockItem) ||
                     !(blockItem.getBlock() instanceof CoilBlock)) {

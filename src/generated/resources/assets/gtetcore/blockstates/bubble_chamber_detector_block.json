@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/bubble_chamber_detector_block"
+    }
+  }
+}

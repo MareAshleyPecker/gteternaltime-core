@@ -3,13 +3,11 @@ package rain.gtetcore.gtet.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.HitResult;
-
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-
 import rain.gtetcore.gtet.common.item.tool.StructureToolBehavior;
 import rain.gtetcore.gtet.common.item.tool.ToolNetwork;
 

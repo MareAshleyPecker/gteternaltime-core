@@ -1,21 +1,18 @@
 package rain.gtetcore.gtet.mixin.GTMT;
 
 import com.hepdd.gtmthings.common.item.AdvancedTerminalBehavior;
-
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
-import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.common.item.terminal.StructureBuildPlanner;
 import rain.gtetcore.gtet.common.item.terminal.TerminalContext;
 import rain.gtetcore.gtet.common.item.terminal.TerminalSettings;
+import rain.gtetcore.gtet.config.GTETConfig;
 
 import java.util.List;
 

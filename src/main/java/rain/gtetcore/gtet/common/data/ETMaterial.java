@@ -2,8 +2,6 @@
 package rain.gtetcore.gtet.common.data;
 
 import com.gregtechceu.gtceu.api.data.chemical.material.Material;
-import com.gregtechceu.gtceu.common.data.GTMaterials;
-import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities;
 import rain.gtetcore.gtet.common.data.material.ETElementMaterials;
 
 /**
@@ -11,10 +9,7 @@ import rain.gtetcore.gtet.common.data.material.ETElementMaterials;
  */
 public class ETMaterial {
 
-    public static Material MaterialNAME = GTMaterials.Iron;
-    public static Material Q235;
-    public static Material Q345;
-    public static Material Q420C;
+    public static Material MaterialNAME ;
     public static Material GFRP;
     public static Material Resin;
     public static Material GlassFiber;

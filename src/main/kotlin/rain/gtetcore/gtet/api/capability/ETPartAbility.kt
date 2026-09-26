@@ -14,9 +14,8 @@ import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility
  * 真正把这批方块登记进能力表的是 `MachineBuilder.abilities(...)`：
  * 它在方块注册回调里执行 `ability.register(tier, block)`。
  *
- * ## 思路来源
- * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）`api/machine/part/GTOPartAbility.java:20` 的 `THREAD_HATCH` —— 借「线程能力必须自成一格、不能挂在 `PARALLEL_HATCH` 上」这个形状；GTO 的能力对象在加密 native 库里，拿不到其实现，GTET 侧只是同形另写一个 `PartAbility`。
- * - 【自研】新增 `THREAD_HATCH` 而不是复用 `OVERCLOCK_HATCH` / `PARALLEL_HATCH` 的取舍 —— 「超频」与「线程」是两件正交的事（可以只装其一、也可以都装），复用一个能力会让它们在结构里互斥；GTM 里没有这种「同一台机器叠两层独立仓」的现成写法。
+ * ⚠️ 新增 `THREAD_HATCH` 而不是复用 `OVERCLOCK_HATCH` / `PARALLEL_HATCH`：「超频」与「线程」是两件
+ * 正交的事（可以只装其一、也可以都装），复用一个能力会让它们在结构里互斥。
  *
  * @author rain fox
  */

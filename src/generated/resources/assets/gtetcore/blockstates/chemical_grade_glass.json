@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/chemical_grade_glass"
+    }
+  }
+}

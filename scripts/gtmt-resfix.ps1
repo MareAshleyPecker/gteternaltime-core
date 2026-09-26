@@ -3,8 +3,8 @@
 #
 #  背景（详见 modpatch/gtmthings-1.6.0/NOTES.md §8）：
 #    GTMThings 的 build.gradle 有 `sourceSets.main.resources { srcDir 'src/generated/resources' }`，
-#    而 blockstates/*.json 与 models/block|item/*.json 全是 datagen 产物；D:\java\GTMThings-1.6.0
-#    这个检出里 src/generated/resources **不存在**，所以只跑 `gradlew build` 出来的 jar 一定缺
+#    而 blockstates/*.json 与 models/block|item/*.json 全是 datagen 产物；GTMThings 的检出目录里
+#    src/generated/resources **不存在**，所以只跑 `gradlew build` 出来的 jar 一定缺
 #    这些 json（实测 456 条目 / assets 310）。这样的 jar 进游戏会让 GTMT 的机器模型全变紫黑块
 #    （Exception loading blockstate definition: ... missing model for variant）。
 #    修法：拿仓内 vendored 的 release 资源参考 zip（libs/gtmt/...，见下面的默认值）把缺的条目补进去。

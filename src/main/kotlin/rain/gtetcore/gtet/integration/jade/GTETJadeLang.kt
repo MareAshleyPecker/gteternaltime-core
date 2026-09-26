@@ -1,6 +1,8 @@
 package rain.gtetcore.gtet.integration.jade
 
 import rain.gtetcore.gtet.Gtetcore
+import rain.gtetcore.gtet.integration.jade.GTETJadeLang.CONFIG_THREADED_RECIPE_LOGIC
+import rain.gtetcore.gtet.integration.jade.GTETJadeLang.CONFIG_THREADED_RECIPE_LOGIC_DESC
 import rain.gtetcore.gtet.integration.jade.provider.ThreadedRecipeLogicProvider
 import rain.gtetcore.gtet.util.lang.LangUtil
 
@@ -53,12 +55,6 @@ import rain.gtetcore.gtet.util.lang.LangUtil
  * （`snownee.jade.util.CommonProxy#loadComplete`）反射加载，那时数据生成早就结束了 ——
  * 键会只存在于内存、进不了数据生成产出的语言文件（`assets/gtetcore/lang/` 下的 json），断言照样炸。
  * 所以入口是 `CommonProxy#kotlinInit()`（与 `ThreadedRecipeStatus.initLang()` 同一处、同一理由）。
- *
- * ## 思路来源
- * - 【自研】上面这份「Jade 到底要哪些键、在哪一步校验、哪些键是软判断」的结论，
- *   由本仓库自行反编译 Jade 11.13.3 的 `JadeClient` / `PluginConfig` / `WailaClientRegistration` /
- *   `PluginsConfigScreen` / `OptionValue` 得出；Jade 那边没有任何文档写明这件事，
- *   而它是第三方 mod 的硬约束，所以必须留在注释里。
  *
  * @author rain fox
  */

@@ -1,6 +1,7 @@
 package rain.gtetcore.gtet.common.item.recipe
 
 import com.gregtechceu.gtceu.api.GTValues
+import rain.gtetcore.gtet.common.item.recipe.VoltageTiers.coerce
 
 /**
  * 配方编辑器的电压档表 —— GTM 的 15 档（下标 `0..MAX`）**加上** 16 个特殊档 `MAX+1 … MAX+16`。

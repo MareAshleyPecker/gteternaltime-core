@@ -1,0 +1,84 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "com.gregtechceu.gtceu",
+    "module": "gtceu-1.20.1",
+    "version": "7.5.3",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "8.8"
+    }
+  },
+  "variants": [
+    {
+      "name": "reobfRuntimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "gtceu-1.20.1-7.5.3.jar",
+          "url": "gtceu-1.20.1-7.5.3.jar",
+          "size": 18216233,
+          "sha512": "0c5360b182ffa320123fd466d17ceb8fd96242b9a5373fa757f64bec0b2b872b493905e2c6fea2e29c273207bbae529ef972821a078fbb483510affd91cf307a",
+          "sha256": "d29d038f5f7f13b64b7326b954573adcf873aa48da682d17bc26790e93e2cef0",
+          "sha1": "3d54c436949c6c385d19e0746fa7395faf6d9cfe",
+          "md5": "bcb6b85040313f6938d55c63e337fd7d"
+        }
+      ]
+    },
+    {
+      "name": "reobfApiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.environment": "standard-jvm",
+        "org.gradle.jvm.version": 17,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api",
+        "org.jetbrains.kotlin.platform.type": "jvm"
+      },
+      "files": [
+        {
+          "name": "gtceu-1.20.1-7.5.3.jar",
+          "url": "gtceu-1.20.1-7.5.3.jar",
+          "size": 18216233,
+          "sha512": "0c5360b182ffa320123fd466d17ceb8fd96242b9a5373fa757f64bec0b2b872b493905e2c6fea2e29c273207bbae529ef972821a078fbb483510affd91cf307a",
+          "sha256": "d29d038f5f7f13b64b7326b954573adcf873aa48da682d17bc26790e93e2cef0",
+          "sha1": "3d54c436949c6c385d19e0746fa7395faf6d9cfe",
+          "md5": "bcb6b85040313f6938d55c63e337fd7d"
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "gtceu-1.20.1-7.5.3-sources.jar",
+          "url": "gtceu-1.20.1-7.5.3-sources.jar",
+          "size": 10817865,
+          "sha512": "ae0de46053bca7e58b5e1aec4c1530213f53c9016a6edb642f90404aede34026cb3bd4fd1f81db5e67750aee4cd7760c316494f142e443aa2b28fbd37567889d",
+          "sha256": "2abc2a630e92a9a2905287ed63ce0350d45c3220ea7ec87d36e43aa09fb1d108",
+          "sha1": "0039a27866940dbd92250a6fa002b7734ab88b52",
+          "md5": "726a3e6f5d6c1b01bce674ce2d7383f3"
+        }
+      ]
+    }
+  ]
+}

@@ -1,12 +1,10 @@
 package rain.gtetcore.gtet.common.item.terminal;
 
 import appeng.api.networking.IGrid;
-
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.pattern.BlockPattern;
 import com.gregtechceu.gtceu.api.pattern.MultiblockState;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -22,17 +20,11 @@ import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 结构搭建执行器 —— 按 {@link StructureBuildPlanner} 的规划把方块放到世界上。
@@ -138,17 +130,15 @@ public final class StructureBuilder {
             }
 
             IItemHandler handler = player.getCapability(ForgeCapabilities.ITEM_HANDLER).orElse(null);
-            if (handler != null) {
-                for (int i = 0; i < handler.getSlots(); i++) {
-                    ItemStack inSlot = handler.getStackInSlot(i);
-                    if (!inSlot.isEmpty() && ItemStack.isSameItemSameTags(inSlot, wanted)) {
-                        return new Source(inSlot.copy(), handler, i, null, null);
-                    }
+            for (int i = 0; i < handler.getSlots(); i++) {
+                ItemStack inSlot = handler.getStackInSlot(i);
+                if (!inSlot.isEmpty() && ItemStack.isSameItemSameTags(inSlot, wanted)) {
+                    return new Source(inSlot.copy(), handler, i, null, null);
                 }
             }
 
             // AE：先只做模拟检查，放成功后才真正提取（避免放了失败还白扣）
-            if (grid != null && AeGridLink.canExtract(grid, player, wanted, 1)) {
+            if (AeGridLink.canExtract(grid, player, wanted, 1)) {
                 return new Source(wanted.copy(), null, -1, grid, player);
             }
             return null;

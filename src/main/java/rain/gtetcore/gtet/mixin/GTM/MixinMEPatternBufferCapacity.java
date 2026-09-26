@@ -2,11 +2,9 @@ package rain.gtetcore.gtet.mixin.GTM;
 
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEPatternBufferPartMachine;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
-
 import rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities;
 
 /**

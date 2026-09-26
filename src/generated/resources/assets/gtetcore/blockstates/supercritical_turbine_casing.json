@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/supercritical_turbine_casing"
+    }
+  }
+}

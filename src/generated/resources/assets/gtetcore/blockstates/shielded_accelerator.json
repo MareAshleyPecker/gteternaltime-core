@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/shielded_accelerator"
+    }
+  }
+}

@@ -25,9 +25,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import rain.gtetcore.gtet.util.RegistriesUtil;
-import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.Gtetcore;
+import rain.gtetcore.gtet.config.GTETConfig;
+import rain.gtetcore.gtet.util.RegistriesUtil;
 
 import java.io.BufferedWriter;
 import java.io.File;

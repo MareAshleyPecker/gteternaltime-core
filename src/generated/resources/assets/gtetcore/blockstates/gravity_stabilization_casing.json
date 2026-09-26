@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/gravity_stabilization_casing"
+    }
+  }
+}

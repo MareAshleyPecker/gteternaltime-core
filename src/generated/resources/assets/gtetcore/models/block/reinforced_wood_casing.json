@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "gtocore:block/casings/reinforced_wood_casing/top",
+    "side": "gtocore:block/casings/reinforced_wood_casing/side"
+  }
+}

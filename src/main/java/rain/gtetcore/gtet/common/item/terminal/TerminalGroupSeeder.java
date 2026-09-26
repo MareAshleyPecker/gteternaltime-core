@@ -8,10 +8,8 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
-
-import rain.gtetcore.gtet.Gtetcore;
-
 import org.jetbrains.annotations.Nullable;
+import rain.gtetcore.gtet.Gtetcore;
 
 /**
  * 把 {@link TerminalStaticGroups} 的 6 类静态组预置进玩家手上的高级终端 NBT。

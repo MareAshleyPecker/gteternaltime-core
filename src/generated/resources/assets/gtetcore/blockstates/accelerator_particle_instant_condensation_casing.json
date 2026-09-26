@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/accelerator_particle_instant_condensation_casing"
+    }
+  }
+}

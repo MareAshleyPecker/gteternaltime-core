@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/high_pressure_pipe_casing"
+    }
+  }
+}

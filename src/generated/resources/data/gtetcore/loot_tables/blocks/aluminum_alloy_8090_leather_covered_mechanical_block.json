@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "gtetcore:aluminum_alloy_8090_leather_covered_mechanical_block"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "gtetcore:blocks/aluminum_alloy_8090_leather_covered_mechanical_block"
+}

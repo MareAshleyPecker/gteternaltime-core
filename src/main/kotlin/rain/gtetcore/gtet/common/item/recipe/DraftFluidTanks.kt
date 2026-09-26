@@ -6,7 +6,7 @@ import net.minecraftforge.fluids.FluidType
 import net.minecraftforge.fluids.capability.IFluidHandler
 
 /**
- * 【自研】配方编辑器的多槽「幽灵流体罐」—— 只存草稿，不参与任何真实物流。
+ * 配方编辑器的多槽「幽灵流体罐」—— 只存草稿，不参与任何真实物流。
  *
  * 为什么要自己写一个而不是直接用 Forge 的 `FluidTank`：
  *  1. `FluidTank` 是**单槽**，而配方编辑器一个配方可能要 4 个流体输入（装配线）、

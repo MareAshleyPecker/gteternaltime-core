@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeLogic
 import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
+import rain.gtetcore.gtet.integration.jade.provider.ThreadedRecipeLogicProvider.Companion.GROUP_LIMIT
 import snownee.jade.api.BlockAccessor
 import snownee.jade.api.IBlockComponentProvider
 import snownee.jade.api.IServerDataProvider
@@ -48,13 +49,8 @@ import snownee.jade.api.ui.BoxStyle
  * 线程上限 ≤ 1 直接返回（连 NBT 都不写）：那种机器（GTM 原版机器 + 没装线程仓的 GTET 多方块）
  * 没有线程概念，多几行只是噪音。
  *
- * ## 思路来源
- * - 【借鉴形状】GTM 7.5.3 的 `ParallelProvider` / `RecipeLogicProvider` / `WorkableBlockProvider`：
- *   借「`IBlockComponentProvider` + `IServerDataProvider` 双接口一个类」、「服务端写 NBT、客户端读 NBT」、
- *   以及 `IElementHelper#progress(...)` 画进度条的用法。
- * - 【自研】NBT 键名与「上限 / 在用 / 合计运行次数 / 合计 EU/t / 逐组明细（含每组 EU/t）+ 每组产物」
- *   这套字段取舍；以及产物**传物品栈**而不是名字/翻译键 —— 客户端因此同时拿到图标与正确的材料名
- *   （早期传组件 JSON 是为了绕开「材料物品的键是 `%s粉` 这种模板」的坑，传栈之后这个坑自然没了）。
+ * ⚠️ 产物用**物品栈**而不是名字 / 翻译键：客户端因此同时拿到图标与正确的材料名
+ * （材料物品的键是 `%s粉` 这种模板，只传键会拼错）。
  *
  * @author rain fox
  */

@@ -60,8 +60,8 @@ tasks.named('processResources', ProcessResources).configure {
 //  ⚠️ 版本**写死**（不走依赖解析）：升级时改 scripts/patches.gradle 的版本常量，
 //     并**同时**改 scripts/dependencies.gradle 的 gtmthings 坐标 + gradle.properties 的 gtm_version，
 //     否则编译用的版本与随包分发的版本会对不上。
-//  ⚠️ 内嵌的 GTM 取 mavenLocal 里那份**本地打过补丁**的构建（异步结构检测等改动就在里面），不是官方原件；
-//     GTMThings 取 libs/jarjar/ 里那份补丁构建。两者的**自动构建/校验**都在 scripts/patches.gradle：
+//  ⚠️ 内嵌的两个 jar 都取 patchJar/ 里那份**本地打过补丁**的产物（异步结构检测等改动就在里面），不是官方原件；
+//     两者的**自动构建/校验**都在 scripts/patches.gradle：
 //     产物缺失时 gradlew build / jar 会自动去外部检出构建，产物已在就秒过（-PgtetPatchBuild=true 强制重建，
 //     -PgtetSkipPatchBuild=true 强制跳过并退回 curse 官方原件）。
 //  ⚠️ 内嵌 = 无条件加载（ContainedDeps 是 JarJar 的老机制）：整合包里**不要**再单独放 GTM / GTMThings，
@@ -71,8 +71,8 @@ tasks.named('processResources', ProcessResources).configure {
 // 写死的嵌入版本与固定文件名（jar 内的名字必须稳定，ContainedDeps 按它找文件）
 // ⚠️ 这里的 jarjarGtmVersion / jarjarGtmtVersion / jarjarGtmName / jarjarGtmtName / jarjarGtmJar /
 //     jarjarGtmtPatched 全部由 scripts/patches.gradle 定义（那里还有自动构建它们的任务），**不要**在这里再写一份。
-//     GTM      ：mavenLocal 里的本地补丁构建（与 gradle.properties 的 gtm_version 必须一致）
-//     GTMThings：仓库内 libs/jarjar/ 里那份补丁 jar（由 D:\java\GTMThings-1.6.0 自己 build 出来、已 reobf）；
+//     GTM      ：patchJar/gtceu-1.20.1-7.5.3.jar（与 gradle.properties 的 gtm_version 必须一致）
+//     GTMThings：patchJar/gtmthings-1.6.0-forge.jar（由 GTMThings 1.6.0 的外部检出自己 build 出来、已 reobf）；
 //                找不到才退回 curse maven 上的官方原件并 warn —— 那种情况下高级终端就是老样式。
 
 configurations {
@@ -103,10 +103,10 @@ tasks.register('collectJarjarDeps', Copy) {
             problems.each { logger.warn('[gtetcore] {}', it) }
             if (!jarjarGtmtPatched.isFile()) {
                 logger.warn('[gtetcore] GTMThings 本次退回 curse 官方原件（高级终端为老样式）。' +
-                        '要补丁版：装好 D:\\java\\GTMThings-1.6.0 后跑 gradlew buildPatchedGtmThings')
+                        '要补丁版：装好 GTMThings 补丁检出后跑 gradlew buildPatchedGtmThings（位置可用 -PgtmtRepo= 指定）')
             }
             if (!jarjarGtmJar.isFile()) {
-                logger.warn('[gtetcore] 本次不会内嵌 GTM。要补丁版：装好 D:\\java\\GregTech-Modern-7.5.3-1.20.1 后跑 gradlew buildPatchedGtm')
+                logger.warn('[gtetcore] 本次不会内嵌 GTM。要补丁版：装好 GTM 补丁检出后跑 gradlew buildPatchedGtm（位置可用 -PgtmRepo= 指定）')
             }
             logger.warn('[gtetcore] 只想跳过外部构建：-PgtetSkipPatchBuild=true；想强制重建：-PgtetPatchBuild=true')
         }

@@ -2,7 +2,6 @@ package rain.gtetcore.gtet.common.machine.multiblock.modular
 
 import com.gregtechceu.gtceu.api.GTValues
 import com.gregtechceu.gtceu.api.capability.recipe.IO
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableElectricMultiblockMachine
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableItemStackHandler
@@ -16,7 +15,6 @@ import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.Items
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /**

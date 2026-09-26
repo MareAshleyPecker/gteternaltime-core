@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "gtetcore:high_pressure_gas_storage_tanks_casing"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "gtetcore:blocks/high_pressure_gas_storage_tanks_casing"
+}

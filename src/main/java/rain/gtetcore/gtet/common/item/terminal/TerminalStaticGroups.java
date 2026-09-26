@@ -4,19 +4,12 @@ import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.common.block.CoilBlock;
 import com.gregtechceu.gtceu.common.data.GTMachines;
-
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-
-import rain.gtetcore.gtet.common.data.machine.hatch.ALLSmahine;
-
 import org.jetbrains.annotations.Nullable;
+import rain.gtetcore.gtet.common.data.machine.ALLSmachine;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 高级终端右侧两块列表面板<b>默认</b>列出的 6 类可选部件（不依赖扫描）。
@@ -32,9 +25,9 @@ import java.util.Map;
  * GTCEu {@code Predicates.heatingCoils()} 同序）</td></tr>
  * <tr><td>能源仓</td><td>{@link GTMachines#ENERGY_INPUT_HATCH} / {@code _4A} / {@code _16A} /
  * {@link GTMachines#SUBSTATION_ENERGY_INPUT_HATCH}</td></tr>
- * <tr><td>超频仓</td><td>{@link ALLSmahine#getOVERCLOCK_HATCHES()}</td></tr>
- * <tr><td>线程仓</td><td>{@link ALLSmahine#getTHREAD_HATCHES()}</td></tr>
- * <tr><td>并行仓</td><td>{@link ALLSmahine#getPARALLEL_HATCHES()}（GTET 自己的分级并行仓，IV ~ MAX）</td></tr>
+ * <tr><td>超频仓</td><td>{@link ALLSmachine#getOVERCLOCK_HATCHES()}</td></tr>
+ * <tr><td>线程仓</td><td>{@link ALLSmachine#getTHREAD_HATCHES()}</td></tr>
+ * <tr><td>并行仓</td><td>{@link ALLSmachine#getPARALLEL_HATCHES()}（GTET 自己的分级并行仓，IV ~ MAX）</td></tr>
  * <tr><td>维护仓</td><td>{@link GTMachines#MAINTENANCE_HATCH} / {@code CONFIGURABLE_MAINTENANCE_HATCH} /
  * {@code CLEANING_MAINTENANCE_HATCH} / {@code AUTO_MAINTENANCE_HATCH}</td></tr>
  * </table>
@@ -99,9 +92,9 @@ public final class TerminalStaticGroups {
         Map<String, List<ItemStack>> all = new LinkedHashMap<>();
         addIfTiered(all, coils());
         addIfTiered(all, energyHatches());
-        addIfTiered(all, definitions(ALLSmahine.INSTANCE.getOVERCLOCK_HATCHES()));
-        addIfTiered(all, definitions(ALLSmahine.INSTANCE.getTHREAD_HATCHES()));
-        addIfTiered(all, definitions(ALLSmahine.INSTANCE.getPARALLEL_HATCHES()));
+        addIfTiered(all, definitions(ALLSmachine.INSTANCE.getOVERCLOCK_HATCHES()));
+        addIfTiered(all, definitions(ALLSmachine.INSTANCE.getTHREAD_HATCHES()));
+        addIfTiered(all, definitions(ALLSmachine.INSTANCE.getPARALLEL_HATCHES()));
         addIfTiered(all, maintenanceHatches());
         return all;
     }

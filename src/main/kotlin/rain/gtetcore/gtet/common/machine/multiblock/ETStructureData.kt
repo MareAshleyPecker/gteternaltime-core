@@ -6,8 +6,8 @@ import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate
 import com.lowdragmc.lowdraglib.utils.BlockInfo
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.block.state.BlockState
+import rain.gtetcore.gtet.common.machine.multiblock.ETStructureData.MODULE_BLOCKS
 import java.util.function.Predicate
-import java.util.function.Supplier
 
 /**
  * 「结构里的模块方块喂数据」——图案里的谓词除了判定方块，还能往 [MultiblockState] 的

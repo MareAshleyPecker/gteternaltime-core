@@ -1,4 +1,5 @@
-@file:Suppress("DEPRECATION","unused")
+@file:Suppress("DEPRECATION", "unused")
+
 package rain.gtetcore.gtet
 
 import com.mojang.logging.LogUtils
@@ -30,7 +31,7 @@ class Gtetcore(context: FMLJavaModLoadingContext) {
 
     companion object {
         const val MODID = "gtetcore"
-        const val NAME  = "GregTech Eternal Time"
+        const val NAME = "GregTech Eternal Time"
 
         @JvmField
         val LOGGER: Logger = LogUtils.getLogger()

@@ -30,12 +30,6 @@ import snownee.jade.api.WailaPlugin
  * （`Block` / `BlockEntity` / `Component` / `CompoundTag`），没有任何 `net.minecraft.client.*`，
  * 所以专用服务端加载本类也不会因为缺类而炸；[IWailaPlugin.registerClient] 在服务端根本不会被调到。
  *
- * ## 思路来源
- * - 【借鉴形状】GTM 7.5.3 的 `GTJadePlugin`（`@WailaPlugin` + 两条注册各来一遍）——
- *   注册的**结构**照它写；provider 本身（线程口径）见 [ThreadedRecipeLogicProvider] 的类注释。
- * - 【自研】把「为什么不在 CommonProxy 里注册」这段结论写进注释（Jade 的注解扫描在
- *   `CommonProxy#loadComplete` 里，见上）—— GTM 那边没有对应说明。
- *
  * @author rain fox
  */
 @WailaPlugin

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/coolant_pip_casing"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/chemical_corrosion_resistant_pipe_casing"
+    }
+  }
+}

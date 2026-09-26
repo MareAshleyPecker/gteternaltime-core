@@ -19,8 +19,8 @@ package rain.gtetcore.gtet.api.capability
  * - 复用 `PARALLEL_HATCH` 会让「超频仓」和「并行仓」在结构里互斥（都是 maxGlobalLimited(1) 的同一能力）；
  * - 实现 `IParallelHatch` 会顶掉控制器缓存的真正并行仓（`getParallelHatch()` 只取一个实例）。
  *
- * ## 思路来源
- * - 【自研】接口本身与 `overclockSpeed` / `overclockEnergyFactor` 两个字段的语义 —— GTM 的 `IParallelHatch` 只有一个 `int getCurrentParallel()`，没有「速度倍率 / 能效系数」这种二维描述，也就没有能抄的东西。
+ * ⚠️ 别把这两个字段与 GTM 的 `IParallelHatch` 混为一谈：那个只有 `int getCurrentParallel()`，
+ * 描述不了「速度倍率 / 能效系数」这种二维语义。
  *
  * @author rain fox
  */

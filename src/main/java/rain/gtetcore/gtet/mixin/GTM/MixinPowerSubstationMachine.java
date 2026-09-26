@@ -1,7 +1,6 @@
 package rain.gtetcore.gtet.mixin.GTM;
 
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.PowerSubstationMachine;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

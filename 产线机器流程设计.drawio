@@ -1,0 +1,218 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="第 1 页" id="FN1OHhLBSK6g-EGmB6dx">
+    <mxGraphModel dx="471" dy="277" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-1" parent="1" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;labelBackgroundColor=none;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font&gt;产线以及任务规划&lt;/font&gt;&lt;/span&gt;&lt;/h1&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="40" width="200" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-4" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;font style=&quot;font-size: 32px;&quot;&gt;Steam Age&lt;/font&gt;" vertex="1">
+          <mxGeometry height="40" width="160" x="40" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-38" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-17">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="140" y="240" />
+              <mxPoint x="140" y="450" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-39" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0.25;entryY=1;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-46" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-5" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;铜Cu&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="40" x="40" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-48" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-50" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-7" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255)); background-color: transparent;&quot;&gt;锡Sn&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="40" x="40" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-24" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.75;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-8" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="铅&lt;br&gt;Pb&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="40" x="40" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-4" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-10" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" target="BJwworzWuM4jO4dfAT6g-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-10" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="黏土" vertex="1">
+          <mxGeometry height="40" width="40" x="240" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-15" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;&lt;a href=&quot;https://www.mcmod.cn/item/766354.html&quot; target=&quot;_blank&quot;&gt;&lt;img class=&quot;icon&quot; alt=&quot;青铜锭&quot; src=&quot;https://i.mcmod.cn/item/icon/32x32/76/766354.png?v=1&quot; width=&quot;15&quot; height=&quot;15&quot;&gt;&lt;/a&gt;&lt;a href=&quot;https://www.mcmod.cn/item/766354.html&quot; target=&quot;_blank&quot;&gt;青铜锭&lt;/a&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="40" x="160" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-63" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-14" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-68" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-14" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;exitX=1;exitY=0.75;exitDx=0;exitDy=0;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-66">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-69" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Helvetica;fontSize=12;fontColor=default;entryX=0;entryY=0.5;entryDx=0;entryDy=0;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-70">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="340" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-14" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;&lt;a href=&quot;https://www.mcmod.cn/item/770257.html&quot; target=&quot;_blank&quot;&gt;&lt;img class=&quot;icon&quot; alt=&quot;砖砌青铜外壳&quot; src=&quot;https://i.mcmod.cn/item/icon/32x32/77/770257.png?v=1&quot; width=&quot;15&quot; height=&quot;15&quot;&gt;&lt;/a&gt;&lt;a href=&quot;https://www.mcmod.cn/item/770257.html&quot; target=&quot;_blank&quot;&gt;砖砌青铜外壳&lt;/a&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="240" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-98" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-89">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480" y="460" />
+              <mxPoint x="480" y="350" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-17" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;&lt;a href=&quot;https://www.mcmod.cn/item/766413.html&quot; target=&quot;_blank&quot;&gt;&lt;img class=&quot;icon&quot; alt=&quot;粗青铜合金锭&quot; src=&quot;https://i.mcmod.cn/item/icon/32x32/76/766413.png&quot; width=&quot;15&quot; height=&quot;15&quot;&gt;&lt;/a&gt;&lt;a href=&quot;https://www.mcmod.cn/item/766413.html&quot; target=&quot;_blank&quot;&gt;粗青铜合金锭&lt;/a&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="160" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-67" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.25;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-80" connectable="0" parent="vig_7E9MO5_bLAvi_Cfc-67" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=1;points=[];fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="量产" vertex="1">
+          <mxGeometry relative="1" x="-0.2259" y="1" as="geometry">
+            <mxPoint x="-25" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-75" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-95" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-84">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-96" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-89">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-27" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;&lt;a href=&quot;https://www.mcmod.cn/item/770709.html&quot; target=&quot;_blank&quot;&gt;&lt;img class=&quot;icon&quot; alt=&quot;低压蒸汽合金炉&quot; src=&quot;https://i.mcmod.cn/item/icon/32x32/77/770709.png?v=2&quot; width=&quot;15&quot; height=&quot;15&quot;&gt;&lt;/a&gt;&lt;a href=&quot;https://www.mcmod.cn/item/770709.html&quot; target=&quot;_blank&quot;&gt;低压蒸汽合金炉&lt;/a&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="360" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-41" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-32" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;&lt;a href=&quot;https://www.mcmod.cn/item/766420.html&quot; target=&quot;_blank&quot;&gt;&lt;img class=&quot;icon&quot; alt=&quot;红色合金锭&quot; src=&quot;https://i.mcmod.cn/item/icon/32x32/76/766420.png&quot; width=&quot;15&quot; height=&quot;15&quot;&gt;&lt;/a&gt;&lt;a href=&quot;https://www.mcmod.cn/item/766420.html&quot; target=&quot;_blank&quot;&gt;红色合金锭&lt;/a&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="360" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-35" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-34" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;红石粉&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="40" x="240" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-81" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-66">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="460" y="190" />
+              <mxPoint x="460" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-97" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-70">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="460" y="190" />
+              <mxPoint x="460" y="330" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-40" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="活塞" vertex="1">
+          <mxGeometry height="40" width="80" x="520" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-99" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-66" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-100">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="560" y="420.19047619047615" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-9" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-66" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" target="BJwworzWuM4jO4dfAT6g-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-66" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span aria-describedby=&quot;tooltip427788&quot;&gt;&lt;a href=&quot;https://www.mcmod.cn/item/770703.html&quot; target=&quot;_blank&quot;&gt;&lt;img class=&quot;icon&quot; alt=&quot;低压蒸汽压缩机&quot; src=&quot;https://i.mcmod.cn/item/icon/32x32/77/770703.png?v=1&quot; width=&quot;15&quot; height=&quot;15&quot;&gt;&lt;/a&gt;&lt;a href=&quot;https://www.mcmod.cn/item/770703.html&quot; target=&quot;_blank&quot;&gt;低压蒸汽压缩机&lt;/a&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="360" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-1" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="BJwworzWuM4jO4dfAT6g-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="340" y="350" />
+            </Array>
+            <mxPoint x="340" y="520" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-6" connectable="0" parent="BJwworzWuM4jO4dfAT6g-1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=Helvetica;fontSize=12;fontColor=default;" value="可选" vertex="1">
+          <mxGeometry relative="1" x="0.6152" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-70" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;&lt;a href=&quot;https://www.mcmod.cn/item/770701.html&quot; target=&quot;_blank&quot;&gt;&lt;img class=&quot;icon&quot; alt=&quot;低压蒸汽研磨机&quot; src=&quot;https://i.mcmod.cn/item/icon/32x32/77/770701.png?v=1&quot; width=&quot;15&quot; height=&quot;15&quot;&gt;&lt;/a&gt;&lt;a href=&quot;https://www.mcmod.cn/item/770701.html&quot; target=&quot;_blank&quot;&gt;低压蒸汽研磨机&lt;/a&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="360" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-93" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-84" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" target="vig_7E9MO5_bLAvi_Cfc-89">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-84" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;&lt;a href=&quot;https://www.mcmod.cn/item/766371.html&quot; target=&quot;_blank&quot;&gt;&lt;img class=&quot;icon&quot; alt=&quot;锡铁合金锭&quot; src=&quot;https://i.mcmod.cn/item/icon/32x32/76/766371.png?v=1&quot; width=&quot;15&quot; height=&quot;15&quot;&gt;&lt;/a&gt;&lt;a href=&quot;https://www.mcmod.cn/item/766371.html&quot; target=&quot;_blank&quot;&gt;锡铁合金锭&lt;/a&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="80" x="520" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-20" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-89" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" target="BJwworzWuM4jO4dfAT6g-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-89" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="大型蒸汽合金炉" vertex="1">
+          <mxGeometry height="40" width="80" x="520" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-15" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-100" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Helvetica;fontSize=12;fontColor=default;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="BJwworzWuM4jO4dfAT6g-16">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="680" y="420" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-21" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-100" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" target="BJwworzWuM4jO4dfAT6g-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-100" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="耐火砖（粗制）" vertex="1">
+          <mxGeometry height="40" width="80" x="520" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-5" edge="1" parent="1" source="vig_7E9MO5_bLAvi_Cfc-102" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" target="BJwworzWuM4jO4dfAT6g-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="vig_7E9MO5_bLAvi_Cfc-102" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="红砖" vertex="1">
+          <mxGeometry height="40" width="40" x="240" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-10" edge="1" parent="1" source="BJwworzWuM4jO4dfAT6g-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" target="BJwworzWuM4jO4dfAT6g-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" value="耐火黏土粉(粗制)" vertex="1">
+          <mxGeometry height="40" width="80" x="300" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-13" edge="1" parent="1" source="BJwworzWuM4jO4dfAT6g-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;fontFamily=Helvetica;fontSize=12;fontColor=default;" target="vig_7E9MO5_bLAvi_Cfc-100">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" value="压缩耐火粘土（粗制）" vertex="1">
+          <mxGeometry height="40" width="80" x="420" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-16" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" value="土高炉（非模块化）" vertex="1">
+          <mxGeometry height="40" width="120" x="640" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-22" edge="1" parent="1" source="BJwworzWuM4jO4dfAT6g-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Helvetica;fontSize=12;fontColor=default;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="BJwworzWuM4jO4dfAT6g-23">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="760" y="380" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-19" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" value="耐火砖（精致）" vertex="1">
+          <mxGeometry height="40" width="80" x="640" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="BJwworzWuM4jO4dfAT6g-23" parent="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=default;align=center;verticalAlign=middle;fontFamily=Helvetica;fontSize=12;fontColor=default;fillColor=default;" value="模块化高炉" vertex="1">
+          <mxGeometry height="40" width="80" x="760" y="320" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

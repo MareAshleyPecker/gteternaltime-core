@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/pbi_radiation_resistant_mechanical_enclosure"
+    }
+  }
+}

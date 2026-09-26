@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/laser_cooling_casing"
+    }
+  }
+}

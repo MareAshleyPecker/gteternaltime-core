@@ -1,8 +1,9 @@
-@file:Suppress("DEPRECATION","unused")
+@file:Suppress("DEPRECATION", "unused")
+
 package rain.gtetcore.gtet.util
 
-import com.gregtechceu.gtceu.api.machine.multiblock.*
-import com.gregtechceu.gtceu.api.pattern.*
+import com.gregtechceu.gtceu.api.machine.multiblock.MultiblockControllerMachine
+import com.gregtechceu.gtceu.api.pattern.MultiblockWorldSavedData
 import rain.gtetcore.gtet.config.GTETConfig
 
 /**

@@ -10,6 +10,16 @@ import com.gregtechceu.gtceu.utils.FormattingUtil
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemStack
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.DISPLAY_LINES
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.LANG_OUTPUTS
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.LANG_OUTPUT_MORE
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.LANG_TOTAL_EUT
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.LANG_TOTAL_RUNS
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.OUTPUTS_PER_LINE
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.eutPerTickOf
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.groupSnapshots
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.outputSnapshotOf
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus.outputsText
 import rain.gtetcore.gtet.util.lang.LangUtil
 import kotlin.math.roundToLong
 
@@ -306,6 +316,7 @@ object ThreadedRecipeStatus {
             ingredient is IntProviderIngredient -> ingredient
             ingredient is SizedIngredient && ingredient.inner is IntProviderIngredient ->
                 ingredient.inner as IntProviderIngredient
+
             else -> null
         }
         var min = (provider?.countProvider?.minValue ?: stack.count).toLong()

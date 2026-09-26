@@ -2,14 +2,12 @@ package rain.gtetcore.gtet.common.item.tool;
 
 import com.gregtechceu.gtceu.api.item.component.IInteractionItem;
 import com.gregtechceu.gtceu.api.item.component.IItemUIFactory;
-
 import com.lowdragmc.lowdraglib.gui.factory.HeldItemUIFactory;
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI;
 import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup;
 import com.lowdragmc.lowdraglib.gui.texture.TextTexture;
 import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget;
 import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
-
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -21,16 +19,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-
-import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.Gtetcore;
+import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.util.lang.LangUtil;
 
 /**
  * 结构工具（合并版）—— 一个物品承载四种工作模式，逻辑全部复用原有的四个实现。
  *
  * <p>模式：{@link WorkMode#EXPORT 选区导出} → {@link WorkMode#RECHECK 结构重检}
- * → {@link WorkMode#DETECT 结构检测} → {@link WorkMode#TERMINAL 高级终端}。
  *
  * <p>切换方式：<b>对着空气按住 Shift 滚轮</b>（客户端判定 + 网络包同步）；
  * 也可在界面里点「切换模式」。导出模式受配置 {@code tools.exportModeEnabled} 控制，

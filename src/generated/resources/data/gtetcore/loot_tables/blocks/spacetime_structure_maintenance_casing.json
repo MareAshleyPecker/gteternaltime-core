@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "gtetcore:spacetime_structure_maintenance_casing"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "gtetcore:blocks/spacetime_structure_maintenance_casing"
+}

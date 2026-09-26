@@ -1,4 +1,4 @@
-@file:Suppress("UNCHECKED_CAST", "DEPRECATION","unused")   // 只压真正需要压的那几项
+@file:Suppress("UNCHECKED_CAST", "DEPRECATION", "unused")   // 只压真正需要压的那几项
 package rain.gtetcore.gtet.common.item.recipe
 
 import com.gregtechceu.gtceu.api.GTValues
@@ -11,7 +11,6 @@ import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient
 import com.gregtechceu.gtceu.api.registry.GTRegistries
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes
 import com.tterrag.registrate.util.entry.RegistryEntry
-
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.Item
@@ -23,10 +22,9 @@ import net.minecraft.world.level.material.Fluid
 import net.minecraft.world.level.material.Fluids
 import net.minecraftforge.fluids.FluidStack
 import net.minecraftforge.registries.ForgeRegistries
-
 import rain.gtetcore.gtet.Gtetcore
+import rain.gtetcore.gtet.common.item.recipe.RecipeCodeWriter.FLUID_MATERIAL_EXPRS
 import rain.gtetcore.gtet.config.GTETConfig
-
 import java.io.File
 import java.lang.reflect.Modifier
 import java.nio.charset.StandardCharsets
@@ -125,7 +123,9 @@ object RecipeCodeWriter {
         return buildString {
             append("ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ").append(itemExpr(out)).append(")\n")
             rows.forEach { append("        .pattern(\"").append(it).append("\")\n") }
-            legend.forEach { (key, ch) -> append("        .define('").append(ch).append("', ").append(key).append(")\n") }
+            legend.forEach { (key, ch) ->
+                append("        .define('").append(ch).append("', ").append(key).append(")\n")
+            }
             append("        .unlockedBy(\"has_item\", has(").append(first).append("))\n")
             append("        .save(provider);\n")
         }
@@ -217,22 +217,22 @@ object RecipeCodeWriter {
         return buildString {
             append(typeExpr(draft.gtType)).append(".recipeBuilder(\"").append(effectiveId(draft)).append("\")\n")
             inputs.forEach { stack ->
-                append("        .inputItems(").append(gtItemExpr(stack)).append(")\n")
+                append("            .inputItems(").append(gtItemExpr(stack)).append(")\n")
             }
             fluidInputs.forEach { stack ->
-                append("        .inputFluids(").append(fluidExpr(stack)).append(")\n")
+                append("            .inputFluids(").append(fluidExpr(stack)).append(")\n")
             }
             outputs.forEach { stack ->
-                append("        .outputItems(").append(gtItemExpr(stack)).append(")\n")
+                append("            .outputItems(").append(gtItemExpr(stack)).append(")\n")
             }
             fluidOutputs.forEach { stack ->
-                append("        .outputFluids(").append(fluidExpr(stack)).append(")\n")
+                append("            .outputFluids(").append(fluidExpr(stack)).append(")\n")
             }
             // 幽灵电路：设置过才写（0 也是合法配置，所以用 -1 表示"不用"）
-            if (draft.circuit >= 0) append("        .circuitMeta(").append(draft.circuit).append(")\n")
-            if (draft.duration > 0) append("        .duration(").append(draft.duration).append(")\n")
-            append("        .EUt(").append(eutExpr(draft)).append(")\n")
-            append("        .save(provider);\n")
+            if (draft.circuit >= 0) append("            .circuitMeta(").append(draft.circuit).append(")\n")
+            if (draft.duration > 0) append("            .duration(").append(draft.duration).append(")\n")
+            append("            .EUt(").append(eutExpr(draft)).append(")\n")
+            append("            .save(provider);\n")
         }
     }
 
@@ -367,7 +367,7 @@ object RecipeCodeWriter {
         val check = ChemicalHelper.get(prefix, material, 1)
         if (check.isEmpty || check.item !== stack.item) return null
         val count = if (stack.count > 1) ", ${stack.count}" else ""
-        return "ChemicalHelper.get(TagPrefix.$prefixName, GTMaterials.$materialName$count)"
+        return "$prefixName, GTMaterials.$materialName,$count"
     }
 
     /**
@@ -483,15 +483,28 @@ object RecipeCodeWriter {
     private fun <T : Any> holderFields(type: Class<T>, vararg holderNames: String): Map<T, Ref> {
         val map = HashMap<T, Ref>()
         for (name in holderNames) {
-            val owner = try { Class.forName(name) } catch (e: Throwable) { null } ?: continue
+            val owner = try {
+                Class.forName(name)
+            } catch (e: Throwable) {
+                null
+            } ?: continue
             for (field in owner.declaredFields) {
                 if (!Modifier.isStatic(field.modifiers)) continue
-                val raw = try { field.isAccessible = true;field.get(null) } catch (e: Throwable) { null } ?: continue // 含 IllegalAccessException 与类初始化失败
+                val raw = try {
+                    field.isAccessible = true; field.get(null)
+                } catch (e: Throwable) {
+                    null
+                } ?: continue // 含 IllegalAccessException 与类初始化失败
                 val registrate = raw is RegistryEntry<*>
                 val value: T = when {
                     type.isInstance(raw) -> type.cast(raw)
-                    registrate                 -> try { raw.get().takeIf { type.isInstance(it) }?.let { type.cast(it) } } catch (e: Throwable) { null }
-                    else                       -> null
+                    registrate -> try {
+                        raw.get().takeIf { type.isInstance(it) }?.let { type.cast(it) }
+                    } catch (e: Throwable) {
+                        null
+                    }
+
+                    else -> null
                 } ?: continue
                 map.putIfAbsent(value, Ref("${owner.simpleName}.${field.name}", registrate))
             }

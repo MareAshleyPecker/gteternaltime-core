@@ -2,7 +2,6 @@ package rain.gtetcore.gtet.mixin.GTM;
 
 import com.google.common.collect.ImmutableMap;
 import com.gregtechceu.gtceu.common.data.GTBlocks;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;

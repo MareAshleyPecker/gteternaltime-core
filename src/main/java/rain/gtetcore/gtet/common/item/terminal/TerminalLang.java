@@ -15,14 +15,9 @@ public final class TerminalLang {
     public static final String UI_NO_GROUPS = "gtetcore.terminal.ui.no_groups";
     public static final String UI_CYCLE = "gtetcore.terminal.ui.cycle";
 
-    private static boolean initialized;
-
     private TerminalLang() {}
-
     /** 幂等注册。 */
     public static void init() {
-        if (initialized) return;
-        initialized = true;
 
         LangUtil.add(UI_GROUPS, "Tiered blocks", "分级方块");
         LangUtil.add(UI_NO_GROUPS, "Shift+right-click a controller to scan first",

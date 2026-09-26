@@ -5,29 +5,18 @@ import com.gregtechceu.gtceu.api.pattern.MultiblockState;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
 import com.gregtechceu.gtceu.api.pattern.predicates.SimplePredicate;
 import com.gregtechceu.gtceu.api.pattern.util.RelativeDirection;
-
 import com.lowdragmc.lowdraglib.utils.BlockInfo;
-
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
-
 import net.minecraftforge.registries.ForgeRegistries;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 结构规划器 —— 把 {@link BlockPattern} 摊成「每个格子要放什么」的清单。

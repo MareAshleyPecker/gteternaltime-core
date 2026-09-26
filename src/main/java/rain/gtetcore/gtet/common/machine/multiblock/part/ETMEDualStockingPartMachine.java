@@ -1,5 +1,13 @@
 package rain.gtetcore.gtet.common.machine.multiblock.part;
 
+import appeng.api.config.Actionable;
+import appeng.api.networking.IGrid;
+import appeng.api.networking.IManagedGridNode;
+import appeng.api.networking.security.IActionSource;
+import appeng.api.stacks.AEFluidKey;
+import appeng.api.stacks.AEKey;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.MEStorage;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -14,36 +22,24 @@ import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEFluidList;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEFluidSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.IConfigurableSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.IConfigurableSlotList;
-
 import com.lowdragmc.lowdraglib.gui.widget.LabelWidget;
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
-
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-
-import appeng.api.config.Actionable;
-import appeng.api.networking.IGrid;
-import appeng.api.networking.IManagedGridNode;
-import appeng.api.networking.security.IActionSource;
-import appeng.api.stacks.AEFluidKey;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
-import appeng.api.storage.MEStorage;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import org.jetbrains.annotations.Nullable;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilter;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator;
 import rain.gtetcore.gtet.integration.ae2.IMEStockingHost;
 
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Comparator;
 import java.util.PriorityQueue;
-
-import javax.annotation.ParametersAreNonnullByDefault;
 
 /**
  * 「ME 二合一库存输入总成」：**一个方块**同时挂 {@code IMPORT_ITEMS} 与 {@code IMPORT_FLUIDS}，
@@ -106,7 +102,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
  * {@link IMEStockingPart}。要分两侧就得自己写一块面板（本轮不做，故不假装支持）。</li>
  * <li>物品侧那块标签面板复用父类挂上的那份（标题是共用的「标签过滤」、没标侧别），
  * 流体侧这块的标题带「流体侧」字样 —— 见 {@link #LANG_TITLE_FLUIDS} 与
- * {@link #SideConfigurator}。刻意**不**重写 {@code attachConfigurators} 的全套
+ * {@link SideConfigurator}。刻意**不**重写 {@code attachConfigurators} 的全套
  * （那样会把 GTM 的电路槽 / 去重开关 / 库存保底面板的挂载逻辑复制一遍，GTM 一改就漂）。</li>
  * </ul>
  *

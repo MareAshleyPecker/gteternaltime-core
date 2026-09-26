@@ -2,7 +2,7 @@
 > [← 返回目录](<../GTM开发教程(编写中).md>) ｜ [下一节：06 游戏内怎么用 →](06-游戏内怎么用.md)
 
 前四个案例讲的是**设计与原理**，这一节是**抄写清单**：每条都写成「要做什么 → 调什么 → 参数给什么 → ⚠️ 坑」。
-括号里的 `文件:行号` 都是核对过的位置（GTM 在 `D:\java\GregTech-Modern-7.5.3-1.20.1`，其余是本仓库源码），
+括号里的 `文件:行号` 都是核对过的位置（GTM 按 GregTech-Modern 7.5.3，其余是本仓库源码），
 升级版本时按行号对一遍就知道有没有漂。
 
 > 原理只在这里**引用**，不重写：四条状态机与配方生命周期见案例一，模块化三条路线见案例二，
@@ -97,7 +97,7 @@ fun registerMachines(event: GTCEuAPI.RegisterEvent<*, *>) {
 ⚠️ **`FactoryBlockPattern.start(definition, ...)` 是 GTO 分叉特有的重载，GTM 7.5.3 上没有**：
 GTM 只有 `start()`（`:110`）与 `start(charDir, stringDir, aisleDir)`（`:114`）；
 `start(MultiblockMachineDefinition)` 与 `start(definition, charDir, stringDir, aisleDir)` 在 GTO 分叉的
-`FactoryBlockPattern.java:101` / `:110` 里（`D:\java\GregTech-Modern-gto`）。
+`FactoryBlockPattern.java:101` / `:110` 里（GTO 分叉的 GTM）。
 从 GTO / GTOCore 抄图案代码（`GTOCore` 里 `FactoryBlockPattern.start(definition)` 有上百处）时，
 把这两个重载换成 GTM 的 `start()`，`definition` 那个参数在 GTM 版本里用不上。
 

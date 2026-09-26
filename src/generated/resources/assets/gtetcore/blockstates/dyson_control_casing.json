@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/dyson_control_casing"
+    }
+  }
+}

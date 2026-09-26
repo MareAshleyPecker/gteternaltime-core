@@ -22,10 +22,6 @@ import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController
  * 这是 GTCEu 提供的**正规扩展点**（`WorkableMultiblockMachine#createRecipeLogic(Object...)`
  * 本来就是 `protected` 可重写的工厂方法），所以本功能不需要任何 mixin。
  *
- * ## 思路来源
- * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）`com.gtolib.api.machine.feature.multiblock.ICrossRecipeMachine` ——借「一个标记接口把控制器标记成多线程机器、并从它身上取线程能力」的形状（`ICrossRecipeMachine#getThread()` / `createRecipeLogic(Object...)` 的签名形状一致）。⚠️ 它只是**形状**来源：该接口在 `libs/gtolib-1.0.jar` 里所有方法体都是 `native`（真正实现被抽到 `native0/native/` 那堆 `.bin` 的加密库里），一行实现都看不到。
- * - 【自研】`threadHatch` 的默认实现（扫 `getParts()`、装机多个时取线程数最大的那个）+ `threadCount` 退化策略（没装仓 → 1，即退化成原版单配方机器）—— 现扫而不是「结构成型时缓存唯一实例」：部件的装卸就发生在结构成型/失效那一刻，现扫永远是最新状态，也不会在拆结构时留下悬空引用；多个仓取最大而不是叠加，避免「装两个仓就能无限开线程」这种结构漏洞。
- *
  * @author rain fox
  */
 interface IThreadedRecipeMachine : IMultiController {

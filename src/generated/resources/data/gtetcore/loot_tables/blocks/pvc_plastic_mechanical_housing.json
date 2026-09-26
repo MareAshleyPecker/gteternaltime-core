@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "gtetcore:pvc_plastic_mechanical_housing"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "gtetcore:blocks/pvc_plastic_mechanical_housing"
+}

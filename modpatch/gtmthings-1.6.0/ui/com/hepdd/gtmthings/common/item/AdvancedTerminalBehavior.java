@@ -61,7 +61,7 @@ import static com.hepdd.gtmthings.api.pattern.AdvancedBlockPattern.getAdvancedBl
  * GTMThings 高级终端。
  *
  * <p>
- * 界面部分（{@link #createWidget}）改成模仿 GTOCore「高级终端设置」的样式：
+ * 界面部分（{@link #createWidget}）重画成「左侧设置面板 + 右侧两块分级方块列表」：
  * 标题 + 右上角 X；左侧一列「标签在左、控件在右」的设置行（文本输入 / [◀] 值 [▶] 步进器 / ✓ 复选框）；
  * 右侧上下两块可滚动的分级方块列表：上为「一组一行：方块 + [▶]」，下为「一档一行：方块 + ✓」。
  *
@@ -86,7 +86,7 @@ import static com.hepdd.gtmthings.api.pattern.AdvancedBlockPattern.getAdvancedBl
  */
 public class AdvancedTerminalBehavior implements IItemUIFactory {
 
-    // ==================== GTO 样式界面布局 ====================
+    // ==================== 界面布局 ====================
     // 窗口 372x274：左侧 160 宽的设置面板（8 行设置，行距 26、第 2 行之后多留一行空档），
     // 右侧上下两块 198 宽的竖向列表（每块**可见 7 行**，更多的行靠滚动条）。
     // ⚠️ 尺寸 / 坐标一改，modpatch/gtmthings-1.6.0/NOTES.md 的 §2 §3 两张坐标表也要跟着改。

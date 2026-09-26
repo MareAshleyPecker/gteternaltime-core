@@ -2,6 +2,7 @@ package rain.gtetcore.gtet.util
 
 import com.lowdragmc.lowdraglib.gui.texture.ResourceTexture
 import net.minecraft.resources.ResourceLocation
+import rain.gtetcore.gtet.util.GtocoreAssets.gtocoreTexture
 
 /**
  * 取用随本 mod 的 jar 一起分发的 GTOCore 贴图副本（`src/main/resources/assets/gtocore/textures/`）。
@@ -28,9 +29,7 @@ object GtocoreAssets {
      */
     @JvmStatic
     fun gtocoreTexture(path: String): ResourceLocation {
-        var normalized = path.trim().replace('\\', '/').removePrefix("/")
-        normalized = normalized.removePrefix("textures/").removeSuffix(".png")
-        return ResourceLocation.fromNamespaceAndPath(NAMESPACE, "textures/$normalized.png")
+        return ResourceLocation.tryBuild("gtocore", path)!!
     }
 
     /**

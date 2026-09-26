@@ -45,7 +45,12 @@ object GTETClientCommands {
                     Component.literal("Copied to clipboard: ")
                         .append(Component.literal(output).withStyle {
                             it.withClickEvent(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, output))
-                                .withHoverEvent(HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Click to fill chat")))
+                                .withHoverEvent(
+                                    HoverEvent(
+                                        HoverEvent.Action.SHOW_TEXT,
+                                        Component.literal("Click to fill chat")
+                                    )
+                                )
                         })
                 )
                 1

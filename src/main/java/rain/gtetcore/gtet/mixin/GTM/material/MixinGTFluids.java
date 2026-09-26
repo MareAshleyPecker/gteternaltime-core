@@ -1,12 +1,10 @@
-package rain.gtetcore.gtet.mixin.GTM;
+package rain.gtetcore.gtet.mixin.GTM.material;
 
 import com.gregtechceu.gtceu.common.data.GTFluids;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 import rain.gtetcore.gtet.api.registrate.OnlyETreg;
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs;
 

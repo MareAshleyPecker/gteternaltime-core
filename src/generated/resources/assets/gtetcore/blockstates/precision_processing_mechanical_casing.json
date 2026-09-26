@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/precision_processing_mechanical_casing"
+    }
+  }
+}

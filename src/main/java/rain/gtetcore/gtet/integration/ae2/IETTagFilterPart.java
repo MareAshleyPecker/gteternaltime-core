@@ -1,9 +1,8 @@
 package rain.gtetcore.gtet.integration.ae2;
 
-import net.minecraft.nbt.CompoundTag;
-
 import appeng.api.stacks.AEKey;
 import appeng.api.stacks.GenericStack;
+import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;

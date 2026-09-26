@@ -6,6 +6,11 @@ import com.gregtechceu.gtceu.api.data.tag.TagPrefix
 import net.minecraft.tags.TagKey
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleTiers.item
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleTiers.prefix
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleTiers.tag
+import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleTiers.tierOf
+import java.util.function.Supplier
 
 /**
  * 「模块物品 → 等级」规则表：三种登记方式 + 一个统一查询。
@@ -19,13 +24,22 @@ import net.minecraft.world.item.ItemStack
  * 查询顺序固定为 **物品 → tagprefix → 标签**（精确度从高到低），命中即返回；全不命中返回 `0`。
  * `0` 在 [ETModularMachine] 里就地表示「没有模块 / 模块不合法」（`checkPattern()` 要求等级 `> 0`）。
  *
+ * ⚠️ 登记动作是在**机器注册期**执行的（机器类的 `companion object init` 会被编进该类的 `<clinit>`，
+ * 而机器注册时就访问了那个类），那时 GT 的物品**还没进注册表**（GTM `CommonProxy.init()` 里
+ * `GTMachines.init()` 在 `GTItems.init()` 之前），所以 ① 登记的是 [Supplier] 而不是 `Item`：
+ * 真正取物品推迟到 [tierOf] 查询时（机器运行时）。
+ *
+ * ② ③ 可以直接登记，无需推迟：`GTMaterials.*` 的字段在 `initMaterials()` 里就赋好值了，
+ * 早于 `GTMachines.init()`；`CustomTags.*` 只是 `TagKey` 常量（`TagUtil.createModItemTag` 只拼
+ * `ResourceLocation`，不读注册表内容）。
+ *
  * ⚠️ 本表是**全局单例**，所有模块化多方块共用同一张表。两台机器需要互相冲突的规则时不要往同一张表里塞，
  * 覆写 [ETModularMachine.tierOfModule] 自己算即可。
  *
  * 用法（在机器类的 `companion object` 里登记一次，登记动作是幂等的）：
  * ```kotlin
  * ETModuleTiers
- *     .item(1, someModuleItem)                            // ① 具体物品
+ *     .item(1, Supplier { someModuleItem.asItem() })      // ① 具体物品（Supplier 是必须的，见上）
  *     .prefix(2, TagPrefix.ingot, GTMaterials.Titanium)   // ② 材料 + 形态
  *     .tag(3, someItemTag)                                // ③ 标签
  * ```
@@ -34,8 +48,8 @@ import net.minecraft.world.item.ItemStack
  */
 object ETModuleTiers {
 
-    /** ① 精确物品 → 等级。 */
-    private val byItem: MutableMap<Item, Int> = HashMap()
+    /** ① 精确物品 → 等级。存 [Supplier]：登记时读不到注册表，见类注释。 */
+    private val byItem: MutableList<Pair<Supplier<out Item>, Int>> = ArrayList()
 
     /** ② 形态 → （材料 → 等级）。拆两层是为了查询只做两次哈希。 */
     private val byPrefix: MutableMap<TagPrefix, MutableMap<Material, Int>> = HashMap()
@@ -43,10 +57,10 @@ object ETModuleTiers {
     /** ③ 标签 → 等级。用 LinkedHashMap 让遍历顺序 = 登记顺序，命中结果可预期。 */
     private val byTag: MutableMap<TagKey<Item>, Int> = LinkedHashMap()
 
-    /** 登记「这些物品 = 第 [tier] 级」。 */
-    fun item(tier: Int, vararg items: Item): ETModuleTiers {
+    /** 登记「这些物品 = 第 [tier] 级」。参数是 [Supplier]，取物品推迟到查询时（见类注释）。 */
+    fun item(tier: Int, vararg items: Supplier<out Item>): ETModuleTiers {
         requireTier(tier)
-        for (i in items) byItem[i] = tier
+        for (i in items) byItem += i to tier
         return this
     }
 
@@ -70,7 +84,7 @@ object ETModuleTiers {
         if (stack.isEmpty) return 0
 
         // ① 物品：最精确，先查
-        byItem[stack.item]?.let { return it }
+        tierOfItem(stack)?.let { return it }
 
         // ② tagprefix：反查「形态 + 材料」
         tierOfPrefix(stack)?.let { return it }
@@ -82,6 +96,19 @@ object ETModuleTiers {
             if (stack.`is`(tag)) return tier
         }
         return 0
+    }
+
+    /**
+     * ① 的反查。
+     *
+     * ⚠️ `supplier.get()` 才是真正读物品注册表的地方：登记期（机器注册）不能读，查询期（机器运行时）才能读。
+     * 规则通常只有几条，按登记顺序线性比一遍最省事。
+     */
+    private fun tierOfItem(stack: ItemStack): Int? {
+        for ((supplier, tier) in byItem) {
+            if (supplier.get() === stack.item) return tier
+        }
+        return null
     }
 
     /**
@@ -100,7 +127,7 @@ object ETModuleTiers {
         val entry = ChemicalHelper.getMaterialEntry(stack.item)
         // ⚠️ 必须先判 isEmpty()：NULL_ENTRY 的形态是 NULL_PREFIX、材料是 GTMaterials.NULL，
         //    不判就会拿「空形态」去查表 —— 语义上是错的（虽然通常查不到）。
-        if (entry.isEmpty()) return null
+        if (entry.isEmpty) return null
         return byPrefix[entry.tagPrefix()]?.get(entry.material())
     }
 

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "gtetcore:fermi_energy_gap_transition_glass"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "gtetcore:blocks/fermi_energy_gap_transition_glass"
+}

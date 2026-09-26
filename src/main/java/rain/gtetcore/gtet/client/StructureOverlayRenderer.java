@@ -3,7 +3,6 @@ package rain.gtetcore.gtet.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.logging.LogUtils;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -13,18 +12,15 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-
 import org.slf4j.Logger;
-
-import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior;
 import rain.gtetcore.gtet.common.item.tool.StructureWriteBehavior;
+import rain.gtetcore.gtet.config.GTETConfig;
 
 /**
  * 客户端渲染器：手持结构工具时绘制选区半透明立方体，

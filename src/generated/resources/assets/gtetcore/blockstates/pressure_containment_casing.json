@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/pressure_containment_casing"
+    }
+  }
+}

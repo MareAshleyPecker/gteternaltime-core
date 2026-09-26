@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/space_station_control_casing"
+    }
+  }
+}

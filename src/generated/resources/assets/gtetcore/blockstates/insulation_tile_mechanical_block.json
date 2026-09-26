@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/insulation_tile_mechanical_block"
+    }
+  }
+}

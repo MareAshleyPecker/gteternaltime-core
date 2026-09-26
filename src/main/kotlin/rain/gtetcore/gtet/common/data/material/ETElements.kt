@@ -1,6 +1,7 @@
 package rain.gtetcore.gtet.common.data.material
 
 import com.gregtechceu.gtceu.api.data.chemical.Element
+import rain.gtetcore.gtet.common.data.material.ETElements.MaterialNAME
 
 
 /**
@@ -11,6 +12,8 @@ import com.gregtechceu.gtceu.api.data.chemical.Element
  */
 object ETElements {
     fun init() {}
-    val MaterialNAME = Element(1, 1, -1,
-        null, "name", "NAME", false)
+    val MaterialNAME = Element(
+        1, 1, -1,
+        null, "name", "NAME", false
+    )
 }

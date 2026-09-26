@@ -1,10 +1,6 @@
 package rain.gtetcore.gtet.integration.ae2;
 
-import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability;
-import com.gregtechceu.gtceu.api.capability.recipe.IFilteredHandler;
-import com.gregtechceu.gtceu.api.capability.recipe.IO;
-import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability;
-import com.gregtechceu.gtceu.api.capability.recipe.RecipeCapability;
+import com.gregtechceu.gtceu.api.capability.recipe.*;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.api.machine.trait.IRecipeHandlerTrait;
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableRecipeHandlerTrait;
@@ -13,23 +9,18 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeHandlerList;
 import com.gregtechceu.gtceu.api.recipe.GTRecipe;
 import com.gregtechceu.gtceu.api.recipe.ingredient.FluidIngredient;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEPatternBufferPartMachine.InternalSlot;
-
 import com.lowdragmc.lowdraglib.syncdata.ISubscription;
-
+import lombok.Getter;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-
 import net.minecraftforge.fluids.FluidStack;
-
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferPartMachine;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferPartMachine;
 
 /**
  * 「ME 样板总成镜像」的配方处理代理表：**每个样板槽一份 {@link RecipeHandlerList}**，
@@ -209,7 +200,7 @@ public final class ETProxySlotRecipeHandler {
 
         /**
          * 摘掉本层回调。
-         *
+         * <p>
          * ⚠️ 只在「链顶仍是自己」时还原：同一个总成上可以挂多个镜像，它们会在**同一批槽**上层层套娃，
          * 若某个先解绑就无条件还原，会把后来者的那一层一起抹掉（它就不再收到内容变化通知，
          * 多方块可能要等到别的触发点才重新判定配方）。不是链顶就留着不管 —— 本层转到空槽后

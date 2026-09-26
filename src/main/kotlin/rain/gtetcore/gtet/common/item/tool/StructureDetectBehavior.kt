@@ -14,6 +14,8 @@ import net.minecraft.world.InteractionResult
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.context.UseOnContext
 import net.minecraftforge.registries.ForgeRegistries
+import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior.NO_TIME
+import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior.TIME_KEY
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /**
@@ -50,9 +52,11 @@ object StructureDetectBehavior : IInteractionItem {
         // 只读：渲染端每帧都会调这里，不能用 getOrCreate* 去写物品 NBT
         val tag = stack.getTagElement(KEY) ?: return null
         if (!tag.contains("pos", Tag.TAG_LIST.toInt())) return null
-        return tag.getList("pos", Tag.TAG_COMPOUND.toInt()).map { (it as CompoundTag).let { compoundTag ->
-            BlockPos(compoundTag.getInt("x"), compoundTag.getInt("y"), compoundTag.getInt("z"))
-        } }.toTypedArray()
+        return tag.getList("pos", Tag.TAG_COMPOUND.toInt()).map {
+            (it as CompoundTag).let { compoundTag ->
+                BlockPos(compoundTag.getInt("x"), compoundTag.getInt("y"), compoundTag.getInt("z"))
+            }
+        }.toTypedArray()
     }
 
     /**

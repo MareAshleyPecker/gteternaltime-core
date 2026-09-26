@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "gtetcore:block/spacecraft_thermal_shielding_casing"
+    }
+  }
+}

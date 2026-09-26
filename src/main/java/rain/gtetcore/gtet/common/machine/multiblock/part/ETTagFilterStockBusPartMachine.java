@@ -1,5 +1,10 @@
 package rain.gtetcore.gtet.common.machine.multiblock.part;
 
+import appeng.api.config.Actionable;
+import appeng.api.stacks.AEItemKey;
+import appeng.api.stacks.AEKey;
+import appeng.api.stacks.GenericStack;
+import appeng.api.storage.MEStorage;
 import com.gregtechceu.gtceu.api.gui.fancy.ConfiguratorPanel;
 import com.gregtechceu.gtceu.api.machine.IMachineBlockEntity;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
@@ -10,31 +15,22 @@ import com.gregtechceu.gtceu.integration.ae2.machine.MEStockingBusPartMachine;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemList;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAEItemSlot;
 import com.gregtechceu.gtceu.integration.ae2.slot.ExportOnlyAESlot;
-
 import com.lowdragmc.lowdraglib.gui.widget.Widget;
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup;
 import com.lowdragmc.lowdraglib.syncdata.annotation.DescSynced;
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted;
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder;
-
 import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
-
-import appeng.api.config.Actionable;
-import appeng.api.stacks.AEItemKey;
-import appeng.api.stacks.AEKey;
-import appeng.api.stacks.GenericStack;
-import appeng.api.storage.MEStorage;
 import org.jetbrains.annotations.Nullable;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilter;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator;
 import rain.gtetcore.gtet.integration.ae2.IMEStockingHost;
 
-import java.util.List;
-
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.List;
 
 /**
  * 「ME 标签库存输入总线」：GTM 的 {@code me_stocking_input_bus}（ME 库存输入总线）+ 两条 GTET 自己的策略。

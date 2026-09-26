@@ -1,19 +1,13 @@
-@file:Suppress("UNCHECKED_CAST", "DEPRECATION","unused")
+@file:Suppress("UNCHECKED_CAST", "DEPRECATION", "unused")
 
 package rain.gtetcore.gtet.common.data.material
 
 import com.gregtechceu.gtceu.api.data.chemical.material.Material
-import com.gregtechceu.gtceu.common.data.GTItems
-import com.gregtechceu.gtceu.common.data.GTMaterials
 import com.gregtechceu.gtceu.common.data.materials.ElementMaterials
-import rain.gtetcore.gtet.common.data.ETMaterial.MaterialNAME
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.common.data.ETMaterial
-import rain.gtetcore.gtet.common.data.ETMaterial.*
+import rain.gtetcore.gtet.common.data.ETMaterial.MaterialNAME
 import rain.gtetcore.gtet.init.CommonProxy
-import rain.gtetcore.gtet.util.RegistriesUtil.getItem
 import rain.gtetcore.gtet.util.lang.cn
-import java.awt.geom.QuadCurve2D
 
 /**
  * 所有标志位均定义在 [com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags] 中，可通过 `MaterialFlags.FLAG_NAME` 调用。
