@@ -17,7 +17,7 @@ ___
    - 还没想好，目前还在打地基 / Still brainstorming, currently laying the groundwork
 
 
-目前缺画方块材质的...
+目前缺画方块材质缺写代码（用ai也可以）的...
 ---
 
 ## 文档 / Documentation
