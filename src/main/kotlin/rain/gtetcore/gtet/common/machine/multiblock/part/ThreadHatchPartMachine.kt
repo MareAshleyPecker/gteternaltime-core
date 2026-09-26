@@ -14,6 +14,7 @@ import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.Mth
 import rain.gtetcore.gtet.api.capability.IThreadHatch
+import rain.gtetcore.gtet.common.machine.multiblock.part.ThreadHatchPartMachine.Companion.MIN_THREAD
 
 /**
  * 「线程仓」多方块部件。
@@ -41,10 +42,10 @@ import rain.gtetcore.gtet.api.capability.IThreadHatch
  * （否则扣掉的料会凭空消失），只是「不再为多出来的槽位开新线程」，见 `ThreadedRecipeLogic#ensureSlots`。
  * 存档读回来时再由 [loadCustomPersistedData] 夹一次，越界值不会漏进线程逻辑。
  *
- * ## 思路来源
- * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）`com.gtolib.api.machine.impl.part.ThreadPartMachine` / `AmountConfigurationPartMachine` —— 借「分级部件 + 一个 `min`/`max`/`current` 三元配置 + `createUIWidget()` 里放数值输入 + `canShared() = false`」这个形状（这两个类只能用 `javap` 看到字段与签名：`protected final long min`、`private final long max`、`protected long current`、`native createUIWidget()`、`native canShared()` —— 方法体在加密 native 里，一行都拿不到）；GTET 侧把它改成 `IntInput` 版本，并把「当前值 / 上限」拆成两个语义（GTO 只有一个 `getCurrentThread()`）。
- * - 【自研】「下调线程数不砍已开线程」的取舍 —— 并行仓改并行数只是改个数字，没有「已经吃掉的料」这回事；线程仓一旦开线程就已经扣过料，砍线程等于吞材料，所以这里只封住「新线程」而放已开线程跑完。
- * - 【自研】`currentThread` 与 `maxThreads` 分开存 —— 上限是构造时注入的固定值（不可改），当前值才是 `@Persisted` 的那一份；这样「玩家把 256 线程的仓调到 3」之后存档重载仍然记得，而不会被上限覆盖回去。上限独立成字段还让 [loadCustomPersistedData] 有依据给读回来的越界值兜底。
+ * ## 两个字段为什么要分开
+ * 上限 [maxThreads] 是构造时注入的固定值（不可改），当前值 [currentThread] 才是 `@Persisted` 的那一份；
+ * 这样「玩家把 256 线程的仓调到 3」之后存档重载仍然记得，而不会被上限覆盖回去。
+ * 上限独立成字段还让 [loadCustomPersistedData] 有依据给读回来的越界值兜底。
  *
  * @param holder  方块实体持有者
  * @param tier    电压等级（决定外壳贴图，见 `ETThreadHatches` 的变体表）

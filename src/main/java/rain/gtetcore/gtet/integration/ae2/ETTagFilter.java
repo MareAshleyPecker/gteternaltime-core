@@ -1,15 +1,13 @@
 package rain.gtetcore.gtet.integration.ae2;
 
-import com.gregtechceu.gtceu.utils.TagExprFilter;
-import com.gregtechceu.gtceu.utils.TagExprFilter.TagExprParser.MatchExpr;
-
-import net.minecraft.tags.TagKey;
-
 import appeng.api.stacks.AEFluidKey;
 import appeng.api.stacks.AEItemKey;
 import appeng.api.stacks.AEKey;
+import com.gregtechceu.gtceu.utils.TagExprFilter;
+import com.gregtechceu.gtceu.utils.TagExprFilter.TagExprParser.MatchExpr;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
+import net.minecraft.tags.TagKey;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -48,12 +46,9 @@ import java.util.stream.Stream;
  * 另外按 {@link AEKey} 缓存判定结果（标签集合要从 ItemStack / FluidStack 现取，取一次就够）。
  * 缓存上限见 {@link #CACHE_LIMIT}，超出直接整体清空（AE2 的 key 总量是有限的，正常玩不会触顶）。
  *
- * <h2>思路来源</h2>
- * 【借鉴形状】GTOCore（LGPL-3.0）{@code com.gtocore.common.machine.multiblock.part.ae.ITagFilterPartMachine}
- * 与 {@code METagFilterStockBusPartMachine} —— 借「白名单 / 黑名单两个字符串 + 一份可缓存的判定器 +
- * 面板上两个输入框配两个幻影槽」这个形状。⚠️ GTOCore 的判定器是 ExtendedAE 的
- * {@code TagPriorityList}（GTO 走自己的 GTM 分叉），GTET 这边不能直接用，改为自己基于 GTM 的
- * {@link TagExprFilter} 实现；判定语义（含「两侧都空 = 不过滤」）也是 GTET 自己定的，见上文。
+ * <h2>为什么不用 ExtendedAE 的判定器</h2>
+ * ExtendedAE 的 {@code TagPriorityList} 只在 GTO 自己的 GTM 分叉下可用，本工程直接用不了，
+ * 所以判定器基于 GTM 的 {@link TagExprFilter} 实现，判定语义（含「两侧都空 = 不过滤」）也由本类定义。
  *
  * @author rain fox
  */

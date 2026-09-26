@@ -20,7 +20,10 @@ import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine
-import rain.gtetcore.gtet.config.GTETConfig.SendThreadDiagnosticlog
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeLogic.Companion.DIAG_INTERVAL
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeLogic.Companion.SEARCH_INTERVAL
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeLogic.Companion.isSameRecipe
+import rain.gtetcore.gtet.config.GTETConfig.SendThreadDiagnosticLog
 
 /**
  * 「多线程配方逻辑内核」。
@@ -176,10 +179,8 @@ import rain.gtetcore.gtet.config.GTETConfig.SendThreadDiagnosticlog
  * 整机口径由本类的 [runningTotalRuns]（= Σ 各线程 `getTotalRuns()`）给出，
  * 显示在机器 UI 与 GTET 自己的 Jade provider 里。
  *
- * ## 思路来源
- * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）的线程记录结构 `ICrossRecipeMachine$Thread { progress, recipe, duration, use }` 与 `ICrossRecipeMachine$Logic`（`updateTickSubscription` / `findAndHandleRecipe` / `serverTick` / `onRecipeFinish` / `saveCustomPersistedData` / `loadCustomPersistedData` 一整套 `native` 覆盖）—— 借的只是「每条线程一条记录（配方 + 进度 + 时长）」和「线程逻辑要自己接管 tick / 存档」这两个形状。
- *   ⚠️ **必须注明**：GTO 的**调度与记账算法一行都拿不到** —— `libs/gtolib-1.0.jar` 里 `ICrossRecipeMachine`、`ICrossRecipeMachine$Thread`、`ICrossRecipeMachine$Logic`、`ThreadPartMachine` 的方法体全是 `native`（`javap` 只能看到签名，实现被抽到 `native0/native/` 那堆 `.bin` 的加密库里）。所以**线程表调度、动态开线程策略、每线程独立 IO 记账、线程数上限来源，全部是 GTET 自研**（见下面的【自研】条）。
- * - 【自研】线程表（`data class ThreadRec` 槽位数组）+ 「先给不同配方、再把剩余空闲线程发给**同一种**配方」的两轮调度（[tryStartThreads]）+ 「一组一预算、再均分」的防超发记账（[planThreadParallel] / [committedUnits]：用 `ParallelLogic#getParallelAmount` 的聚合上限调用一次性判定「输入 / tick 输入 / 输出」三头，再减掉本组已提交的份额，然后按本组还能开的线程数均分）+ 轮转式公平分配 + 同配方判等（按 `GTRecipe#id`，`id == null` 时退化成引用相等 —— 现成的 `GTRecipe#equals` 只比 id 且对 null id 会 NPE）+ 「线程数上限由线程仓 tier 决定」+ 「玩家下调线程数不砍已开线程」+ 「每线程独立 `chanceCaches`」+ 「基类单进度镜像」+ 存档恢复策略：这些在 GTOCore 里都没有可抄的实现（GTO 那半边在 native 里，且是 `ICrossRecipeMachine` 专属的私有调度 —— 它只有「同一种配方占一条线程」的 `duplicateCheck` 语义，没有「同配方多线程」这回事）。
+ * ⚠️ GTO 那套线程调度与记账的实现全在加密 native 里（`libs/gtolib-1.0.jar` 的 `native0/native/`），
+ * `javap` 只能看到签名，可读的只有线程记录那几个字段；本内核的调度与记账算法没有可参照的实现。
  *
  * @param machine 持有本逻辑的机器（应当实现 [IThreadedRecipeMachine]；否则线程数上限退化为 1）
  *
@@ -284,7 +285,7 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
      * 【临时诊断】线程数变化时往日志里打一行整机快照。
      *
      * 为什么要有它：线程表不进同步字段，光靠「机器在跑」看不出**开了几条**线程。
-     * `logs/latest.log` 里搜 `[GTET][线程诊断]` 就能拿到「在用 N/上限 M + 样本配方 id 与进度 + 合计运行次数」，
+     * `logs/latest.log` 里搜 `[GTET](线程诊断)` 就能拿到「在用 N/上限 M + 样本配方 id 与进度 + 合计运行次数」，
      * 这是「线程到底有没有真的开」最直接的证据。
      *
      * 节流：[DIAG_INTERVAL] tick 之内最多一行，且只在「在用线程数」变化时打，
@@ -310,15 +311,15 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
             .joinToString(", ") { (slot, rec) ->
                 "#$slot ${rec.recipe.id ?: "?"} ×${rec.recipe.parallels} ${rec.percent}%"
             }
-        if (SendThreadDiagnosticlog()) {
-                Gtetcore.LOGGER.info(
-                    "[GTET][线程诊断] 在跑线程 {}/{}；同时处理次数合计 {}；样本：[{}]",
-                    running,
-                    threadLimit,
-                    runningTotalRuns,
-                    sample
-                )
-            }
+        if (SendThreadDiagnosticLog()) {
+            Gtetcore.LOGGER.info(
+                "[GTET][线程诊断] 在跑线程 {}/{}；同时处理次数合计 {}；样本：[{}]",
+                running,
+                threadLimit,
+                runningTotalRuns,
+                sample
+            )
+        }
     }
 
     // ────────────────────────────────────────────────
@@ -571,7 +572,7 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
         warnedAlreadyParallel = true
         Gtetcore.LOGGER.warn(
             "[GTET] 线程仓：配方 {} 在机器配方修改器里已经吃过并行（parallels={}），" +
-                "线程逻辑不再叠加。请把该多方块的 recipeModifier 换成不含并行的版本。",
+                    "线程逻辑不再叠加。请把该多方块的 recipeModifier 换成不含并行的版本。",
             recipe.id,
             recipe.parallels
         )
@@ -858,7 +859,7 @@ class ThreadedRecipeLogic(machine: IRecipeLogicMachine) : RecipeLogic(machine) {
         var slot = 0
         for ((id, savedProgress) in pending) {
             if (slot >= limit) break
-            val origin = getRecipeManager().byKey(id).orElse(null) as? GTRecipe ?: continue
+            val origin = recipeManager.byKey(id).orElse(null) as? GTRecipe ?: continue
             val fanOut = countRunningSameRecipe(origin) > 0
             val threaded = buildThreadRecipe(origin, fanOut, limit) ?: continue
             threads[slot] = ThreadRec(threaded, savedProgress.coerceIn(0, threaded.duration), threaded.duration)

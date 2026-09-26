@@ -1,6 +1,7 @@
 package rain.gtetcore.gtet.common.machine.overclock
 
 import com.gregtechceu.gtceu.api.recipe.OverclockingLogic
+import rain.gtetcore.gtet.common.machine.overclock.OverclockingLogics.create
 import kotlin.math.pow
 
 /**
@@ -28,9 +29,6 @@ import kotlin.math.pow
  * 返回 `OCResult(eutMultiplier, durationMultiplier, ocLevel, 1)`：
  * 前两个是「已经生效的倍数」，第三个是实际消耗掉的超频级数（写进 `recipe.ocLevel`），
  * 第四个 parallels 恒为 1 —— 超频仓只改速度，不碰并行（并行仍然交给并行仓 / `PARALLEL_HATCH`）。
- *
- * ## 思路来源
- * - 【自研】每级 `duration ÷S`、`EUt ×(E×S)` 的倍率公式与 `S` / `E` 两个参数化旋钮 —— GTM 只有写死的 ÷2 / ÷4 与 ×4 这两档，没有「速度倍率 × 能效系数」这种可配置组合；`OCResult(..., parallels = 1)` 取 1 也是本算法的决定（超频仓只改速度，不碰并行）。
  *
  * @author rain fox
  */

@@ -2,12 +2,10 @@ package rain.gtetcore.gtet.mixin.GTM.Jade;
 
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity;
 import com.gregtechceu.gtceu.integration.jade.provider.ParallelProvider;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 import rain.gtetcore.gtet.api.capability.IThreadedRecipeMachine;
 import snownee.jade.api.BlockAccessor;
 import snownee.jade.api.ITooltip;
@@ -62,9 +60,8 @@ import snownee.jade.api.config.IPluginConfig;
  * {@code appendServerData(CompoundTag, BlockAccessor)}，写全描述符可以避免将来 GTM 加重载时选错。
  * {@code remap = false} 是因为 GTM / Jade 都是 mod（方法名不混淆），按运行时原名匹配。
  *
- * <p>## 思路来源
- * - 【自研】取消条件（按 {@code IThreadedRecipeMachine} 限定范围）与「只取消倍率行、保留我们自己的线程行」
- *   这个取舍 —— GTM 侧没有任何针对单个 provider 的过滤扩展点，只能靠 mixin。
+ * <p>⚠️ GTM 没有「过滤单个 provider」的扩展点，取消只能靠 mixin 注入。
+ * 取消范围按 {@code IThreadedRecipeMachine} 限定：只取消倍率行，保留我们自己的线程行。
  *
  * @author rain fox
  */

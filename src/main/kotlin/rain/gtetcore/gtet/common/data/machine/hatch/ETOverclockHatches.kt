@@ -6,81 +6,14 @@ import com.gregtechceu.gtceu.api.machine.MachineDefinition
 import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
-import com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTieredHullMachineModel
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.api.capability.ETPartAbility
+import rain.gtetcore.gtet.common.data.machine.hatch.ETOverclockHatches.VARIANTS
 import rain.gtetcore.gtet.common.machine.multiblock.part.OverclockHatchPartMachine
 import rain.gtetcore.gtet.util.lang.LangUtil
 import kotlin.math.floor
-
-/**
- * 「超频仓」变体定义。
- *
- * 一个变体 = 一个方块。所有数值都只在这一张表里出现，加档只需要往下加一行。
- *
- * @param id           注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`）
- * @param speed        速度倍率 S：每消耗 1 级超频，配方耗时 ÷S
- * @param energyFactor 能效系数 E：每消耗 1 级超频，EUt × `E × S`
- * @param tier         默认（也是唯一）电压等级，决定外壳贴图与配方等级上限
- * @param tooltip      可选说明行（中英成对）；`null` = 这一档不加说明行（默认，也是绝大多数档位的状态）
- *
- * @author rain fox
- */
-data class OverclockHatchVariant(
-    val id: String,
-    val speed: Int,
-    val energyFactor: Double,
-    val tier: Int,
-    val tooltip: HatchTooltip? = null
-) {
-
-    /** 每级超频实际的 EUt 倍率 = `E × S`。 */
-    val eutPerLevel: Double get() = energyFactor * speed
-}
-
-/**
- * 一条物品提示（tooltip）文案，中英**必须成对**给。
- *
- * 中文写进 `zh_cn`、英文写进 `en_us`，键名由 [ETOverclockHatches.registerOne] 按项目惯例
- * 生成成 `gtetcore.machine.<id>.tooltip.0`（与 `ETTestMultiblocks` / `ETModularTestMachine` 同一套）。
- * 只给一个变体填 [OverclockHatchVariant.tooltip] 就等于「这一档多一行提示」，别的档位不受影响。
- */
-data class HatchTooltip(val cn: String, val en: String)
-
-/**
- * 超频仓正面覆盖层的来源命名空间。
- *
- * ⚠️ 这批贴图是 **GTOCore 的素材**（版权归 GTOCore 作者所有，LGPL-3.0），
- * 随本 mod 一起分发、只引用不修改；来源与授权原文见 `assets/gtocore/LICENSE.txt`。
- */
-private const val GTOCORE_NS = "gtocore"
-
-/** GTOCore 超频仓覆盖层目录前缀：完整路径 = 本前缀 + mk 编号（`..._mk1` … `..._mk7`）。 */
-private const val OVERCLOCK_OVERLAY_ROOT = "block/machines/overclock_hatch/overclock_hatch_mk"
-
-/** GTOCore 的 mk 编号区间：`mk1` ↔ UV，`mk7` ↔ MAX。 */
-private const val OVERCLOCK_MK_MIN = 1
-private const val OVERCLOCK_MK_MAX = 7
-
-/**
- * 变体对应的 GTOCore 覆盖层目录（`createWorkableTieredHullMachineModel` 的 `overlayDir` 参数）。
- *
- * GTOCore 自己的编号规则是 `mk = tier - ZPM`（`mk1` 就是 UV），只覆盖 UV..MAX 七档；
- * 本族多出的 ZPM 档会算成 `mk0`（GTOCore 没有这一级），所以收进 `mk1`——
- * 这样 UV..MAX 这七档与 GTOCore 的对应关系逐档一致，只有 ZPM 与 UV 共用正面贴图
- * （两者的外壳本身还隔着电压等级 `gtceu:block/casings/voltage/<tier>`，不会认错）。
- *
- * GTOCore 这几套目录里**只有 `overlay_front`**，没有 back/top/bottom/side：
- * `WorkableOverlays.get` 对缺失的面直接判空、不写键，所以六个面里只有正面有覆盖层，
- * 与 GTOCore 原版表现一致，不需要硬凑别的面。
- */
-private fun overlayFor(v: OverclockHatchVariant): ResourceLocation =
-    ResourceLocation.fromNamespaceAndPath(
-        GTOCORE_NS,
-        OVERCLOCK_OVERLAY_ROOT + (v.tier - GTValues.ZPM).coerceIn(OVERCLOCK_MK_MIN, OVERCLOCK_MK_MAX)
-    )
 
 /**
  * 「超频仓」注册入口。
@@ -108,6 +41,73 @@ private fun overlayFor(v: OverclockHatchVariant): ResourceLocation =
 object ETOverclockHatches {
 
     /**
+     * 「超频仓」变体定义。
+     *
+     * 一个变体 = 一个方块。所有数值都只在这一张表里出现，加档只需要往下加一行。
+     *
+     * @param id           注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`）
+     * @param speed        速度倍率 S：每消耗 1 级超频，配方耗时 ÷S
+     * @param energyFactor 能效系数 E：每消耗 1 级超频，EUt × `E × S`
+     * @param tier         默认（也是唯一）电压等级，决定外壳贴图与配方等级上限
+     * @param tooltip      可选说明行（中英成对）；`null` = 这一档不加说明行（默认，也是绝大多数档位的状态）
+     *
+     * @author rain fox
+     */
+    data class OverclockHatchVariant(
+        val id: String,
+        val speed: Int,
+        val energyFactor: Double,
+        val tier: Int,
+        val tooltip: HatchTooltip? = null
+    ) {
+
+        /** 每级超频实际的 EUt 倍率 = `E × S`。 */
+        val eutPerLevel: Double get() = energyFactor * speed
+    }
+
+    /**
+     * 一条物品提示（tooltip）文案，中英**必须成对**给。
+     *
+     * 中文写进 `zh_cn`、英文写进 `en_us`，键名由 [ETOverclockHatches.registerOne] 按项目惯例
+     * 生成成 `gtetcore.machine.<id>.tooltip.0`（与 `ETTestMultiblocks` / `ETModularTestMachine` 同一套）。
+     * 只给一个变体填 [OverclockHatchVariant.tooltip] 就等于「这一档多一行提示」，别的档位不受影响。
+     */
+    data class HatchTooltip(val cn: String, val en: String)
+
+    /**
+     * 超频仓正面覆盖层的来源命名空间。
+     *
+     * ⚠️ 这批贴图是 **GTOCore 的素材**（版权归 GTOCore 作者所有，LGPL-3.0），
+     * 随本 mod 一起分发、只引用不修改；来源与授权原文见 `assets/gtocore/LICENSE.txt`。
+     */
+    private const val GTOCORE_NS = "gtocore"
+
+    /** GTOCore 超频仓覆盖层目录前缀：完整路径 = 本前缀 + mk 编号（`..._mk1` … `..._mk7`）。 */
+    private const val OVERCLOCK_OVERLAY_ROOT = "block/machines/overclock_hatch/overclock_hatch_mk"
+
+    /** GTOCore 的 mk 编号区间：`mk1` ↔ UV，`mk7` ↔ MAX。 */
+    private const val OVERCLOCK_MK_MIN = 1
+    private const val OVERCLOCK_MK_MAX = 7
+
+    /**
+     * 变体对应的 GTOCore 覆盖层目录（`createWorkableTieredHullMachineModel` 的 `overlayDir` 参数）。
+     *
+     * GTOCore 自己的编号规则是 `mk = tier - ZPM`（`mk1` 就是 UV），只覆盖 UV..MAX 七档；
+     * 本族多出的 ZPM 档会算成 `mk0`（GTOCore 没有这一级），所以收进 `mk1`——
+     * 这样 UV..MAX 这七档与 GTOCore 的对应关系逐档一致，只有 ZPM 与 UV 共用正面贴图
+     * （两者的外壳本身还隔着电压等级 `gtceu:block/casings/voltage/<tier>`，不会认错）。
+     *
+     * GTOCore 这几套目录里**只有 `overlay_front`**，没有 back/top/bottom/side：
+     * `WorkableOverlays.get` 对缺失的面直接判空、不写键，所以六个面里只有正面有覆盖层，
+     * 与 GTOCore 原版表现一致，不需要硬凑别的面。
+     */
+    private fun overlayFor(v: OverclockHatchVariant): ResourceLocation =
+        ResourceLocation.fromNamespaceAndPath(
+            GTOCORE_NS,
+            OVERCLOCK_OVERLAY_ROOT + (v.tier - GTValues.ZPM).coerceIn(OVERCLOCK_MK_MIN, OVERCLOCK_MK_MAX)
+        )
+
+    /**
      * 全部超频仓变体（4 系列 × 4 档 + 1024× 一档 = 17 档）。
      *
      * 每级超频的收益固定是「耗时 ÷S、EUt ×(E×S)」，所以表中 EUt/级 那一列的来历就是 `E × S`
@@ -118,29 +118,33 @@ object ETOverclockHatches {
      */
     val VARIANTS: List<OverclockHatchVariant> = listOf(
         // 4× 系列：ZPM / UV / UHV / UEV
-        OverclockHatchVariant("overclock_hatch_4x_lossy4"       , 4  , 8.0, GTValues.ZPM,
-            tooltip = HatchTooltip("看起来并不好用", "Looks pretty useless")),
-        OverclockHatchVariant("overclock_hatch_4x_lossy2"       , 4  , 4.0, GTValues.UV ),
-        OverclockHatchVariant("overclock_hatch_4x_perfect"      , 4  , 2.0, GTValues.UHV),
-        OverclockHatchVariant("overclock_hatch_4x_saving"       , 4  , 1.0, GTValues.UEV),
+        OverclockHatchVariant(
+            "overclock_hatch_4x_lossy4", 4, 8.0, GTValues.ZPM,
+            tooltip = HatchTooltip("看起来并不好用", "Looks pretty useless")
+        ),
+        OverclockHatchVariant("overclock_hatch_4x_lossy2", 4, 4.0, GTValues.UV),
+        OverclockHatchVariant("overclock_hatch_4x_perfect", 4, 2.0, GTValues.UHV),
+        OverclockHatchVariant("overclock_hatch_4x_saving", 4, 1.0, GTValues.UEV),
         // 16× 系列：UV / UHV / UEV / UIV
-        OverclockHatchVariant("overclock_hatch_16x_lossy4"      , 16 , 8.0, GTValues.UV  ),
-        OverclockHatchVariant("overclock_hatch_16x_lossy2"      , 16 , 4.0, GTValues.UHV ),
-        OverclockHatchVariant("overclock_hatch_16x_perfect"     , 16 , 2.0, GTValues.UEV ),
-        OverclockHatchVariant("overclock_hatch_16x_saving"      , 16 , 1.0, GTValues.UIV ),
+        OverclockHatchVariant("overclock_hatch_16x_lossy4", 16, 8.0, GTValues.UV),
+        OverclockHatchVariant("overclock_hatch_16x_lossy2", 16, 4.0, GTValues.UHV),
+        OverclockHatchVariant("overclock_hatch_16x_perfect", 16, 2.0, GTValues.UEV),
+        OverclockHatchVariant("overclock_hatch_16x_saving", 16, 1.0, GTValues.UIV),
         // 64× 系列：UHV / UEV / UIV / UXV
-        OverclockHatchVariant("overclock_hatch_64x_lossy4"      , 64 , 8.0, GTValues.UHV),
-        OverclockHatchVariant("overclock_hatch_64x_lossy2"      , 64 , 4.0, GTValues.UEV),
-        OverclockHatchVariant("overclock_hatch_64x_perfect"     , 64 , 2.0, GTValues.UIV),
-        OverclockHatchVariant("overclock_hatch_64x_saving"      , 64 , 1.0, GTValues.UXV),
+        OverclockHatchVariant("overclock_hatch_64x_lossy4", 64, 8.0, GTValues.UHV),
+        OverclockHatchVariant("overclock_hatch_64x_lossy2", 64, 4.0, GTValues.UEV),
+        OverclockHatchVariant("overclock_hatch_64x_perfect", 64, 2.0, GTValues.UIV),
+        OverclockHatchVariant("overclock_hatch_64x_saving", 64, 1.0, GTValues.UXV),
         // 256× 系列：UEV / UIV / UXV / OpV
-        OverclockHatchVariant("overclock_hatch_256x_lossy4"     , 256, 4.0, GTValues.UEV ),
-        OverclockHatchVariant("overclock_hatch_256x_lossy2"     , 256, 2.0, GTValues.UIV ),
-        OverclockHatchVariant("overclock_hatch_256x_perfect"    , 256, 1.0, GTValues.UXV ),
-        OverclockHatchVariant("overclock_hatch_256x_saving"     , 256, 0.5, GTValues.OpV ),
+        OverclockHatchVariant("overclock_hatch_256x_lossy4", 256, 4.0, GTValues.UEV),
+        OverclockHatchVariant("overclock_hatch_256x_lossy2", 256, 2.0, GTValues.UIV),
+        OverclockHatchVariant("overclock_hatch_256x_perfect", 256, 1.0, GTValues.UXV),
+        OverclockHatchVariant("overclock_hatch_256x_saving", 256, 0.5, GTValues.OpV),
         // 1024× 档：本表终点，铭牌 MAX
-        OverclockHatchVariant("overclock_hatch_1024x_saving_max", 1024,0.25, GTValues.MAX,
-            tooltip = HatchTooltip("屌爆啦！！！", "Absolutely insane!!!"))
+        OverclockHatchVariant(
+            "overclock_hatch_1024x_saving_max", 1024, 0.25, GTValues.MAX,
+            tooltip = HatchTooltip("so good~", "so goooooood~")
+        )
     )
 
     /**

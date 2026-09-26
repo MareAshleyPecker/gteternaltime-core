@@ -1,4 +1,5 @@
-@file:Suppress("UNCHECKED_CAST", "DEPRECATION","unused")
+@file:Suppress("UNCHECKED_CAST", "DEPRECATION", "unused")
+
 package rain.gtetcore.gtet.common.item.recipe
 
 import com.gregtechceu.gtceu.api.blockentity.MetaMachineBlockEntity
@@ -11,19 +12,12 @@ import com.gregtechceu.gtceu.api.machine.feature.IRecipeLogicMachine
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType
 import com.gregtechceu.gtceu.api.registry.GTRegistries
 import com.gregtechceu.gtceu.common.item.IntCircuitBehaviour
-
 import com.lowdragmc.lowdraglib.gui.factory.HeldItemUIFactory
 import com.lowdragmc.lowdraglib.gui.modular.ModularUI
 import com.lowdragmc.lowdraglib.gui.texture.GuiTextureGroup
 import com.lowdragmc.lowdraglib.gui.texture.TextTexture
-import com.lowdragmc.lowdraglib.gui.widget.ButtonWidget
-import com.lowdragmc.lowdraglib.gui.widget.DraggableScrollableWidgetGroup
-import com.lowdragmc.lowdraglib.gui.widget.LabelWidget
-import com.lowdragmc.lowdraglib.gui.widget.TextFieldWidget
-import com.lowdragmc.lowdraglib.gui.widget.Widget
-import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup
+import com.lowdragmc.lowdraglib.gui.widget.*
 import com.lowdragmc.lowdraglib.gui.widget.custom.PlayerInventoryWidget
-
 import net.minecraft.client.Minecraft
 import net.minecraft.core.BlockPos
 import net.minecraft.network.chat.Component
@@ -40,12 +34,10 @@ import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.Blocks
 import net.minecraftforge.fluids.FluidStack
-
 import org.lwjgl.glfw.GLFW
-
 import rain.gtetcore.gtet.Gtetcore
+import rain.gtetcore.gtet.common.item.recipe.RecipeEditorBehavior.fluidSetter
 import rain.gtetcore.gtet.config.GTETConfig
-
 import java.util.function.Consumer
 import java.util.function.Supplier
 
@@ -311,7 +303,10 @@ object RecipeEditorBehavior : IItemUIFactory {
             fluidInputWidgets.forEachIndexed { i, widget ->
                 widget.isVisible = i < fluidIn
                 if (i < fluidIn) {
-                    widget.setSelfPosition(SLOT_LEFT + (i % FLUID_COLS) * FLUID_PITCH, y + (i / FLUID_COLS) * FLUID_PITCH)
+                    widget.setSelfPosition(
+                        SLOT_LEFT + (i % FLUID_COLS) * FLUID_PITCH,
+                        y + (i / FLUID_COLS) * FLUID_PITCH
+                    )
                 }
             }
             y += slotRows(fluidIn, FLUID_COLS) * FLUID_PITCH
@@ -356,8 +351,8 @@ object RecipeEditorBehavior : IItemUIFactory {
             relayout()
             preview.invalidate()
         })
-        pageRecipe.addWidget(button(72 , 270, 76, 18, { "导出到目录" }) { export(holder, draft) })
-        pageRecipe.addWidget(button(152, 270, 76, 18, { "复制代码"   }) { copyToClipboard(holder, draft) })
+        pageRecipe.addWidget(button(72, 270, 76, 18, { "导出到目录" }) { export(holder, draft) })
+        pageRecipe.addWidget(button(152, 270, 76, 18, { "复制代码" }) { copyToClipboard(holder, draft) })
         pageRecipe.addWidget(button(232, 270, 76, 18, { "看完整代码" }) { showPage(2) })
 //        for (line in 0 until 4) {
 //            val label = label(8, 242 + line * 8) {
@@ -602,7 +597,12 @@ object RecipeEditorBehavior : IItemUIFactory {
         return null
     }
 
-    override fun use(item: Item, level: Level, player: Player, usedHand: InteractionHand): InteractionResultHolder<ItemStack> {
+    override fun use(
+        item: Item,
+        level: Level,
+        player: Player,
+        usedHand: InteractionHand
+    ): InteractionResultHolder<ItemStack> {
         val stack = player.getItemInHand(usedHand)
         if (player is ServerPlayer) {
             HeldItemUIFactory.INSTANCE.openUI(player, usedHand)

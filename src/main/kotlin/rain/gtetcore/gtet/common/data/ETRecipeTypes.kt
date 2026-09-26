@@ -3,7 +3,7 @@ package rain.gtetcore.gtet.common.data
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes
 
-object ETRecipesTypes {
+object ETRecipeTypes {
     const val STEAM: String = "steam"
     const val ELECTRIC: String = "electric"
     const val GENERATOR: String = "generator"

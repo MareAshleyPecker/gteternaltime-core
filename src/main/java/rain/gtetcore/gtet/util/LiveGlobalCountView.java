@@ -1,7 +1,6 @@
 package rain.gtetcore.gtet.util;
 
 import com.gregtechceu.gtceu.api.pattern.predicates.SimplePredicate;
-
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 
@@ -99,11 +98,6 @@ import java.util.Map;
  * <li>委托对象不会为 null：{@code MultiblockState} 的两个构造器都会
  *     {@code new Reference2IntOpenHashMap<>()} 初始化这两个字段（GTM 源码实证）。</li>
  * </ul>
- *
- * ## 思路来源
- * - 【自研】整个适配层 —— 活视图类、覆写集合的选择、以及「用转发而不是拷贝」这个判断，
- *   都是我们为 GTMThings 1.6.0 与 GTM 7.5.3 的签名错配自己写的。GTMThings 与 GTM 双方
- *   都没有为此提供任何兼容层或扩展点。
  *
  * @author rain fox
  */

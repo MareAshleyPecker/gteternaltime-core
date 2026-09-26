@@ -27,10 +27,6 @@ import java.math.RoundingMode
  * 走 GTM 那条路会构造出负的 `ocAmount` 再返回一个「倍数全是 1 但把 `ocLevel` 重置为 0」的
  * `ModifierFunction`，语义上更糟。对 `OCs == 0` 两种写法完全等价。
  *
- * ## 思路来源
- * - 【自研】唯一一处有意偏离 —— 这里写 `OCs <= 0`，而 GTM 原文是 `if (OCs == 0) return ModifierFunction.IDENTITY;`（`OCs < 0` 的语义差异见上文）。
- * - 【自研】「为什么不能直接调 `getModifier`」的判断与绕法 —— `OverclockingLogic#getModifier(...)` 正是本 mod 注入的那个方法，直接调会立刻递归，所以只能自己把前置段算出来、末尾改调 `logic.runOverclockingLogic(...)`；GTM 没有提供可复用的拆分点。
- *
  * @author rain fox
  */
 object OverclockHatchHelper {

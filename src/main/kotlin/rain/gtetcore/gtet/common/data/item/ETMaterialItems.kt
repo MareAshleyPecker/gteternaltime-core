@@ -9,8 +9,9 @@ import net.minecraft.world.item.Item
 
 /**
  * 材料物品表 — 直接引用 GTCEu 的 [GTMaterialItems.MATERIAL_ITEMS]。
- * 物品注册由 [rain.gtetcore.gtet.mixin.GTM.MixinGTMaterialItems] @Overwrite 接管，不再需要独立生成。
+ * 物品注册由 [rain.gtetcore.gtet.mixin.GTM.material.MixinGTMaterialItems] @Overwrite 接管，不再需要独立生成。
  */
 object ETMaterialItems {
-    @JvmField val MATERIAL_ITEMS: Table<TagPrefix, Material, ItemEntry<out Item>> = GTMaterialItems.MATERIAL_ITEMS
+    @JvmField
+    val MATERIAL_ITEMS: Table<TagPrefix, Material, ItemEntry<out Item>> = GTMaterialItems.MATERIAL_ITEMS
 }

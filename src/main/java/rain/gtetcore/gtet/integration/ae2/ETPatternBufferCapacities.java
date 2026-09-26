@@ -3,16 +3,13 @@ package rain.gtetcore.gtet.integration.ae2;
 import com.gregtechceu.gtceu.api.machine.MachineDefinition;
 import com.gregtechceu.gtceu.api.machine.MetaMachine;
 import com.gregtechceu.gtceu.integration.ae2.machine.MEPatternBufferPartMachine;
-
 import net.minecraft.resources.ResourceLocation;
-
 import org.jetbrains.annotations.Nullable;
+import rain.gtetcore.gtet.Gtetcore;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import rain.gtetcore.gtet.Gtetcore;
 
 /**
  * 「多阶段 ME 样板总成」的容量表：**方块定义 id → 样板槽位数**。
@@ -48,7 +45,7 @@ public final class ETPatternBufferCapacities {
 
     /**
      * GTM 原生 {@code me_pattern_buffer} 的容量。
-     *
+     * <p>
      * ⚠️ 数值必须与 {@code MEPatternBufferPartMachine.MAX_PATTERN_COUNT} 一致（7.5.3 = 27）；
      * 本 mod 之外的任何一个 {@link MEPatternBufferPartMachine} 实例（GTM 自己的、别的附属的）
      * 都按这个数走，行为与打 mixin 之前**完全一样**。

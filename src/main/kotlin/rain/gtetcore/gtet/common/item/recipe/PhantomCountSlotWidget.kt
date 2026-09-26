@@ -6,12 +6,11 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
-import net.minecraft.world.Clearable
-import net.minecraft.world.Container
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.fluids.FluidStack
 import net.minecraftforge.items.IItemHandlerModifiable
 import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget.Companion.ACTION_SET_COUNT
+import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget.Companion.ITEM_Z
 import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget.Companion.MAX_COUNT
 import rain.gtetcore.gtet.util.lang.LangUtil
 
@@ -117,6 +116,7 @@ class PhantomCountSlotWidget(
         }
         return true
     }
+
     /** 只处理自己的 [ACTION_SET_COUNT]；其余（1 = 拖入、2 = 右键清空）转给父类。 */
     override fun handleClientAction(id: Int, buffer: FriendlyByteBuf) {
         if (id == ACTION_SET_COUNT) {

@@ -3,14 +3,11 @@ package rain.gtetcore.gtet.mixin.GTMT;
 import com.gregtechceu.gtceu.api.pattern.MultiblockState;
 import com.gregtechceu.gtceu.api.pattern.predicates.SimplePredicate;
 import com.hepdd.gtmthings.api.pattern.AdvancedBlockPattern;
-
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
-
 import rain.gtetcore.gtet.util.LiveGlobalCountView;
 
 /**
@@ -34,7 +31,7 @@ import rain.gtetcore.gtet.util.LiveGlobalCountView;
  * 换成了 {@code Reference2IntOpenHashMap<SimplePredicate>}。
  *
  * <pre>
- * # GTMThings 侧（D:\.gradle\caches\forge_gradle\deobf_dependencies\curse\maven\gtmthings-1104310\...）
+ * # GTMThings 侧（ForgeGradle 的 deobf_dependencies 缓存里那份 curse maven jar）
  * javap -p -c ...\gtmthings-1104310-7712957_mapped_parchment_2023.09.03-1.20.1.jar 里的 AdvancedBlockPattern.class
  *   75: invokevirtual // Method .../MultiblockState.getGlobalCount:()Lit/unimi/dsi/fastutil/objects/Object2IntOpenHashMap;
  *   81: invokevirtual // Method .../MultiblockState.getLayerCount:()Lit/unimi/dsi/fastutil/objects/Object2IntOpenHashMap;
@@ -87,11 +84,6 @@ import rain.gtetcore.gtet.util.LiveGlobalCountView;
  * <li>两个 {@code @Redirect} 分开写（而不是合成一个），是因为它们的返回值要分别来自
  *     {@code getGlobalCount()} 与 {@code getLayerCount()} 两张不同的表，不能共用。</li>
  * </ul>
- *
- * ## 思路来源
- * - 【自研】这一层适配桥 —— 「重定向两个旧描述符调用点 + 活视图转发」的方案、覆写集合的取舍、
- *   以及用 {@code require = 1} 换取加载期响亮失败，都是我们为 GTMThings 1.6.0 与 GTM 7.5.3
- *   的签名错配自己定的。GTMThings 与 GTM 双方都没有提供兼容层、SPI 或扩展点。
  *
  * @author rain fox
  */

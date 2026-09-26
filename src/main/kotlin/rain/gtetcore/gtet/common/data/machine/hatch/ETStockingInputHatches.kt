@@ -11,7 +11,6 @@ import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEDualStockingPartMachine
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETTagFilterStockBusPartMachine
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETTagFilterStockHatchPartMachine
-import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /** GTM 的 AE 覆盖层命名空间：贴图在 GTM 自己的 jar 里，我们只引用。 */
@@ -88,7 +87,7 @@ private const val OVERLAY_ME_INPUT_HATCH = "block/overlay/appeng/me_input_hatch"
  * ## 注册位置
  *
  * 与超频 / 线程 / 并行 / 标签库存 / 样板总成几族同在 `common/data/machine/hatch/`，
- * 由 [ALLSmahine.registerMachines] 调用：这里全是**多方块部件仓**，同一张表、同一个入口。
+ * 由 [rain.gtetcore.gtet.common.data.machine.ALLSmachine.registerMachines] 调用：这里全是**多方块部件仓**，同一张表、同一个入口。
  *
  * @author rain fox
  */
@@ -225,11 +224,15 @@ object ETStockingInputHatches {
         // 二合一件：两侧各一套配置，所以流体侧那块面板的标题必须标清侧别
         //（物品侧那块沿用共用的「标签过滤」，见 ETMEDualStockingPartMachine 的类注释）
         LangUtil.add(ETMEDualStockingPartMachine.LANG_TITLE_FLUIDS, "Tag Filter (Fluids)", "标签过滤（流体侧）")
-        LangUtil.add(DUAL_TOOLTIP_KEY,
+        LangUtil.add(
+            DUAL_TOOLTIP_KEY,
             "Items and fluids both pull from the ME network, each with its own filter",
-            "物品与流体都走 ME 库存拉取，两侧各有一套过滤")
-        LangUtil.add(DUAL_HINT_KEY,
+            "物品与流体都走 ME 库存拉取，两侧各有一套过滤"
+        )
+        LangUtil.add(
+            DUAL_HINT_KEY,
             "Unlabeled Tag Filter tab = items; min count is shared",
-            "未标注侧别的「标签过滤」是物品侧；保底数量两侧共用")
+            "未标注侧别的「标签过滤」是物品侧；保底数量两侧共用"
+        )
     }
 }

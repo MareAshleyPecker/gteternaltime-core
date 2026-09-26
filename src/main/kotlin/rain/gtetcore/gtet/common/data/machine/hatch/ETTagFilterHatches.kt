@@ -59,7 +59,7 @@ private const val OVERLAY_ME_INPUT_HATCH = "block/overlay/appeng/me_input_hatch"
  *
  * ## 注册位置
  *
- * 放在 `common/data/machine/hatch/` 与超频 / 线程 / 并行三族同目录，由 [ALLSmahine.registerMachines] 调用，
+ * 放在 `common/data/machine/hatch/` 与超频 / 线程 / 并行三族同目录，由 [rain.gtetcore.gtet.common.data.machine.ALLSmachine.registerMachines] 调用，
  * 理由：这三族与本族都是**多方块部件仓**，同一张表、同一个入口，加一件只需要在这里加一行；
  * 而 `multiblock.ALLMmchine` 那边是多方块本体，不该混部件。
  *
@@ -85,7 +85,7 @@ object ETTagFilterHatches {
      * @return 按注册顺序排列的 [MachineDefinition]；AE2 缺失时是空表
      */
     @JvmStatic
-     private fun register(registrate: GTRegistrate): List<MachineDefinition> {
+    private fun register(registrate: GTRegistrate): List<MachineDefinition> {
         if (!GTCEu.Mods.isAE2Loaded()) return emptyList()
         registerLang()
         return listOf(registerItemBus(registrate), registerFluidHatch(registrate))
@@ -158,7 +158,8 @@ object ETTagFilterHatches {
         LangUtil.add(TAG_FILTER_TOOLTIP_KEY, "AE tag filtering + batch pull", "AE 标签过滤 + 定量拉取")
         LangUtil.add(SHARE_TOOLTIP_KEY,
             "Multiblock sharing: isolated by default, toggle in the Tag Filter panel",
-            "多方块共享：默认隔离，可在「标签过滤」面板里切换")
+            "多方块共享：默认隔离，可在「标签过滤」面板里切换"
+        )
 
         LangUtil.add(ETTagFilterConfigurator.LANG_TITLE, "Tag Filter", "标签过滤")
         LangUtil.add(ETTagFilterConfigurator.LANG_WHITE, "Whitelist (blank = no limit)", "白名单（留空 = 不限制）")
@@ -174,17 +175,25 @@ object ETTagFilterHatches {
         LangUtil.add(ETTagFilterConfigurator.LANG_SHARE, "Multiblock sharing", "多方块共享")
         LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_ON, "Allowed", "允许共享")
         LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_OFF, "Isolated", "隔离")
-        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_TIP_0,
+        LangUtil.add(
+            ETTagFilterConfigurator.LANG_SHARE_TIP_0,
             "Whether other multiblocks may occupy this part",
-            "本件能不能被别的多方块占用")
-        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_TIP_1,
+            "本件能不能被别的多方块占用"
+        )
+        LangUtil.add(
+            ETTagFilterConfigurator.LANG_SHARE_TIP_1,
             "Off (isolated): if this part already belongs to a formed multiblock, another structure's check fails here. Prevents recipe mixups.",
-            "关（隔离）：本件已属于某个已成型多方块时，别的结构检查到这一格就判失败 —— 防止两个结构串配方")
-        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_TIP_2,
+            "关（隔离）：本件已属于某个已成型多方块时，别的结构检查到这一格就判失败 —— 防止两个结构串配方"
+        )
+        LangUtil.add(
+            ETTagFilterConfigurator.LANG_SHARE_TIP_2,
             "On (allowed): another structure must be re-formed (checked again) to take this part; already formed structures do not change by themselves.",
-            "开（允许共享）：别的结构要重新成型（重新检查一次结构）才会占用本件；已成型结构不会自己变化")
-        LangUtil.add(ETTagFilterConfigurator.LANG_SHARE_TIP_3,
+            "开（允许共享）：别的结构要重新成型（重新检查一次结构）才会占用本件；已成型结构不会自己变化"
+        )
+        LangUtil.add(
+            ETTagFilterConfigurator.LANG_SHARE_TIP_3,
             "Toggling re-checks this part's own multiblocks at once; the change takes effect on structure re-check.",
-            "拨动开关会立刻让本件所属的多方块复检一次；改动在结构重新检查后生效")
+            "拨动开关会立刻让本件所属的多方块复检一次；改动在结构重新检查后生效"
+        )
     }
 }

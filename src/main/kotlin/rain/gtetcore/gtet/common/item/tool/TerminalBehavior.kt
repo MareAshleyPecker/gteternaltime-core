@@ -47,7 +47,12 @@ object TerminalBehavior : IInteractionItem {
         return InteractionResult.PASS
     }
 
-    override fun use(item: Item, level: Level, player: Player, usedHand: InteractionHand): InteractionResultHolder<ItemStack> {
+    override fun use(
+        item: Item,
+        level: Level,
+        player: Player,
+        usedHand: InteractionHand
+    ): InteractionResultHolder<ItemStack> {
         return InteractionResultHolder.pass(player.getItemInHand(usedHand))
     }
 }

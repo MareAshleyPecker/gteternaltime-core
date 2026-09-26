@@ -2,12 +2,10 @@ package rain.gtetcore.gtet.mixin.GTM;
 
 import com.gregtechceu.gtceu.api.pattern.Predicates;
 import com.gregtechceu.gtceu.api.pattern.TraceabilityPredicate;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-
 import rain.gtetcore.gtet.api.capability.ETPartAbility;
 
 /**
@@ -46,9 +44,7 @@ import rain.gtetcore.gtet.api.capability.ETPartAbility;
  * <p>该方法签名里唯一的坑是它是 <b>static</b> 的，所以注入处理器必须也是 {@code private static}
  * （且 {@code remap = false} —— GTM 是 mod，方法名不混淆，但参数描述符要按运行时原名写全，
  * 因为有 {@code autoAbilities} 的多个重载）。
- * <p>
- * ## 思路来源
- * - 【自研】追加逻辑本身 —— GTM 的 `autoAbilities` 里没有任何 hook / SPI 扩展点，要加这条能力只能靠 mixin 注入。
+ * <p>⚠️ GTM 的 {@code autoAbilities} 里没有任何 hook / SPI 扩展点，追加这条能力只能靠 mixin 注入。
  *
  * @author rain fox
  */

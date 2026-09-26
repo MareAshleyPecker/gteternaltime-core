@@ -1,7 +1,7 @@
 # gtmthings-1.6.0 补丁说明
 
 - **来源**：liansishen/GTMThings @ 1.6.0（LGPLv3.0），原作者 **liansishen**。
-- **本补丁（第一轮）**：GTET 把「高级终端」的设置界面从「一列文本输入框」重画成 **GTOCore(GTO) 样式**，
+- **本补丁（第一轮）**：GTET 把「高级终端」的设置界面从「一列文本输入框」重画成**左侧设置面板 + 右侧两块方块列表**，
   并把原来由 GTET mixin 追加的「分级方块」列表改成在补丁里直接画。**只动界面，不动搭建逻辑。**
 - **本补丁（第二轮，见 §6）**：把 GTO 高级终端里剩下的 **3 项「搭建行为」设置**补齐 ——
   `module` 模块搭建 / `isFlip` 镜像搭建 / `demolition` 拆除模式，并把「重复结构次数」上限
@@ -35,32 +35,32 @@
 
 原版的问题：5 行全是「数字填 0/1」的文本框，没有关闭按钮，UI 宽 176 但内部滚动组宽到 186（略微溢出）。
 
-## 2. GTO 样式下的对照（本次补丁）
+## 2. 本补丁的界面布局（对照 §1）
 
 窗口 `ModularUI(372, 274)`，根 `WidgetGroup(0,0,372,274)` 背景 `BACKGROUND_INVERSE`。
 左侧设置面板 `WidgetGroup(4, 4, 160, 266)`（背景 `DISPLAY`）；
 右侧两块列表面板各宽 198、x = 170：上 (170, 20, 198, 114)（标题在 y = 8）、下 (170, 154, 198, 114)（标题在 y = 142）。
 设置面板内：标签 x = 10、控件统一右边缘 x = 152；8 行的**行顶** y = 28 / 54 / 88 / 114 / 140 / 166 / 192 / 218
-（行距 26，第 2 行之后多留 8 像素的空档 —— 对应 GTO 里设置项分组之间的空行）。
+（行距 26，第 2 行之后多留 8 像素的空档，把「线圈等级 / 重复次数」这两个数值项与后面 6 个开关项分成两组）。
 
 > ⚠️ **2026-09-13 放大过一次**（用户：原来的 300×172「太小了」，右侧每块只能显示 3~4 行）：
 > 窗口 300×172 → **372×274**，左侧 148×164 → **160×266**，右侧两块 140 宽 → **198 宽**、
 > 每块可见行数 3~4 → **7**。下表是放大后的坐标（面板内相对坐标；窗口绝对 y = 面板 y + 4）。
 > ⚠️ 尺寸 / 坐标一改，这张表和 §3 那张表必须一起改（`AdvancedTerminalBehavior` 顶部那组常量就是它们）。
 
-| 行        | GTO 样式下的坐标（面板内）                                                                 | 控件（GTO 样式）                | 为什么                                           |
+| 行        | 坐标（面板内）                                                                 | 控件                        | 说明                                              |
 |----------|------------------------------------------------------------------------------|---------------------------|-----------------------------------------------|
 | 标题       | `AlignLabelWidget(84, 8)` 居中（窗口坐标；84 = 4 + 160/2，即面板中线）                  | 不变                        | 面板中线上居中                                       |
-| 关闭 X     | `ButtonWidget(354, 7, 12, 12, CLOSE_ICON)`（窗口坐标；354 = 372 - 18）               | **新增**（GTO 右上角 X）         | 服务端 `player.closeContainer()` → 客户端界面随之关闭     |
-| 1 线圈等级   | label (10, 30)；`◀`(110, 28, 12×12)、值(130, 30, 居中)、`▶`(140, 28, 12×12)        | 文本框 → **步进器 `[◀] 值 [▶]`** | 对应 GTO 的「主结构搭建」步进器：档位有限、左右点一下就换档；值只读显示，避免手输越界 |
-| 2 重复结构次数 | label (10, 56)；`TerminalInputWidget(116, 55, 36×14)` min 0 max **1000**         | 仍是**文本输入框**               | 对应 GTO 的「重复结构次数」文本框（第二轮把上限 99 提到 GTO 的 1000）              |
-| （空行）     | 54 → 88 之间留 34 像素（≈ 一整行 + 空档）                                                 | —                         | GTO 样式里设置项分组之间留空行                             |
-| 3 无仓室模式  | label (10, 90)；`SwitchWidget(138, 88, 14×14)`                                 | 文本框 → **✓ 复选框**           | 对应 GTO 的「无仓室模式」勾选                             |
-| 4 线圈替换模式 | label (10, 116)；`SwitchWidget(138, 114, 14×14)`                               | 文本框 → **✓ 复选框**           | 对应 GTO 的「替换模式」勾选                              |
-| 5 使用AE物品 | label (10, 142)；`SwitchWidget(138, 140, 14×14)`                               | 文本框 → **✓ 复选框**           | 对应 GTO 的「使用AE物品」勾选                            |
-| 6 镜像搭建   | label (10, 168)；`SwitchWidget(138, 166, 14×14)`                               | **✓ 复选框**                  | 第二轮新增，对应 GTO 的「镜像搭建」勾选                        |
-| 7 模块搭建   | label (10, 194)；`TerminalInputWidget(116, 193, 36×14)` min 0 max 100          | **文本输入框**                   | 第二轮新增，对应 GTO 的「模块搭建」文本框（档数不定，不用步进器；GTO 同样是文本框 0~100） |
-| 8 拆除模式   | label (10, 220)；`SwitchWidget(138, 218, 14×14)`                               | **✓ 复选框**                  | 第二轮新增，对应 GTO 的「拆除模式」勾选                        |
+| 关闭 X     | `ButtonWidget(354, 7, 12, 12, CLOSE_ICON)`（窗口坐标；354 = 372 - 18）               | **新增**                    | 服务端 `player.closeContainer()` → 客户端界面随之关闭     |
+| 1 线圈等级   | label (10, 30)；`◀`(110, 28, 12×12)、值(130, 30, 居中)、`▶`(140, 28, 12×12)        | 文本框 → **步进器 `[◀] 值 [▶]`** | 档位有限（= 线圈等级数），左右点一下就换档；值只读显示，避免手输越界            |
+| 2 重复结构次数 | label (10, 56)；`TerminalInputWidget(116, 55, 36×14)` min 0 max **1000**         | 仍是**文本输入框**               | 档数不定，文本框更合适；上限由 99 提到 1000                     |
+| （空行）     | 54 → 88 之间留 34 像素（≈ 一整行 + 空档）                                                 | —                         | 把上面两个数值项与下面 6 个开关 / 输入项分成两组                     |
+| 3 无仓室模式  | label (10, 90)；`SwitchWidget(138, 88, 14×14)`                                 | 文本框 → **✓ 复选框**           | 布尔开关，复选框比填 0/1 直观                            |
+| 4 线圈替换模式 | label (10, 116)；`SwitchWidget(138, 114, 14×14)`                               | 文本框 → **✓ 复选框**           | 同上                                            |
+| 5 使用AE物品 | label (10, 142)；`SwitchWidget(138, 140, 14×14)`                               | 文本框 → **✓ 复选框**           | 同上                                            |
+| 6 镜像搭建   | label (10, 168)；`SwitchWidget(138, 166, 14×14)`                               | **✓ 复选框**                  | 第二轮新增；布尔开关，同上                                 |
+| 7 模块搭建   | label (10, 194)；`TerminalInputWidget(116, 193, 36×14)` min 0 max 100          | **文本输入框**                   | 第二轮新增；档数不定（模块序号），故用文本框 0~100                  |
+| 8 拆除模式   | label (10, 220)；`SwitchWidget(138, 218, 14×14)`                               | **✓ 复选框**                  | 第二轮新增；布尔开关，同上                                 |
 
 复选框外观：未选中 = `GuiTextures.BUTTON`（空框）；选中 = `BUTTON` + 金黄色（`0xFFAA00`）`✔`。
 
@@ -170,8 +170,8 @@ javap -v -p ... | 常量池： #134 = Utf8 Lorg/spongepowered/asm/mixin/injectio
                                       #138 = Utf8 Lorg/spongepowered/asm/mixin/injection/At;
                                       #140 = Utf8 RETURN
 
-# 补丁 jar libs/jarjar/gtmthings-1.6.0-forge.jar（本轮重建）：AutoBuildSetting 的公开面一字未动
-javap -p -classpath libs/jarjar/gtmthings-1.6.0-forge.jar 'com.hepdd.gtmthings.common.item.AdvancedTerminalBehavior$AutoBuildSetting'
+# 补丁 jar patchJar/gtmthings-1.6.0-forge.jar（本轮重建）：AutoBuildSetting 的公开面一字未动
+javap -p -classpath patchJar/gtmthings-1.6.0-forge.jar 'com.hepdd.gtmthings.common.item.AdvancedTerminalBehavior$AutoBuildSetting'
   public java.util.List<net.minecraft.world.item.ItemStack> apply(com.lowdragmc.lowdraglib.utils.BlockInfo[]);
   public boolean isPlaceHatch(com.lowdragmc.lowdraglib.utils.BlockInfo[]);
   public boolean isReplaceCoilMode();  public boolean isFlipMode();  public boolean isDemolitionMode();
@@ -180,7 +180,7 @@ javap -p -classpath libs/jarjar/gtmthings-1.6.0-forge.jar 'com.hepdd.gtmthings.c
   private static boolean lambda$apply$0(com.lowdragmc.lowdraglib.utils.BlockInfo);   ← apply 的方法体也没动
 
 # AdvancedTerminalBehaviorMixin 的目标：useOn 描述符不变
-javap -p -classpath libs/jarjar/gtmthings-1.6.0-forge.jar com.hepdd.gtmthings.common.item.AdvancedTerminalBehavior
+javap -p -classpath patchJar/gtmthings-1.6.0-forge.jar com.hepdd.gtmthings.common.item.AdvancedTerminalBehavior
   public net.minecraft.world.InteractionResult useOn(net.minecraft.world.item.context.UseOnContext);
 
 # AdvancedBlockPatternMixin 的目标：autoBuild 描述符不变，旧描述符计数调用**仍是恰好 2 处**（@Redirect require=1）
@@ -254,7 +254,7 @@ GTO 的 `controller.getSubPattern()` 在 **GTM 7.5.3 里不存在**（见 6.4 �
 ### 6.4 GTM 7.5.3 的三个 API 事实（带证据）
 
 > ⚠️ 先把一件事说清楚：**GTMThings 1.6.0 编译期对齐的是 GTM 7.5.2**，不是 7.5.3
-> （`D:\java\GTMThings-1.6.0\gradle.properties`: `gtceu_version=7.5.2`）。
+> （GTMThings 1.6.0 补丁检出的 `gradle.properties`: `gtceu_version=7.5.2`）。
 > 两个版本在下面这三点上**并不完全一样**，所以每条都给了两版数据。
 
 | 事实 | GTM 7.5.2（编译期） | GTM 7.5.3（运行期） | 结论 |
@@ -263,7 +263,9 @@ GTO 的 `controller.getSubPattern()` 在 **GTM 7.5.3 里不存在**（见 6.4 �
 | `BlockPattern#setActualRelativeOffset(..., Direction, boolean)` | 有，**private** | 有，**private** | 签名里**确实有 `isFlipped`**，但是 private、GTMThings 调不到；GTMThings 的 `AdvancedBlockPattern` 自带一份私有拷贝，本来就用它（所以镜像只改了「`isFlipped` 从哪来」） |
 | `MultiblockState#cleanCache()` | **不存在**（只有 `clean()`） | **不存在**；有 `clean()` 与 `clearCache()` | GTO 的 `cleanCache()` 是分叉加的方法；7.5.3 的等价物是 `clearCache()`，但它在 7.5.2 上编不过 → 只能反射（`AdvancedBlockPattern#clearCache`，先试 `clearCache()` 再退 `clean()`） |
 
-证据命令与关键输出（javap 打在**真 jar** 上，源码 grep 佐证）：
+证据命令与关键输出（javap 打在**真 jar** 上，源码 grep 佐证）。
+下面 `<gtceu-1.20.1-7.5.3.jar>` 指仓内 vendored 的那份：
+`patchJar/maven/com/gregtechceu/gtceu/gtceu-1.20.1/7.5.3/gtceu-1.20.1-7.5.3.jar`（补丁 GTM，dev 与打包均取此处）。
 
 ```
 # 1) getSubPattern：两个版本都没有
@@ -419,7 +421,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 `--existing src/main/resources/`）。而那个目录在检出里**默认不存在** —— 只要没跑过 `runData`，
 `gradlew spotlessApply build` 产出的 jar 就天然缺这些 json。
 
-而 `libs/jarjar/gtmthings-1.6.0-forge.jar` 正是由 `D:\java\GTMThings-1.6.0\build\libs\gtmthings-1.6.0.jar`
+而 `patchJar/gtmthings-1.6.0-forge.jar` 正是由 `<GTMThings 补丁检出>/build/libs/gtmthings-1.6.0.jar`
 改名而来。实测修复前那份 jar 与该 build 产物**逐字节相同**
 （`SHA256 = 4B9C674E18919238374AEC31754BC89B8391CE58619116125E34CBC5DE7110A1`）——
 确证补丁 jar 就是「没跑 datagen 的 build」的直接产物，不是别的地方拷错了。
@@ -459,7 +461,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 ### 8.4 怎么修（**已并入构建流程，不用手工做**）
 
 ```
-gradlew buildPatchedGtmThings      # 外部 spotlessApply + build → 自动补齐 → 体检通过才覆盖 libs/jarjar
+gradlew buildPatchedGtmThings      # 外部 spotlessApply + build → 自动补齐 → 体检通过才覆盖 patchJar
 gradlew resfixGtmtJar              # 只做「补齐 + 体检 + 落盘」（不跑外部构建）
 ```
 
@@ -467,16 +469,18 @@ gradlew resfixGtmtJar              # 只做「补齐 + 体检 + 落盘」（不�
 `applyGtmtResfix` / `resfixAndVerifyGtmt`）：
 
 1. 跑外部构建 `spotlessApply build`（步骤、JDK、参数见 `../README.md`）；
-2. 拿 build 产物（`D:\java\GTMThings-1.6.0\build\libs\gtmthings-1.6.0.jar`）跑
-   **`scripts/gtmt-resfix.ps1`**：把仓内 vendored 的资源参考里缺的条目补进去，输出到
+2. 拿 build 产物（`<检出目录>/build/libs/gtmthings-1.6.0.jar`）跑
+   **`scripts/gtmt-resfix.ps1`**（Linux/macOS 是 **`scripts/gtmt-resfix.sh`**，参数与防线完全一致，
+   由 `scripts/patches.gradle` 按 `os.name` 选，见 `../README.md`）：把仓内 vendored 的资源参考里缺的条目补进去，输出到
    `build/tmp/gtmt-resfix/resfix-out.jar`；
 3. 体检这份输出（`jarAssetsProbe`：`assets/** ≥ 1080` 且存在 `assets/gtmthings/models/block/` 条目）；
-4. **只有体检通过**才把它拷成 `libs/jarjar/gtmthings-1.6.0-forge.jar`；不通过就 `GradleException`
-   让任务失败，并明确写出「libs/jarjar 里那份没有被覆盖，仍是上一份通过体检的产物」。
+4. **只有体检通过**才把它拷成 `patchJar/gtmthings-1.6.0-forge.jar`；不通过就 `GradleException`
+   让任务失败，并明确写出「patchJar 里那份没有被覆盖，仍是上一份通过体检的产物」。
 
 ⚠️ 所以「只 build 忘了补资源」这条路已经堵死了 —— 体检不过就没有 jar 落盘，不会静默降级。
 
-`scripts/gtmt-resfix.ps1` 的三条硬约束（**改脚本时一条都不能松**）：
+`scripts/gtmt-resfix.ps1`（Linux/macOS 用 `scripts/gtmt-resfix.sh`，参数与防线完全一致，需 Python 3）
+的三条硬约束（**改脚本时一条都不能松**）：
 
 - ⚠️ **输入 jar 里已有的条目一律原样拷贝、绝不覆盖** —— 这就天然保护了我们改过的
   `assets/gtmthings/lang/en_us.json` / `zh_cn.json`（补丁版 **418** 键，第四轮加了
@@ -490,7 +494,7 @@ gradlew resfixGtmtJar              # 只做「补齐 + 体检 + 落盘」（不�
 
 #### 8.4.1 资源参考为什么是仓内 vendored 的（原来用 curse 缓存路径，缓存一清就失效）
 
-原来那次修复用的是 `D:\.gradle\caches\forge_gradle\...\curse\maven\gtmthings-1104310\7712957_...`
+原来那次修复用的是 `<GRADLE_USER_HOME>\caches\forge_gradle\...\curse\maven\gtmthings-1104310\7712957_...`
 这个 **Gradle 缓存**路径，`gradlew clean` / 换机器 / 清缓存就没了。现在固化在仓库里：
 
 ```
@@ -502,7 +506,7 @@ libs/gtmt/gtmthings-1.6.0-datagen-resources.zip     （782 条目 / 302 KB，只
 | 来源 | CurseForge 上的 GTMThings 1.6.0 官方发布件：`gtmthings-1104310-7712957.jar`（file id 7712957） |
 | 该原件 SHA256 | `72FDC64E0AF5093C7C4B4697ECF3186ED487D6368B68543EEFB65B8FE2852F`（本地缓存 `modules-2\files-2.1\curse.maven\gtmthings-1104310\7712957\`） |
 | 本 zip 的选法 | 取原件里 **「没跑 datagen 的 build 产物」缺的那些条目**（= §8.3 里那 782 条：781 个 json + `assets/gtmthings/blockstates/` 目录条目），并去掉 `*.class` 与 `.cache/` |
-| 本 zip SHA256 | `5A76715A00AC3AA78515E6283119A3CC13CB206B5C0AD7E866A54DDBB9F5D2BE` |
+| 本 zip SHA256 | `5a76715a00ac3aa78515e6283119a3cc13cb206b5c0ad7e866a54ddbb9f5d2be` |
 
 **为什么只留这 782 条、不留整份原件**：体积（302 KB vs 960 KB）只是次要理由，
 主要理由是**范围最小** —— 这份参考只能补「datagen 产物」，不可能把别的东西（尤其是
@@ -520,7 +524,7 @@ file id 7712957，校验 SHA256 后再选）。
 先在 GTMThings 检出把 datagen 产物跑出来，再 build：
 
 ```
-cd D:\java\GTMThings-1.6.0
+cd <GTMThings 补丁检出>
 gradlew.bat runData                    # 生成 src/generated/resources/
 gradlew.bat spotlessApply build
 ```
@@ -539,7 +543,7 @@ gradlew.bat spotlessApply build
 不满足 → `verifyPatchedJarjar` 直接抛 `GradleException`（`collectJarjarDeps` 也是同一份判据，至少 warn），
 文案写明「补丁 jar 缺 datagen 资源；跑 `gradlew resfixGtmtJar` 从仓内参考补齐，或先跑 GTMThings 的 datagen」。
 `buildPatchedGtmThings` / `resfixGtmtJar` 用的是**同一个探针**，而且是**硬失败**（不通过就不覆盖
-`libs/jarjar`，见 8.4）。
+`patchJar`，见 8.4）。
 
 ```
 gradlew verifyPatchedJarjar        # 只校验，不构建，不碰外部仓库
@@ -556,7 +560,7 @@ gradlew verifyPatchedJarjar        # 只校验，不构建，不碰外部仓库
 
 ```powershell
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$z = [System.IO.Compression.ZipFile]::OpenRead('libs\jarjar\gtmthings-1.6.0-forge.jar')
+$z = [System.IO.Compression.ZipFile]::OpenRead('patchJar\gtmthings-1.6.0-forge.jar')
 $n = $z.Entries | ForEach-Object { $_.FullName }; $z.Dispose()
 "total = $($n.Count)"; "assets = $(($n -like 'assets/*').Count)"; "class = $(($n -like '*.class').Count)"
 ```
@@ -567,7 +571,7 @@ $n = $z.Entries | ForEach-Object { $_.FullName }; $z.Dispose()
 只有文件内容变了，**Gradle / ForgeGradle 的 deobf 缓存不会自动失效**（它按坐标缓存）：
 
 ```
-D:\.gradle\caches\forge_gradle\deobf_dependencies\jarjar\gtmthings-1.6.0\
+<GRADLE_USER_HOME>\caches\forge_gradle\deobf_dependencies\jarjar\gtmthings-1.6.0\
   └─ forge_mapped_parchment_2023.09.03-1.20.1\
        └─ gtmthings-1.6.0-forge_mapped_parchment_2023.09.03-1.20.1.jar   ← 就是这个
 ```
@@ -581,17 +585,17 @@ D:\.gradle\caches\forge_gradle\deobf_dependencies\jarjar\gtmthings-1.6.0\
 ### 8.7 怎么验证「补齐流程」本身（不用跑外部构建）
 
 拿一份**残缺 jar** 当输入，看流程会不会把它补成完整的 —— 这也是唯一能在 CI / 本机快速复现的验法
-（`-PgtmtResfixOut` 指到临时文件，不会动 `libs/jarjar`）：
+（`-PgtmtResfixOut` 指到临时文件，不会动 `patchJar`）：
 
 ```
-gradlew resfixGtmtJar "--PgtmtBuiltJar=D:\java\GTMThings-1.6.0\build\libs\gtmthings-1.6.0.jar" "-PgtmtResfixOut=build/tmp/gtmt-resfix-verify/gradle-resfix-out.jar"
+gradlew resfixGtmtJar "--PgtmtBuiltJar=<检出目录>\build\libs\gtmthings-1.6.0.jar" "-PgtmtResfixOut=build/tmp/gtmt-resfix-verify/gradle-resfix-out.jar"
 ```
 
 2026-09-13 实测输出（节选，输入正是「只 build 没跑 runData」的那份 456 条目产物）：
 
 ```
-gtmt-resfix: input   = D:\java\GTMThings-1.6.0\build\libs\gtmthings-1.6.0.jar  (456 entries)
-gtmt-resfix: ref     = D:\java\GTEternalTime -- core\libs\gtmt\gtmthings-1.6.0-datagen-resources.zip
+gtmt-resfix: input   = <检出目录>\build\libs\gtmthings-1.6.0.jar  (456 entries)
+gtmt-resfix: ref     = <项目根>\libs\gtmt\gtmthings-1.6.0-datagen-resources.zip
 gtmt-resfix: to add  = 782 entries
    ext '.json' = 781
    ext '' = 1
@@ -599,7 +603,7 @@ gtmt-resfix: wrote ...\gradle-resfix-out.jar  (1238 entries, assets=1092, class=
 [gtetcore] 补丁 GTMThings 已就绪（资源补齐后）：...  assets=1092 sha256=1b45a707899336fd6d874f53aa9e2b01e2474bbfbb39cf467b5b3073e512051b
 ```
 
-把结果与那次手工修好的 `libs/jarjar/gtmthings-1.6.0-forge.jar` **逐条目比内容 SHA256**：
+把结果与那次手工修好的 `patchJar/gtmthings-1.6.0-forge.jar` **逐条目比内容 SHA256**：
 1238 条全中、**0 条不同 / 0 条缺失**；`class=101` 说明补丁那三个内部类一个不少，
 `assets=1092` 正是 §8.3 的正确基线。也就是说：**今天再走一遍这条流程，产出的就是当初手工修好的那一份。**
 
@@ -614,10 +618,10 @@ gtmt-resfix: wrote ...resfix-out.jar  (783 entries, assets=782, class=0)
 * What went wrong:
 Execution failed for task ':resfixGtmtJar'.
 > [gtetcore] 补齐后的 GTMThings jar 仍然缺 datagen 资源：assets 条目 = 782（要求 ≥ 1080），方块模型目录存在 = true
-    ... libs/jarjar 里那份**没有被覆盖**，仍是上一份通过体检的产物。
+    ... patchJar 里那份**没有被覆盖**，仍是上一份通过体检的产物。
 ```
 
-实测事后核对：`libs/jarjar/gtmthings-1.6.0-forge.jar` 的 SHA256 前后完全相同
+实测事后核对：`patchJar/gtmthings-1.6.0-forge.jar` 的 SHA256 前后完全相同
 （`A5444DBD...7430`），`-PgtmtResfixOut` 指的那个文件**根本没被写出来** —— 体检不过就什么都不落盘。
 
 ## 9. 右侧两块面板「不依赖扫描」直接列出 5 类（2026-09-13 第三轮）
@@ -832,8 +836,8 @@ gtet_terminal.ui_group : "<组键>"      // 与 plan.groups 里的 key 同一套
 
 | 步骤 | 命令 | 结果 |
 |---|---|---|
-| 补丁源码编译 | 外部 `gradlew spotlessApply build`（`D:\java\GTMThings-1.6.0`） | `BUILD SUCCESSFUL`，`spotlessCheck` 通过（补丁源码格式合规） |
-| 资源补齐 + 体检 + 落盘 | `gradlew resfixGtmtJar` | `to add = 782`，输出 `1239 entries, assets=1092, class=102`，体检通过后覆盖 `libs/jarjar` |
+| 补丁源码编译 | 外部 `gradlew spotlessApply build`（GTMThings 补丁检出） | `BUILD SUCCESSFUL`，`spotlessCheck` 通过（补丁源码格式合规） |
+| 资源补齐 + 体检 + 落盘 | `gradlew resfixGtmtJar` | `to add = 782`，输出 `1239 entries, assets=1092, class=102`，体检通过后覆盖 `patchJar` |
 | 产物自检 | `gradlew verifyPatchedJarjar` | `[OK] 补丁 GTMThings`（补丁内部类 + `assets ≥ 1080` 两条都过） |
 | 补丁类还在 | `javap` 打在**最终**那份 jar 上 | `AdvancedTerminalBehavior$TierListPanel` 在，且有 `detectAndSendChanges` / `updateScreen` / `applyLayout` |
 | 三个 mixin 的签名 | 同上 | `useOn(UseOnContext)` 不变；`AutoBuildSetting#apply(BlockInfo[])` 不变；`AdvancedBlockPattern#autoBuild(...)` 不变，且 `getGlobalCount`/`getLayerCount` **各 1 处共 2 处**（`@Redirect require=1` 的目标）不变 |

@@ -4,8 +4,8 @@ import com.gregtechceu.gtceu.api.block.ICoilType
 import com.gregtechceu.gtceu.api.data.chemical.material.Material
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.StringRepresentable
-import rain.gtetcore.gtet.common.data.ETMaterial
 import rain.gtetcore.gtet.Gtetcore.Companion.id
+import rain.gtetcore.gtet.common.data.ETMaterial
 import rain.gtetcore.gtet.util.lang.LangUtil
 import java.util.function.Supplier
 
@@ -32,8 +32,10 @@ enum class CoilType(
 ) : StringRepresentable, ICoilType {
 
     /** 示例线圈 — 铜镍合金，基础等级 */
-    NAME("cupronickel", "测试线圈方块", 18000, 10, 10,
-        Supplier { ETMaterial.MaterialNAME }, id("block/coil/testcoil/machine_coil_cupronickel"))
+    NAME(
+        "cupronickel", "测试线圈方块", 18000, 10, 10,
+        Supplier { ETMaterial.MaterialNAME }, id("block/coil/testcoil/machine_coil_cupronickel")
+    )
 
     ;
 

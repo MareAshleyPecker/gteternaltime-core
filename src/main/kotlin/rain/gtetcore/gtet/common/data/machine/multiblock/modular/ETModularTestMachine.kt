@@ -1,4 +1,4 @@
-package rain.gtetcore.gtet.common.machine.multiblock
+package rain.gtetcore.gtet.common.data.machine.multiblock.modular
 
 import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.GTValues
@@ -12,29 +12,35 @@ import com.gregtechceu.gtceu.api.pattern.FactoryBlockPattern
 import com.gregtechceu.gtceu.api.pattern.MultiblockShapeInfo
 import com.gregtechceu.gtceu.api.pattern.Predicates
 import com.gregtechceu.gtceu.common.data.GTBlocks
+import com.gregtechceu.gtceu.common.data.GTItems
 import com.gregtechceu.gtceu.common.data.GTMaterials
+import com.gregtechceu.gtceu.data.recipe.CustomTags
 import com.lowdragmc.lowdraglib.gui.widget.Widget
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup
 import com.lowdragmc.lowdraglib.utils.BlockInfo
 import net.minecraft.network.chat.Component
-import rain.gtetcore.gtet.common.machine.multiblock.ETModularTestMachine.Companion.MODULE_SLOT_AREA
+import rain.gtetcore.gtet.common.data.machine.multiblock.modular.ETModularTestMachine.Companion.MODULE_SLOT_AREA
+import rain.gtetcore.gtet.common.machine.multiblock.ETStructureData
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleTiers
 import rain.gtetcore.gtet.util.lang.LangUtil
+import java.util.function.Supplier
 
 /**
  * 模块化多方块试验台 —— [ETModularMachine] 的活样本，同时也是「结构喂数据」的样本。
  *
  * - **模块物品决定等级**：金锭 = MK1、钛锭 = MK2、中子素锭 = MK3，换模块会换结构（3³ / 5³ / 7³）。
- *   判定不写在这里了，而是登记进全局规则表 [ETModuleTiers]（见 `companion object` 的 `init`）；
+ *   判定不写在这里了，而是登记进全局规则表 [ETModuleTiers]（见 `companion object` 的 `init`）——
+ *   那里把**三种判定方式各登记了一份**当示例：
+ *   ① `item` 具体物品（LV 电动马达）、② `prefix` 材料 + 形态（金 / 钛 / 中子素锭）、
+ *   ③ `tag` 标签（GT 的 `#gtceu:circuits/lv|hv|iv` 电路板）；
  * - **结构决定规模**：中间层机壳墙会被 [ETStructureData] 收集成「模块方块」，数量每 8 个把配方电压等级上限抬 1 档
  *   （3³ 有 8 个 → +1、5³ 有 16 个 → +2、7³ 有 24 个 → +3）；
  * - **面板右侧有模块槽**（[createUIWidget]），不然玩家没地方放模块。
  *
- * ⚠️ 改用规则表的 tagprefix 方式（材料 + 形态）之后**只有锭形态算模块**：旧实现直接比
- * `ChemicalHelper.getMaterialStack(stack).material()`，同一种材料的**任意形态**（粉 / 粒 / 块…）都会命中；
- * 规则表的三种登记方式里没有「只看材料」这一种，所以这里是**有意收窄**。想让别的形态也算，
- * 在 `init` 里继续 `prefix(...)` 登记即可。
+ * ⚠️ tagprefix 那一组是**有意收窄**过的：旧实现直接比 `ChemicalHelper.getMaterialStack(stack).material()`，
+ * 同一种材料的**任意形态**（粉 / 粒 / 块…）都会命中；规则表的三种登记方式里没有「只看材料」这一种，
+ * 所以现在只有**登记过的形态**算模块。要让别的形态也算，在 `init` 里继续 `prefix(...)` 登记即可。
  *
  * @author rain fox
  */
@@ -106,6 +112,34 @@ class ETModularTestMachine(holder: IMachineBlockEntity) : ETModularMachine(holde
 
         /** 机器 id（注册与语言键共用）。 */
         const val ID: String = "modular_test_machine"
+
+        /**
+         * 模块 → 等级登记：**三种判定方式各来一份**，等于 [ETModuleTiers] 的活示例。
+         *
+         * 1. **物品** —— 具体物品直接当模块（参数用 `Supplier`，理由见下）；
+         * 2. **tagprefix** —— 「材料 + 形态」；⚠️ 反查出来的是两个维度，形态必须一起登记，
+         *    所以只登记锭的话，金粉 / 金粒这类同材料物品**不算**模块（旧实现按材料匹配时它们算，见类注释）；
+         * 3. **标签** —— 交给整合包按标签喂（MC 标签自带层级，`#gtceu:circuits` 这种父标签也会一并命中）。
+         *
+         * ⚠️ 登记放在 `companion object` 的 `init` 里，Kotlin 会把它编进**外层类的 `<clinit>`**，
+         * 而本类首次被加载就是机器注册期（[ETModularTestMultiblocks.register] 第一行的 `initLang()`）——
+         * 那时 `GTItems` 还没进注册表（GTM 是 `GTMachines.init()` 在 `GTItems.init()` 之前），
+         * 直接写 `GTItems.X.asItem()` 会抛 `Registry entry not present`。
+         * 所以 ① 用 `Supplier` 包一层，把取物品推迟到机器运行时。
+         */
+        init {
+            ETModuleTiers
+                // ① 物品：一个具体物品直接当模块（Supplier 是必须的：登记期读不到物品注册表）
+                .item(1, Supplier { GTItems.ELECTRIC_MOTOR_LV.asItem() })
+                // ② tagprefix：材料 + 形态
+                .prefix(1, TagPrefix.ingot, GTMaterials.Gold)
+                .prefix(2, TagPrefix.ingot, GTMaterials.Titanium)
+                .prefix(3, TagPrefix.ingot, GTMaterials.Neutronium)
+                // ③ 标签：GT 的电路标签（LV / HV / IV 电路板）
+                .tag(1, CustomTags.LV_CIRCUITS)
+                .tag(2, CustomTags.HV_CIRCUITS)
+                .tag(3, CustomTags.IV_CIRCUITS)
+        }
 
         /** 每多少个「模块方块」把配方电压等级上限抬一档。 */
         private const val MODULE_BLOCKS_PER_TIER: Int = 8
@@ -192,15 +226,11 @@ class ETModularTestMachine(holder: IMachineBlockEntity) : ETModularMachine(holde
 
             return builder
                 .where('S', Predicates.controller(Predicates.blocks(definition.block)))
-                .where(
-                    'X',
-                    Predicates.blocks(casing.get())
+                .where('X', Predicates.blocks(casing.get())
                         .setMinGlobalLimited(1)
                         .or(Predicates.autoAbilities(*definition.recipeTypes)),
                 )
-                .where(
-                    'M',
-                    ETStructureData.collectingModuleBlocks(
+                .where('M', ETStructureData.collectingModuleBlocks(
                         { it.`is`(casing.get()) },
                         arrayOf(BlockInfo.fromBlockState(casing.get().defaultBlockState())),
                     ),

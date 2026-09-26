@@ -1,8 +1,7 @@
-package rain.gtetcore.gtet.mixin.GTM;
+package rain.gtetcore.gtet.mixin.GTM.material;
 
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
-
 import com.gregtechceu.gtceu.api.GTCEuAPI;
 import com.gregtechceu.gtceu.api.data.chemical.material.Material;
 import com.gregtechceu.gtceu.api.data.chemical.material.registry.MaterialRegistry;
@@ -12,17 +11,13 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate;
 import com.gregtechceu.gtceu.common.data.GTItems;
 import com.gregtechceu.gtceu.common.data.GTMaterialItems;
 import com.gregtechceu.gtceu.common.registry.GTRegistration;
-
-import net.minecraft.world.item.Item;
-
 import com.tterrag.registrate.providers.ProviderType;
 import com.tterrag.registrate.util.entry.ItemEntry;
 import com.tterrag.registrate.util.nullness.NonNullBiConsumer;
-
+import net.minecraft.world.item.Item;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
-
 import org.spongepowered.asm.mixin.Unique;
 import rain.gtetcore.gtet.api.registrate.OnlyETreg;
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs;

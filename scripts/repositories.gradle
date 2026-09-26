@@ -1,13 +1,25 @@
 repositories {
+    // 仓内 vendored 的补丁 GTM：maven 布局（patchJar/maven/com/gregtechceu/gtceu/...）。
+    // ⚠️ 必须排在 mavenLocal() 之前 —— dev 编译期依赖 com.gregtechceu.gtceu:gtceu-1.20.1 优先取这里，
+    //    保证任何机器（克隆后 m2 里没有补丁版）拿到的都是补丁 jar，而不是官方未打补丁的同版本。
+    //    content 过滤只接管 GTM 组：file 仓库对每个依赖都做一次未命中探测，放开会拖慢解析。
+    maven {
+        name = 'gtetcore patchJar'
+        url = project.uri('patchJar/maven')
+        content {
+            includeGroup 'com.gregtechceu.gtceu'
+        }
+    }
+    // 兜底：外部检出 rebuild 时 publishToMavenLocal 的产物仍能被解析
     mavenLocal()
     flatDir {
         dir "libs"
     }
     // 补丁 jar 的 flatDir 仓库：记号是「仓库名:name:version」，flatDir 忽略 group、只按
     // <name>-<version>.jar 找文件 —— 所以这里的 dir 必须是 jar 所在的那一层目录。
-    // ⚠️ 不能把这一条并进上面的 `dir "libs"`：flatDir 不递归子目录，libs/jarjar/ 里的 jar 找不到。
+    // ⚠️ 不能并进上面的 `dir "libs"`：flatDir 不递归子目录。
     flatDir {
-        dir "libs/jarjar"
+        dir "patchJar"
     }
     mavenCentral()
 

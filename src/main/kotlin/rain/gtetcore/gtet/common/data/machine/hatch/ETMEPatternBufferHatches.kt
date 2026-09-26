@@ -9,47 +9,15 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.Gtetcore
+import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.PROXY_ID
+import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.PROXY_TIERS_TOOLTIP_KEY
+import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.STAGES
+import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.register
+import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.registerProxy
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferPartMachine
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferProxyPartMachine
 import rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities
 import rain.gtetcore.gtet.util.lang.LangUtil
-
-/** GTM 的 AE 覆盖层命名空间：贴图在 GTM 自己的 jar 里，我们只引用。 */
-private const val GTCEU_NS = "gtceu"
-
-/** 总成正面覆盖层：与 GTM 的 `me_pattern_buffer` 用同一张。 */
-private const val OVERLAY_BUFFER = "block/overlay/appeng/me_buffer_hatch"
-
-/** 镜像正面覆盖层：与 GTM 的 `me_pattern_buffer_proxy` 用同一张。 */
-private const val OVERLAY_PROXY = "block/overlay/appeng/me_buffer_hatch_proxy"
-
-/**
- * 一档「ME 样板总成」。
- *
- * 容量就是这一行的字面值：注册时既写进 [ETPatternBufferCapacities]（mixin 在父类构造期按
- * 方块定义查它来决定样板槽位数），也写进名字与 tooltip。**一个容量只有一个来源**，
- * 所以名字、面板、实际槽位三者不会打架。
- *
- * ⚠️ 容量按「9 列一块、最多两块并排、每块最多 12 行」规整过（见 [ETMEPatternBufferPartMachine]）：
- * 64 → 63（= 7×9）、125 → 126（= 7×18）；27 与 216 本来就是整块。
- *
- * ⚠️ 镜像**不在**这张表里：镜像现在只有一件、且能连所有档位（见 [registerProxy]）。
- *
- * @param id       总成注册名（同时决定方块 id 与语言键 `block.gtetcore.<id>`）
- * @param capacity 样板槽位数
- * @param tier     电压等级，决定外壳贴图；⚠️ 非能源部件不看 tier，这里纯外观与档位标识
- */
-data class PatternBufferStage(
-    val id: String,
-    val capacity: Int,
-    val tier: Int
-)
-
-/** 唯一那件镜像的注册名（保留历史 id：不动存档、也不动已产出资源名）。 */
-private const val PROXY_ID = "me_pattern_buffer_proxy_luv"
-
-/** 唯一那件镜像的电压等级（LuV；非能源部件不看 tier，只影响外壳贴图）。 */
-private const val PROXY_TIER = GTValues.LuV
 
 /**
  * 「多阶段 ME 样板总成 + 通用镜像」注册入口：**四档总成 + 一件镜像**，进
@@ -102,6 +70,43 @@ private const val PROXY_TIER = GTValues.LuV
  * @author rain fox
  */
 object ETMEPatternBufferHatches {
+
+    /** GTM 的 AE 覆盖层命名空间：贴图在 GTM 自己的 jar 里，我们只引用。 */
+    private const val GTCEU_NS = "gtceu"
+
+    /** 总成正面覆盖层：与 GTM 的 `me_pattern_buffer` 用同一张。 */
+    private const val OVERLAY_BUFFER = "block/overlay/appeng/me_buffer_hatch"
+
+    /** 镜像正面覆盖层：与 GTM 的 `me_pattern_buffer_proxy` 用同一张。 */
+    private const val OVERLAY_PROXY = "block/overlay/appeng/me_buffer_hatch_proxy"
+
+    /**
+     * 一档「ME 样板总成」。
+     *
+     * 容量就是这一行的字面值：注册时既写进 [ETPatternBufferCapacities]（mixin 在父类构造期按
+     * 方块定义查它来决定样板槽位数），也写进名字与 tooltip。**一个容量只有一个来源**，
+     * 所以名字、面板、实际槽位三者不会打架。
+     *
+     * ⚠️ 容量按「9 列一块、最多两块并排、每块最多 12 行」规整过（见 [ETMEPatternBufferPartMachine]）：
+     * 64 → 63（= 7×9）、125 → 126（= 7×18）；27 与 216 本来就是整块。
+     *
+     * ⚠️ 镜像**不在**这张表里：镜像现在只有一件、且能连所有档位（见 [registerProxy]）。
+     *
+     * @param id       总成注册名（同时决定方块 id 与语言键 `block.gtetcore.<id>`）
+     * @param capacity 样板槽位数
+     * @param tier     电压等级，决定外壳贴图；⚠️ 非能源部件不看 tier，这里纯外观与档位标识
+     */
+    data class PatternBufferStage(
+        val id: String,
+        val capacity: Int,
+        val tier: Int
+    )
+
+    /** 唯一那件镜像的注册名（保留历史 id：不动存档、也不动已产出资源名）。 */
+    private const val PROXY_ID = "me_pattern_buffer_proxy_luv"
+
+    /** 唯一那件镜像的电压等级（LuV；非能源部件不看 tier，只影响外壳贴图）。 */
+    private const val PROXY_TIER = GTValues.LuV
 
     /**
      * 四档总成的**唯一**来源：容量 / tier / 名字全部从这一行取。
@@ -156,8 +161,10 @@ object ETMEPatternBufferHatches {
             .tier(stage.tier)
             .langValue("ME Pattern Buffer ($tierName, ${stage.capacity} Patterns)")
             .rotationState(RotationState.ALL)
-            .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS,
-                PartAbility.EXPORT_ITEMS)
+            .abilities(
+                PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS,
+                PartAbility.EXPORT_ITEMS
+            )
             .colorOverlayTieredHullModel(gtmOverlay(OVERLAY_BUFFER))
             .tooltips(
                 Component.translatable("block.gtceu.pattern_buffer.desc.0"),
@@ -192,8 +199,10 @@ object ETMEPatternBufferHatches {
             .tier(PROXY_TIER)
             .langValue("ME Pattern Buffer Proxy ($tierName, All Tiers)")
             .rotationState(RotationState.ALL)
-            .abilities(PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS,
-                PartAbility.EXPORT_ITEMS)
+            .abilities(
+                PartAbility.IMPORT_ITEMS, PartAbility.IMPORT_FLUIDS, PartAbility.EXPORT_FLUIDS,
+                PartAbility.EXPORT_ITEMS
+            )
             .colorOverlayTieredHullModel(gtmOverlay(OVERLAY_PROXY))
             .tooltips(
                 Component.translatable("block.gtceu.pattern_buffer_proxy.desc.0"),
@@ -223,8 +232,10 @@ object ETMEPatternBufferHatches {
     /** 登记四条说明：总成的容量说明 + 镜像的「全档通用」说明（中英各一条）。 */
     private fun registerLang() {
         LangUtil.add(CAPACITY_TOOLTIP_KEY, "Pattern slots: %s", "样板槽位：%s")
-        LangUtil.add(PROXY_TIERS_TOOLTIP_KEY,
+        LangUtil.add(
+            PROXY_TIERS_TOOLTIP_KEY,
             "Connects to any tier of ME Pattern Buffer: 27 / 63 / 126 / 216 patterns",
-            "可连接任意档位的 ME 样板总成：27 / 63 / 126 / 216 样板")
+            "可连接任意档位的 ME 样板总成：27 / 63 / 126 / 216 样板"
+        )
     }
 }

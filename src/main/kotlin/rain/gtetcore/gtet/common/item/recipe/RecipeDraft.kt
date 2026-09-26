@@ -4,12 +4,17 @@ import com.gregtechceu.gtceu.api.capability.recipe.FluidRecipeCapability
 import com.gregtechceu.gtceu.api.capability.recipe.ItemRecipeCapability
 import com.gregtechceu.gtceu.api.recipe.GTRecipeType
 import com.gregtechceu.gtceu.api.registry.GTRegistries
-
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.fluids.FluidStack
 import net.minecraftforge.items.ItemStackHandler
+import rain.gtetcore.gtet.common.item.recipe.RecipeDraft.Companion.KEY
+import rain.gtetcore.gtet.common.item.recipe.RecipeDraft.Companion.MAX_FLUID_INPUTS
+import rain.gtetcore.gtet.common.item.recipe.RecipeDraft.Companion.MAX_FLUID_OUTPUTS
+import rain.gtetcore.gtet.common.item.recipe.RecipeDraft.Companion.MAX_INPUTS
+import rain.gtetcore.gtet.common.item.recipe.RecipeDraft.Companion.MAX_OUTPUTS
+import rain.gtetcore.gtet.common.item.recipe.RecipeDraft.Companion.restore
 
 /**
  * 配方编辑器的工作区（草稿）—— 记录"当前这个配方填了什么"。
@@ -25,7 +30,7 @@ import net.minecraftforge.items.ItemStackHandler
  * 再由控件自己的 update info 同步回客户端显示。所以改草稿的代码必须两边都能跑，
  * 别只改一边、也别在构造时把状态抄进控件里。
  *
- * 槽位用 Forge 的 [ItemStackHandler]（自带 NBT 序列化）+ 【自研】的 [DraftFluidTanks]
+ * 槽位用 Forge 的 [ItemStackHandler]（自带 NBT 序列化）+ [DraftFluidTanks]
  * （多槽幽灵流体罐），界面侧分别交给 GTCEu 的 `PhantomSlotWidget` / `PhantomFluidWidget`。
  * 界面固定只建 [MAX_INPUTS] + [MAX_OUTPUTS] + [MAX_FLUID_INPUTS] + [MAX_FLUID_OUTPUTS]
  * 这一片网格，**这次实际用几个由配方类型的真实能力决定**（见 [inputSlots] 等四个方法），
@@ -158,7 +163,10 @@ class RecipeDraft {
 
     /** 实际使用的输出槽数量。 */
     fun outputSlots(): Int =
-        if (gtDeclaresNothing()) 1 else slotCount(MAX_OUTPUTS, kind.outputs) { it.getMaxOutputs(ItemRecipeCapability.CAP) }
+        if (gtDeclaresNothing()) 1 else slotCount(
+            MAX_OUTPUTS,
+            kind.outputs
+        ) { it.getMaxOutputs(ItemRecipeCapability.CAP) }
 
     /**
      * 实际使用的流体输入槽数量。
@@ -174,7 +182,7 @@ class RecipeDraft {
     /** 是不是 GT 种类、但类型一个槽都没声明（GT 自己注册的 `gtceu:dummy` 占位类型就是这样）。 */
     private fun gtDeclaresNothing(): Boolean = kind == Kind.GT && gtRecipeType()?.let { type ->
         type.getMaxInputs(ItemRecipeCapability.CAP) <= 0 && type.getMaxOutputs(ItemRecipeCapability.CAP) <= 0 &&
-            type.getMaxInputs(FluidRecipeCapability.CAP) <= 0 && type.getMaxOutputs(FluidRecipeCapability.CAP) <= 0
+                type.getMaxInputs(FluidRecipeCapability.CAP) <= 0 && type.getMaxOutputs(FluidRecipeCapability.CAP) <= 0
     } == true
 
     /**

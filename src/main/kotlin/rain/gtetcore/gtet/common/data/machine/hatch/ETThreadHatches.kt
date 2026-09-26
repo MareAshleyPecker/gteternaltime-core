@@ -11,57 +11,12 @@ import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTi
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.api.capability.ETPartAbility
+import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches.VARIANTS
+import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches.register
+import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches.registerOne
 import rain.gtetcore.gtet.common.machine.multiblock.part.ThreadHatchPartMachine
 import rain.gtetcore.gtet.util.lang.LangUtil
 
-/**
- * 「线程仓」变体定义。
- *
- * 一个变体 = 一个方块。**线程数就写在这一行里**（与 [OverclockHatchVariant] 同构：
- * 规格是表的显式参数，扫一眼表就知道每档多少线程），注册时由 [ETThreadHatches.registerOne]
- * 原样传给 [ThreadHatchPartMachine] —— 表里写 4 就真的是 4，
- * 不用再去别处翻一个公式算它。
- *
- * ⚠️ 线程数与 tier 必须自己对上（4↔ZPM、8↔UV、16↔UHV、32↔UEV、64↔UIV、128↔UXV、256↔OpV、512↔MAX，
- * 从 ZPM 起每档相对上一档翻倍）；加档时这一行要一起改，
- * 别只改一半。名字里的线程数与本档上限取自**同一个** `threads`，所以这两处不会打架。
- *
- * @param id      注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`；
- *                本 mod **不再**为线程仓生成 tooltip / 面板说明键，见 [ETThreadHatches.registerOne]）
- * @param threads 该档的线程数上限（= 同时能跑的线程条数），直接传给 [ThreadHatchPartMachine]
- * @param tier    电压等级，决定外壳贴图
- *
- * @author rain fox
- */
-data class ThreadHatchVariant(
-    val id: String,
-    val threads: Int,
-    val tier: Int
-)
-
-/**
- * 线程仓正面覆盖层的来源命名空间。
- *
- * ⚠️ 这批贴图是 **GTOCore 的素材**（版权归 GTOCore 作者所有，LGPL-3.0），
- * 随本 mod 一起分发、只引用不修改；来源与授权原文见 `assets/gtocore/LICENSE.txt`。
- */
-private const val GTOCORE_NS = "gtocore"
-
-/** GTOCore 线程仓覆盖层目录前缀：完整路径 = 本前缀 + mk 编号（`..._mk1` … `..._mk7`）。 */
-private const val THREAD_OVERLAY_ROOT = "block/machines/thread_hatch/thread_hatch_mk"
-
-/**
- * 变体对应的 GTOCore 覆盖层目录（`createWorkableTieredHullMachineModel` 的 `overlayDir` 参数）。
- *
- * GTOCore 自己的编号规则是 `mk = tier - ZPM`，注册区间也是 UV..MAX，
- * 与本族 [ThreadHatchVariant] 表**逐档一一对应**（`thread_hatch_uv` → `mk1` … `thread_hatch_max` → `mk7`），
- * 所以这里不需要任何取整/夹取。
- *
- * 与超频仓那套相比：这几套目录里多了 `overlay_front_active`，运行时 IDLE 与 WORKING
- * 会是两张不同的正面贴图（缺 back/top/bottom/side 覆盖层的情况两族一样，见 [ETOverclockHatches]）。
- */
-private fun overlayFor(v: ThreadHatchVariant): ResourceLocation =
-    ResourceLocation.fromNamespaceAndPath(GTOCORE_NS, THREAD_OVERLAY_ROOT + (v.tier - GTValues.ZPM))
 
 /**
  * 「线程仓」注册入口。
@@ -78,21 +33,69 @@ private fun overlayFor(v: ThreadHatchVariant): ResourceLocation =
  * 与 [ETOverclockHatches] 同一套约定：每个变体**只**生成名字语言键 `block.gtetcore.<id>`，
  * 中文名里直接带上电压等级与线程数（例如「MAX 线程仓（256 线程）」），英文名走 `.langValue(...)`。
  * 说明性的多行 tooltip 与部件面板的说明行都已删除（清单见 [registerOne] 的注释）。
+ * ⚠️ 不采用运行期插值的文案口径（「同时处理至多 %1$s 种不同配方，每种配方至多 %2$s 个」），
+ * 线程数直接写进方块**名字**（注册时已由变体表确定，不需要运行期字符串插值）。
  *
  * ## 接线位置
- * 本文件的 [register] 由 `rain.gtetcore.gtet.common.data.machine.multiblock.ALLMmchine.init()`
+ * 本文件的 [register] 由 `rain.gtetcore.gtet.common.data.machine.ALLMmchine.init()`
  * 调用一次（结果存进 `ALLMmchine.THREAD_HATCHES`），走的是与 [ETOverclockHatches] 完全相同的那条路径
  * —— 那里也是机器表 `unfreeze()` / `freeze()` 的窗口所在，不要另找入口重复注册。
  *
- * ## 思路来源
- * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）`common/data/GTOMachines.java:250-258` —— 借「`registerTieredMachines("thread_hatch", …)` 从 UV 一路分级到 MAX + 能力 `GTOPartAbility.THREAD_HATCH` + 提示里报出线程数」的形状；GTET 侧因为变体表自带唯一 tier，做成「变体表 + 逐个 register」而不是 GTM 那种「传 tier 数组」。
- * - 【借鉴形状】GTOCore `data/lang/MachineLang.java:26-28` 的文案「同时处理至多 %1$s 种不同配方，每种配方至多 %2$s 个」—— 借的是**文案口径**（先说能同时跑几种配方、再说每种能并行多少）；GTET 侧把「线程数」直接写进方块**名字**（线程数写在变体表里、注册时就已知），运行期不做字符串插值。⚠️ GTO 的线程调度实现在加密 native 里（`libs/gtolib-1.0.jar` 里 `native0/native/` 那一堆 `.bin`），本文件不涉及它。
- * - 【自研】`ThreadHatchVariant` 把线程数做成**显式字段**（而不是由 tier 现算出来，原先那份 `maxThreadsForTier` 已删）—— 与 [OverclockHatchVariant] 同构，看表就能读出七档各是多少线程；代价是 tier 与线程数成了两列需要对上的数据，加档时两列都要改（`registerOne` 把同一个 `threads` 同时用于名字与部件构造，所以至少这两处不会不一致）。
- * - 【自研】「规格并进名字、不再单独生成 tooltip / 面板说明键」这条显示约定 —— 由玩家反馈「这些仓的面板/提示太啰嗦」直接决定。
+ * ⚠️ GTO 那侧的线程调度实现在加密 native 里（`libs/gtolib-1.0.jar` 的 `native0/native/`），
+ * 一行实现都拿不到，只对得上字段与签名，本文件不依赖它。
  *
  * @author rain fox
  */
 object ETThreadHatches {
+
+    /**
+     * 「线程仓」变体定义。
+     *
+     * 一个变体 = 一个方块。**线程数就写在这一行里**（与 [OverclockHatchVariant] 同构：
+     * 规格是表的显式参数，扫一眼表就知道每档多少线程），注册时由 [ETThreadHatches.registerOne]
+     * 原样传给 [ThreadHatchPartMachine] —— 表里写 4 就真的是 4，
+     * 不用再去别处翻一个公式算它。
+     *
+     * ⚠️ 线程数与 tier 必须自己对上（4↔ZPM、8↔UV、16↔UHV、32↔UEV、64↔UIV、128↔UXV、256↔OpV、512↔MAX，
+     * 从 ZPM 起每档相对上一档翻倍）；加档时这一行要一起改，
+     * 别只改一半。名字里的线程数与本档上限取自**同一个** `threads`，所以这两处不会打架。
+     *
+     * @param id      注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`；
+     *                本 mod **不再**为线程仓生成 tooltip / 面板说明键，见 [ETThreadHatches.registerOne]）
+     * @param threads 该档的线程数上限（= 同时能跑的线程条数），直接传给 [ThreadHatchPartMachine]
+     * @param tier    电压等级，决定外壳贴图
+     *
+     * @author rain fox
+     */
+    data class ThreadHatchVariant(
+        val id: String,
+        val threads: Int,
+        val tier: Int
+    )
+
+    /**
+     * 线程仓正面覆盖层的来源命名空间。
+     *
+     * ⚠️ 这批贴图是 **GTOCore 的素材**（版权归 GTOCore 作者所有，LGPL-3.0），
+     * 随本 mod 一起分发、只引用不修改；来源与授权原文见 `assets/gtocore/LICENSE.txt`。
+     */
+    private const val GTOCORE_NS = "gtocore"
+
+    /** GTOCore 线程仓覆盖层目录前缀：完整路径 = 本前缀 + mk 编号（`..._mk1` … `..._mk7`）。 */
+    private const val THREAD_OVERLAY_ROOT = "block/machines/thread_hatch/thread_hatch_mk"
+
+    /**
+     * 变体对应的 GTOCore 覆盖层目录（`createWorkableTieredHullMachineModel` 的 `overlayDir` 参数）。
+     *
+     * GTOCore 自己的编号规则是 `mk = tier - ZPM`，注册区间也是 UV..MAX，
+     * 与本族 [ThreadHatchVariant] 表**逐档一一对应**（`thread_hatch_uv` → `mk1` … `thread_hatch_max` → `mk7`），
+     * 所以这里不需要任何取整/夹取。
+     *
+     * 与超频仓那套相比：这几套目录里多了 `overlay_front_active`，运行时 IDLE 与 WORKING
+     * 会是两张不同的正面贴图（缺 back/top/bottom/side 覆盖层的情况两族一样，见 [ETOverclockHatches]）。
+     */
+    private fun overlayFor(v: ThreadHatchVariant): ResourceLocation =
+        ResourceLocation.fromNamespaceAndPath(GTOCORE_NS, THREAD_OVERLAY_ROOT + (v.tier - GTValues.ZPM))
 
     /**
      * 全部线程仓变体：ZPM 起每级翻倍，一路到 MAX。
@@ -119,11 +122,11 @@ object ETThreadHatches {
      * 并行 = 同一种配方**同时跑几次**，所以两族的档位不用对齐。
      */
     val VARIANTS: List<ThreadHatchVariant> = listOf(
-        ThreadHatchVariant("thread_hatch_zpm", 4  , GTValues.ZPM),
-        ThreadHatchVariant("thread_hatch_uv" , 8  , GTValues.UV),
-        ThreadHatchVariant("thread_hatch_uhv", 16 , GTValues.UHV),
-        ThreadHatchVariant("thread_hatch_uev", 32 , GTValues.UEV),
-        ThreadHatchVariant("thread_hatch_uiv", 64 , GTValues.UIV),
+        ThreadHatchVariant("thread_hatch_zpm", 4, GTValues.ZPM),
+        ThreadHatchVariant("thread_hatch_uv", 8, GTValues.UV),
+        ThreadHatchVariant("thread_hatch_uhv", 16, GTValues.UHV),
+        ThreadHatchVariant("thread_hatch_uev", 32, GTValues.UEV),
+        ThreadHatchVariant("thread_hatch_uiv", 64, GTValues.UIV),
         ThreadHatchVariant("thread_hatch_uxv", 128, GTValues.UXV),
         ThreadHatchVariant("thread_hatch_opv", 256, GTValues.OpV),
         ThreadHatchVariant("thread_hatch_max", 512, GTValues.MAX),

@@ -8,12 +8,10 @@ import com.gregtechceu.gtceu.api.recipe.OverclockingLogic;
 import com.gregtechceu.gtceu.api.recipe.modifier.ModifierFunction;
 import com.gregtechceu.gtceu.common.data.GTRecipeModifiers;
 import com.gregtechceu.gtceu.common.machine.multiblock.electric.FusionReactorMachine;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
-
 import rain.gtetcore.gtet.api.capability.IOverclockHatch;
 import rain.gtetcore.gtet.common.machine.overclock.OverclockHatchHelper;
 import rain.gtetcore.gtet.common.machine.overclock.OverclockingLogics;
@@ -67,9 +65,8 @@ import rain.gtetcore.gtet.common.machine.overclock.OverclockingLogics;
  * {@code logic.getModifier(...)}（它直接调 {@code logic.runOverclockingLogic(...)}），
  * 所以不存在递归；而本类回退分支里调 {@code logic.getModifier(...)} 是安全的 ——
  * 我们重定向的是调用点（{@code GTRecipeModifiers}），不是接口方法本身。
- *
- * ## 思路来源
- * - 【自研】挂钩点的选择与「5 处 {@code @Redirect}」这套方案 —— 原本打算注入 {@link OverclockingLogic} 接口的 default 方法（所有超频的唯一汇合点），被 Mixin 0.8.5 的注解处理器硬拒（{@code Injector in interface is unsupported}，见上文），于是改成重定向调用点；这个改道方案与「哪 5 处、以及为什么必须 5 处全部重定向」的判断都是本次自己定的。
+ * <p>⚠️ 挂钩点只能选调用点：Mixin 0.8.5 的注解处理器不允许往 {@link OverclockingLogic} 接口的
+ * default 方法里注入（{@code Injector in interface is unsupported}），所以这 5 处必须全部重定向。
  *
  * @author rain fox
  */

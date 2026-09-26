@@ -2,8 +2,7 @@ package rain.gtetcore.gtet.common.machine.multiblock.modular
 
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.Level
-import java.util.Collections
-import java.util.WeakHashMap
+import java.util.*
 
 /**
  * 模块化多方块的**无线对接表**（GTET 版的 `IIWirelessInteractor`）。

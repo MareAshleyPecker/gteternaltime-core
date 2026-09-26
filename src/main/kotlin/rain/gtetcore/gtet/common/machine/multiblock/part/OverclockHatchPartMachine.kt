@@ -26,8 +26,8 @@ import rain.gtetcore.gtet.api.capability.IOverclockHatch
  * S 与 E 由注册表在构造时注入、之后不再变化，所以不需要 `@Persisted`，
  * `MANAGED_FIELD_HOLDER` 只是为了让 ldlib 把父类那些 `@DescSynced` 字段（控制器坐标等）串起来。
  *
- * ## 思路来源
- * - 【自研】不实现 `IParallelHatch` 的决定 —— 实现它会顶掉控制器缓存的真正并行仓（`getParallelHatch()` 只取一个实例），因此改用 GTET 自己的 `IOverclockHatch`；这个取舍在 GTM 里没有对应物。
+ * ⚠️ 不实现 `IParallelHatch`：实现它会顶掉控制器缓存的真正并行仓
+ * （`getParallelHatch()` 只取一个实例），所以用独立能力 [IOverclockHatch]。
  *
  * @param holder       方块实体持有者
  * @param tier         电压等级（同时决定外壳贴图，见 `ETOverclockHatches` 的变体表）

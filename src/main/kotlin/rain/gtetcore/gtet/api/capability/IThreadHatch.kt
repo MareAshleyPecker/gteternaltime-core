@@ -22,10 +22,9 @@ package rain.gtetcore.gtet.api.capability
  *   只缓存一个实例，见 `MultiblockControllerMachine` 第 56 行的 `parallelHatch` 字段），
  *   于是「每线程各自吃 M 倍并行」这件事就废了。
  *
- * ## 思路来源
- * - 【借鉴形状】GTOCore（`D:\java\GTOCore`）的线程仓形状 —— `GTOMachines.java:250-258` 用 `GTOPartAbility.THREAD_HATCH` + `ThreadPartMachine::new` 把「线程仓」做成一个分级部件，`ThreadPartMachine#getCurrentThread()` 暴露线程数；这里借的是「一个独立能力 + 一个分级部件 + 一个线程数 getter」这个形状。
- *   ⚠️ GTO 侧只有**字段与签名**能看到：`com.gtolib.api.machine.impl.part.ThreadPartMachine` 与 `com.gtolib.api.machine.feature.multiblock.ICrossRecipeMachine$Thread`（`progress` / `recipe` / `duration` / `use`）的方法体全在**加密 native**里（`libs/gtolib-1.0.jar` 里 `native0/native/` 那一堆 `.bin`，`.class` 里方法体被替换成 `native` 声明），一行实现都拿不到。
- * - 【自研】把「线程数」拆成 [threadCount]（当前生效、玩家可下调）与 [maxThreads]（变体表给的上限）两个语义 —— 并行仓那套只有一个 `getCurrentParallel()`，GTO 的线程仓同样只有一个 `getCurrentThread()`；「上限 / 当前值分开、且允许玩家往下调」这一对语义在两边都没有对应物。
+ * ## 两个语义为什么要分开
+ * GTM 的并行仓与 GTO 的线程仓都只暴露一个 getter；这里把「线程数」拆成 [threadCount]（当前生效、
+ * 玩家可下调）与 [maxThreads]（变体表给的上限），两者都要有。
  *
  * @author rain fox
  */

@@ -1,17 +1,16 @@
 package rain.gtetcore.gtet.data.recipes
 
-import net.minecraft.data.recipes.FinishedRecipe
-import java.util.function.Consumer
-
 import com.gregtechceu.gtceu.api.GTValues.*
 import com.gregtechceu.gtceu.api.data.tag.TagPrefix.dust
 import com.gregtechceu.gtceu.common.data.GTMaterials
 import com.gregtechceu.gtceu.common.data.GTRecipeTypes.CHEMICAL_RECIPES
+import net.minecraft.data.recipes.FinishedRecipe
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.common.data.ETMaterial.*
+import java.util.function.Consumer
 
 
-object Chemical_recipes {
+object ChemicalRecipes {
     // gtceu:chemical_reactor / test_thread / 200t / 30 EU/t / LV
     // ⚠️ 原来写的是 `inputItems(GTMaterials.Aluminium, 2)` / `outputItems(Al2O3, 1)` ——
     //    这两个重载不认 Material，会静默丢掉输入和输出（见类注释坑点 1），现在补上 `dust` 前缀。

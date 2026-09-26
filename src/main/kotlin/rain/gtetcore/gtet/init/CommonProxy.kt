@@ -1,4 +1,5 @@
-@file:Suppress("UNCHECKED_CAST", "DEPRECATION","unused")
+@file:Suppress("UNCHECKED_CAST", "DEPRECATION", "unused")
+
 package rain.gtetcore.gtet.init
 
 import com.gregtechceu.gtceu.api.GTCEuAPI
@@ -14,22 +15,22 @@ import net.minecraftforge.eventbus.api.IEventBus
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext
-import rain.gtetcore.gtet.config.GTETConfig
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.data.block.ETBlock
 import rain.gtetcore.gtet.common.data.item.ETItems
 import rain.gtetcore.gtet.common.data.machine.MachineRegister
+import rain.gtetcore.gtet.common.data.material.ETElementMaterials
+import rain.gtetcore.gtet.common.data.material.ETMaterialRegister
 import rain.gtetcore.gtet.common.item.recipe.FluidCountSlotWidget
 import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget
 import rain.gtetcore.gtet.common.item.terminal.TerminalLang
 import rain.gtetcore.gtet.common.item.tool.ToolNetwork
-import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleHostMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleMachine
-import rain.gtetcore.gtet.common.data.material.ETElementMaterials
-import rain.gtetcore.gtet.common.data.material.ETMaterialRegister
+import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
+import rain.gtetcore.gtet.config.GTETConfig
 import rain.gtetcore.gtet.data.GTETDatagen
 import rain.gtetcore.gtet.integration.jade.GTETJadeLang
 
@@ -59,11 +60,9 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         GTETCreativeModeTabs.init()
         ETItems.init()
         ETBlock.init()
-        // 机器不在这里注册：由 [registerMachines] 在 GTM 的机器注册窗口里经 MachineRegister 注册
-        // （那是 GTM 唯一允许往机器表里加东西的时刻）。
     }
 
-    fun initLang(){
+    private fun initLang() {
         // 高级终端扩展用到的双语条目（必须在数据生成前注册）
         TerminalLang.init()
         // 线程状态文本（机器 UI 与 GTET 的 Jade provider 共用；⚠️ 必须赶在数据生成之前登记 —— Jade 插件类加载太晚）

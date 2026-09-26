@@ -10,23 +10,10 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTieredHullMachineModel
 import net.minecraft.network.chat.Component
+import rain.gtetcore.gtet.common.data.machine.hatch.ETParallelHatches.VARIANTS
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETParallelHatchPartMachine
 import rain.gtetcore.gtet.util.lang.LangUtil
 
-/**
- * 「并行仓」变体定义：一个变体 = 一个方块。
- *
- * @param id          注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`）
- * @param tier        电压等级，决定外壳贴图
- * @param maxParallel 并行上限（同时是部件的默认值）
- *
- * @author rain fox
- */
-data class ParallelHatchVariant(
-    val id: String,
-    val tier: Int,
-    val maxParallel: Int
-)
 
 /**
  * GTET 自己的「并行仓」注册入口（IV ~ MAX 共 10 档，一套仓覆盖全部档位）。
@@ -46,6 +33,21 @@ data class ParallelHatchVariant(
  * @author rain fox
  */
 object ETParallelHatches {
+    /**
+     * 「并行仓」变体定义：一个变体 = 一个方块。
+     *
+     * @param id          注册名（同时决定方块 id 与名字语言键 `block.gtetcore.<id>`）
+     * @param tier        电压等级，决定外壳贴图
+     * @param maxParallel 并行上限（同时是部件的默认值）
+     *
+     * @author rain fox
+     */
+    data class ParallelHatchVariant(
+        val id: String,
+        val tier: Int,
+        val maxParallel: Int
+    )
+
 
     /**
      * 全部并行仓变体（IV ~ MAX 十档），tier 与并行上限一一对应：
@@ -53,10 +55,10 @@ object ETParallelHatches {
      * UXV 2097152 / OpV 8388608 / MAX 33554432。
      */
     val VARIANTS: List<ParallelHatchVariant> = listOf(
-        ParallelHatchVariant("parallel_hatch_iv" , GTValues.IV , 32),
+        ParallelHatchVariant("parallel_hatch_iv", GTValues.IV, 32),
         ParallelHatchVariant("parallel_hatch_luv", GTValues.LuV, 128),
         ParallelHatchVariant("parallel_hatch_zpm", GTValues.ZPM, 512),
-        ParallelHatchVariant("parallel_hatch_uv" , GTValues.UV , 2048),
+        ParallelHatchVariant("parallel_hatch_uv", GTValues.UV, 2048),
         ParallelHatchVariant("parallel_hatch_uhv", GTValues.UHV, 8192),
         ParallelHatchVariant("parallel_hatch_uev", GTValues.UEV, 32768),
         ParallelHatchVariant("parallel_hatch_uiv", GTValues.UIV, 524288),

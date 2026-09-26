@@ -25,13 +25,12 @@ dependencies {
     //   · 补丁内容是高级终端 UI / 逻辑，官方原件跑起来界面完全没变化（dev 里永远看不到补丁效果）；
     //   · 该 jar 是 SRG 名（由 GTMThings 自己的 reobfJar 产出），dev 是 Mojmap，所以必须过 fg.deobf 重映射；
     //   · fg.deobf 只认**单文件 artifact 依赖**（Gradle 的 files(...) 依赖 FG 明确不支持 deobf），
-    //     本地 jar 只能走 flatDir 记号 → 见 scripts/repositories.gradle 的 `dir "libs/jarjar"`。
-    // flatDir 记号是「组名:name:version」，组名被忽略，实际匹配的是 libs/jarjar/gtmthings-1.6.0-forge.jar。
+    //     本地 jar 只能走 flatDir 记号 → 见 scripts/repositories.gradle 的 `dir "patchJar"`。
+    // flatDir 记号是「组名:name:version」，组名被忽略，实际匹配的是 patchJar/gtmthings-1.6.0-forge.jar。
     // 原 curse 坐标 curse.maven:gtmthings-1104310:7712957 已删除：它的 POM（curse 那边自动生成的）
     // 里**没有任何 dependencies**，删掉不丢传递依赖；它需要的 ae2 / guideme / ldlib / gtceu 在本文件里都单独声明了。
-    // ⚠️ 代价：dev 编译从此**硬依赖** libs/jarjar/gtmthings-1.6.0-forge.jar 存在。仓里没有就先
-    //    gradlew buildPatchedGtmThings（或 gradlew build / jar，那条链路会自动补建），否则解析失败。
-    implementation fg.deobf("jarjar:gtmthings-1.6.0:forge")//libs/jarjar/gtmthings-1.6.0-forge.jar（补丁版）
+    // ⚠️ 代价：dev 编译从此**硬依赖** patchJar/gtmthings-1.6.0-forge.jar 存在（该 jar 已进 git，克隆即有）。
+    implementation fg.deobf("jarjar:gtmthings-1.6.0:forge")//patchJar/gtmthings-1.6.0-forge.jar（补丁版）
 
     //architectury (ftb 依赖)
     implementation fg.deobf("curse.maven:architectury-api-419699:5137938")//architectury-9.2.14-forge
@@ -53,7 +52,7 @@ dependencies {
     // 所以本 mod 不用写屏幕代码也能在 Mods 列表里可视化改配置；
     // 玩家侧不强制（mods.toml 里不声明），装了就有界面，不装就纯 toml。
     // 本地 jar 必须走 flatDir 记号才会被 fg.deobf 重映射（files(...) 依赖 FG 明确不支持 deobf）
-    runtimeOnly fg.deobf("libs:configured-forge-1.20.1:2.2.3")
+    runtimeOnly fg.deobf("dev:configured-forge-1.20.1:2.2.3")
 
     compileOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge-api:${jei_version}"))
     runtimeOnly(fg.deobf("mezz.jei:jei-${mc_version}-forge:${jei_version}"))
@@ -62,5 +61,8 @@ dependencies {
     //jade
     implementation fg.deobf("curse.maven:jade-324717:8479276")
     implementation fg.deobf("curse.maven:jade-addons-583345:8203724")
+
+    //embeddium
+    implementation fg.deobf("curse.maven:embeddium-908741:5681725")
 
 }
