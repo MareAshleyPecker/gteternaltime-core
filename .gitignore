@@ -42,3 +42,13 @@ runData-*.txt
 
 # 本机自用脚本（例如重算补丁哈希的维护脚本），不进公开仓
 local/
+
+# README/zh_CN 下的「设计与报告」类文档：只在本地留存，不进公开仓。
+# 教程（GTM开发教程/、IDEA使用教程）、对照表、开发说明、计划 这几类仍然跟踪。
+# ⚠️ 这里只是**不再跟踪**：这些文档在更早的提交里提交过，旧版本仍能从历史里翻到。
+/README/zh_CN/ME集成部件方案.md
+/README/zh_CN/主控塔实现报告.md
+/README/zh_CN/无线能源-API核实.md
+/README/zh_CN/无线能源链接仓设定.md
+/README/zh_CN/时序仓实现报告.md
+/README/zh_CN/高级终端行为规格.md
