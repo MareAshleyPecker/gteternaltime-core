@@ -1,0 +1,61 @@
+{
+  "_comment": "测试产物：TF（time_flow）参与配方序列化的实证，不参与游戏运行",
+  "ability_probe": {
+    "ability": "gtet_tf_hatch",
+    "ability_block_count": 7,
+    "note": "autoAbilities(true,false,true) 的返回谓词里出现的时序仓方块数（期望 7）",
+    "predicate_candidate_block_count": 42,
+    "registered_hatch_count": 7,
+    "tf_hatch_found_in_predicate": 7
+  },
+  "duration": 200,
+  "gtm_toJson_error": "java.lang.NullPointerException: Cannot invoke \"net.minecraft.client.Minecraft.isSameThread()\" because the return value of \"net.minecraft.client.Minecraft.getInstance()\" is null",
+  "how": "GTRecipeSerializer.CODEC.encodeStart(RegistryOps.create(JsonOps.INSTANCE, GatherDataEvent#getLookupProvider), GTRecipeBuilder#buildRawRecipe)",
+  "recipe": {
+    "type": "gtceu:macerator",
+    "category": "gtceu:macerator",
+    "duration": 200,
+    "inputs": {
+      "item": [
+        {
+          "content": {
+            "type": "gtceu:sized",
+            "count": 1,
+            "ingredient": {
+              "tag": "forge:dusts/iron"
+            }
+          }
+        }
+      ]
+    },
+    "outputs": {
+      "item": [
+        {
+          "content": {
+            "type": "gtceu:sized",
+            "count": 1,
+            "ingredient": {
+              "item": "gtceu:iron_dust"
+            }
+          }
+        }
+      ]
+    },
+    "tickInputs": {
+      "eu": [
+        {
+          "content": 30
+        }
+      ],
+      "time_flow": [
+        {
+          "content": 16
+        }
+      ]
+    }
+  },
+  "recipe_class": "MACERATOR_RECIPES",
+  "recipe_id": "gtceu:macerator/test_time_flow_tick_input",
+  "tf_per_tick": 16,
+  "total_tf_per_craft": 3200
+}

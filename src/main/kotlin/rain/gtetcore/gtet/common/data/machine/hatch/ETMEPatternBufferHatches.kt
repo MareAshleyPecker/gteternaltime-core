@@ -17,6 +17,7 @@ import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.reg
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferPartMachine
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferProxyPartMachine
 import rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities
+import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /**
@@ -59,13 +60,19 @@ import rain.gtetcore.gtet.util.lang.LangUtil
  * 与 [ETTagFilterHatches] / [ETThreadHatches] 同一套约定：英文名走 `.langValue(...)`、
  * 中文名走 [LangUtil.BLOCK_LANG]，**档位与容量并进名字**；总成 tooltip 保留 GTM 那三条功能说明
  * （`block.gtceu.pattern_buffer.desc.[0-2]`，它讲清了"闪存绑定镜像"的用法）+
- * 一条本 mod 的容量说明（键带 `%s`，四档共用）+ GTM 的 `gtceu.part_sharing.disabled`；
+ * 一条本 mod 的容量说明（键带 `%s`，四档共用）+ GTM 的「多方块共享」那一行；
  * 镜像那件换成 [PROXY_TIERS_TOOLTIP_KEY]（说明它能连所有档位）。
  *
- * ⚠️ 共享那一行写 `gtceu.part_sharing.disabled`：这两件的机器类
- * （[ETMEPatternBufferPartMachine] / [ETMEPatternBufferProxyPartMachine]）现在都覆写了
- * `IMultiPart#canShared() = false`（**仓室隔离**，防串配方），所以 tooltip 必须写「禁止」——
- * 写成 enabled 就是在骗玩家。代价与依据见那两个类的 `canShared()` 注释。
+ * ⚠️ 共享那一行默认写「禁止」（`gtceu.part_sharing.disabled`）：这两件的机器类
+ * （`ETMEPatternBufferPartMachine` / `ETMEPatternBufferProxyPartMachine`）都覆写了
+ * `IMultiPart#canShared()`（**仓室隔离**，防串配方），原先写死 `false`，
+ * 所以 tooltip 必须写「禁止」—— 写成 enabled 就是在骗玩家。
+ * 代价与依据见那两个类的 `canShared()` 注释。
+ *
+ * ⚠️ **现在那道闸门改成读全局配置 `multiblock.partsShareable`**（默认 false = 仍然禁止，
+ * 行为与原先一字不差）：配置一打开，本行会自己变成 `gtceu.part_sharing.enabled`，
+ * 否则 tooltip 就与事实相反了。所以这一行由
+ * [rain.gtetcore.gtet.util.ETPartSharing.line] 在**渲染时**给出（走 `MachineBuilder#tooltipBuilder`）。
  *
  * @author rain fox
  */
@@ -170,9 +177,14 @@ object ETMEPatternBufferHatches {
                 Component.translatable("block.gtceu.pattern_buffer.desc.0"),
                 Component.translatable("block.gtceu.pattern_buffer.desc.1"),
                 Component.translatable("block.gtceu.pattern_buffer.desc.2"),
-                Component.translatable(CAPACITY_TOOLTIP_KEY, stage.capacity),
-                Component.translatable("gtceu.part_sharing.disabled")
+                Component.translatable(CAPACITY_TOOLTIP_KEY, stage.capacity)
             )
+            // 「多方块共享」那一行仍在最后：本件 `canShared()` 读全局配置 `multiblock.partsShareable`，
+            // 所以它只能**渲染时**取值，走 tooltipBuilder（见 [ETPartSharing.line]）。
+            // ⚠️ tooltips() 与 tooltipBuilder() 在 MachineBuilder 里是**追加**关系、不是覆盖
+            //    （GTM MachineBuilder.java:693-696：先 `components.addAll(tooltips)` 再跑 builder），
+            //    上面那四行一行没动。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 
@@ -208,9 +220,10 @@ object ETMEPatternBufferHatches {
                 Component.translatable("block.gtceu.pattern_buffer_proxy.desc.0"),
                 Component.translatable("block.gtceu.pattern_buffer_proxy.desc.1"),
                 Component.translatable("block.gtceu.pattern_buffer_proxy.desc.2"),
-                Component.translatable(PROXY_TIERS_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.disabled")
+                Component.translatable(PROXY_TIERS_TOOLTIP_KEY)
             )
+            // 同上：共享行仍在最后，改走 tooltipBuilder 以便按配置取 enabled / disabled。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 

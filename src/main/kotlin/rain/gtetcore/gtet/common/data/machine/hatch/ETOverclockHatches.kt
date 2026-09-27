@@ -12,6 +12,7 @@ import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.api.capability.ETPartAbility
 import rain.gtetcore.gtet.common.data.machine.hatch.ETOverclockHatches.VARIANTS
 import rain.gtetcore.gtet.common.machine.multiblock.part.OverclockHatchPartMachine
+import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
 import kotlin.math.floor
 
@@ -33,8 +34,11 @@ import kotlin.math.floor
  * 这是**唯一必有的**显示键，规格都写在名字里，所以默认不再生成说明性 tooltip / 面板键。
  * 例外：[OverclockHatchVariant.tooltip] 非空的档位会额外生成一条
  * `gtetcore.machine.<id>.tooltip.0`（目前只有 `4x_lossy4` 与 `1024x_saving_max` 两档）。
- * 其余档位的提示只剩 GTM 自带的那条 `gtceu.part_sharing.disabled`
- * （所有 GTM 多方块部件都有，用来告诉玩家部件不可共享）。
+ * 其余档位的提示只剩 GTM 自带的那条「多方块共享」行
+ * （`gtceu.part_sharing.disabled` / `.enabled`，所有 GTM 多方块部件都有，用来告诉玩家部件能不能共享）。
+ * ⚠️ 那一行不是写死的：本件的机器类 `canShared()` 读全局配置 `multiblock.partsShareable`，
+ * 所以提示改走 `MachineBuilder#tooltipBuilder` 在渲染时按配置取键（见 [ETPartSharing.line]）；
+ * 默认配置下显示的仍是 `…disabled`，与以前一字不差。
  *
  * @author rain fox
  */
@@ -208,11 +212,16 @@ object ETOverclockHatches {
                         model.addReplaceableTextures("bottom", "top", "side")
                     }
             )
-            // 提示 = GTM 自带的「部件不可共享」+ 变体表里可选的说明行（没填的档位 extraTooltips 为空）
-            .tooltips(
-                Component.translatable("gtceu.part_sharing.disabled"),
-                *extraTooltips
-            )
+            // 提示 = 「多方块共享」那一行（默认状态下是 GTM 的 `gtceu.part_sharing.disabled`）
+            //      + 变体表里可选的说明行（没填的档位 extraTooltips 为空）。
+            // 走 tooltipBuilder 而不是 tooltips()：那一行要**渲染时**才读配置 `multiblock.partsShareable`。
+            // ⚠️ 这两者在 MachineBuilder 里是**追加**关系、不是覆盖（GTM MachineBuilder.java:693-696：
+            //    `components.addAll(tooltips)` 之后才调 tooltipBuilder），所以这里把原有的两行
+            //    原样搬进 lambda 只是为了**保住顺序**（共享行在最前），不是被覆盖后被迫搬。
+            .tooltipBuilder { _, list ->
+                list.add(ETPartSharing.line())
+                list.addAll(extraTooltips)
+            }
             .tooltips()
             .register()
     }

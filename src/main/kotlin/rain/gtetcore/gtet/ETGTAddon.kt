@@ -3,6 +3,7 @@ package rain.gtetcore.gtet
 import com.gregtechceu.gtceu.GTCEu
 import com.gregtechceu.gtceu.api.addon.GTAddon
 import com.gregtechceu.gtceu.api.addon.IGTAddon
+import com.gregtechceu.gtceu.api.registry.GTRegistries
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import net.minecraft.data.recipes.FinishedRecipe
 import net.minecraft.resources.ResourceLocation
@@ -11,6 +12,7 @@ import net.minecraftforge.event.BuildCreativeModeTabContentsEvent
 import net.minecraftforge.fml.ModList
 import net.minecraftforge.fml.javafmlmod.FMLModContainer
 import net.minecraftforge.registries.ForgeRegistries
+import rain.gtetcore.gtet.api.capability.ETTimeFlowCapability
 import rain.gtetcore.gtet.api.registrate.OnlyETreg
 import rain.gtetcore.gtet.common.data.block.ETBlock
 import rain.gtetcore.gtet.common.data.item.ETItems
@@ -57,7 +59,34 @@ open class ETGTAddon : IGTAddon {
         check(ALLMmachine.TEST_MULTIBLOCK != null) {
             "GTET 的机器没有被注册：GTM 的 GTCEuAPI.RegisterEvent 没有触发 CommonProxy.registerMachines"
         }
+        checkTimeFlowCapabilityRegistered()
         hideGtmXXXFromXXXCreativeTabs()
+    }
+
+    /**
+     * 自检：时间流能力必须已经在 GTM 的能力表里。
+     *
+     * 本方法由 `CommonProxy` 在 `GTRecipeCapabilities.init()`（`CommonProxy.java:128`）**之后**的
+     * `initializeAddon()`（`CommonProxy.java:162`）里回调，所以此刻查表是有意义的：
+     * 表已经 `freeze()`，注册窗口早关了，留下什么就是什么。
+     *
+     * ### 为什么「先打日志，再 check 抛异常」两件都做
+     * 日志给出**可 grep 的成功/失败两种证据**（`registered` / `MISSING`），
+     * `check` 则保证真出问题时**立刻崩**、而不是拖进游戏里变成一句难懂的
+     * `Unknown registry key in gtceu:recipe_capability: time_flow`。
+     * 顺序不能反：抛异常会中断流程，日志就没机会写出来了。
+     */
+    private fun checkTimeFlowCapabilityRegistered() {
+        val capability = GTRegistries.RECIPE_CAPABILITIES.get(ETTimeFlowCapability.NAME)
+        val registered = capability === ETTimeFlowCapability.CAP
+        Gtetcore.LOGGER.info(
+            "[GTET] time flow recipe capability: {}",
+            if (registered) "registered" else "MISSING",
+        )
+        check(registered) {
+            "GTET 的时间流（TF）配方能力没有注册进 GTRegistries.RECIPE_CAPABILITIES：" +
+                "GTM 没有回调 IGTAddon#registerRecipeCapabilities()，或者回调落在了能力表 freeze 之后"
+        }
     }
 
     /** 返回本模组的 MODID。 */
@@ -68,6 +97,22 @@ open class ETGTAddon : IGTAddon {
     /** 注册自定义化学元素。 */
     override fun registerElements() {
         ETElements.init()
+    }
+
+    /**
+     * 注册 GTET 的自定义配方能力 —— 目前只有**时间流（TF）**这一个。
+     *
+     * ⚠️ **配方能力只在这里注册**：GTM 的 `GTRecipeCapabilities#init()` 顺序是
+     * `unfreeze()` → 注册自带的 5 个 → **回调本方法**（`GTRecipeCapabilities.java:32`）→
+     * `postEvent(GTCEuAPI.RegisterEvent)`（:33-34）→ `freeze()`（:35），
+     * 也就是说这一瞬间能力表是开着的，直接 `register` 就行。
+     * **不要**改用那个 Forge 事件：本仓 05 文档记过它「写成具体泛型时一次都不会被调用、也不报错」的坑。
+     */
+    override fun registerRecipeCapabilities() {
+        // 这行专门用来把「GTM 到底有没有回调到本 addon」留在日志里；
+        // 缺了它，「没注册上」会有两种无法区分的原因（回调没跑 / 回调跑了但注册失败）。
+        Gtetcore.LOGGER.info("[GTET] registerRecipeCapabilities() callback invoked by GTCEu")
+        ETTimeFlowCapability.init()
     }
 
     /** 注册本模组的全部配方 —— GTET 的配方入口。*/

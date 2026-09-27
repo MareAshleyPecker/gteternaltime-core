@@ -36,5 +36,7 @@ object ALLRecipes {
         MixerRecipes.init(provider)
         ChemicalRecipes.init(provider)
         TerminalRecipes.init(provider)
+        // ⚠️ 测试用：证明「TF 能被配方真的扣掉」的那一条（见 TestTimeFlowRecipe 的类注释）
+        TestTimeFlowRecipe.init(provider)
     }
 }

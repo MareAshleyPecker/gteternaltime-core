@@ -57,6 +57,11 @@ public final class GTETConfig {
     /** 是否发送成型失败信息的默认值。 */
     public static final boolean DEFAULT_SEND_FORM_ERROR_MESSAGE = true;
 
+    /**
+     * 部件是否可跨多方块共享的默认值：{@code false} = 保持隔离（与手写死的 {@code canShared() = false} 一致）。
+     */
+    public static final boolean DEFAULT_PARTS_SHAREABLE = false;
+
     public static final boolean DEFAULT_SEND_THREAD = false;
 
     /** 是否启用结构导出模式的默认值。 */
@@ -76,6 +81,45 @@ public final class GTETConfig {
 
     /** 结构检测错误框的停留时间默认值（秒）；{@code 0} 表示不自动消失。 */
     public static final int DEFAULT_DETECT_BOX_LIFETIME = 10;
+
+    // ---- 时间流（TF）----
+
+    /** 主控塔是否全服唯一的默认值。 */
+    public static final boolean DEFAULT_MASTER_TOWER_UNIQUE = true;
+
+    /** 时序潮汐半幅 {@code a} 的默认值：{@code 0} = 关闭潮汐。 */
+    public static final double DEFAULT_TIDE_AMPLITUDE = 0.0;
+
+    /**
+     * 时序潮汐半幅 {@code a} 的硬上限。
+     *
+     * <p>反套利闭式解 {@code a <= (1 - eta) / (1 + eta)}；往返效率 {@code eta = 0.8} 时上限正好 11.11%。
+     * 超过这个值就会出现「便宜的时候买、贵的时候卖」的套利通道。
+     */
+    public static final double MAX_TIDE_AMPLITUDE = 0.1111;
+
+    /** 时序潮汐周期 {@code T} 的默认值（tick）：1 游戏日 = 24000 tick。 */
+    public static final int DEFAULT_TIDE_PERIOD = 24000;
+
+    /** 超频仓系数 {@code k} 的默认值：付一半能量价值（五折），鼓励建塔。 */
+    public static final double DEFAULT_OVERCLOCK_FACTOR_K = 0.5;
+
+    /** 时序之瓶系数 {@code K_hand} 的默认值。 */
+    public static final double DEFAULT_TIME_BOTTLE_HAND_FACTOR = 4.0;
+
+    /**
+     * 主控塔「每段塔身容量」的**占位默认值**（TF）—— <b>待定稿，不是最终数值</b>。
+     *
+     * <p>容量 = 塔身段数 × 本值；段数上限见 {@link #DEFAULT_TOWER_MAX_SEGMENTS}，
+     * 因此占位期的容量上限是 {@code 10 × 1,000,000 = 10,000,000 TF}。
+     */
+    public static final long DEFAULT_TOWER_SEGMENT_CAPACITY = 1_000_000L;
+
+    /** 主控塔段数上限的默认值（结构最多往外接几段塔身）。 */
+    public static final int DEFAULT_TOWER_MAX_SEGMENTS = 10;
+
+    /** 主控塔白名单的默认值：空串 = 只有所有者能用。 */
+    public static final String DEFAULT_TOWER_WHITELIST = "";
 
     // ================================================================
     //  配置定义
@@ -104,6 +148,25 @@ public final class GTETConfig {
     /** 成型失败时是否把错误信息发送给玩家。 */
     @Bilingual(en = "Send Form Error Message", cn = "发送成型错误信息")
     public static final ForgeConfigSpec.BooleanValue SEND_FORM_ERROR_MESSAGE;
+
+    /**
+     * 部件是否可以跨多方块共享 —— **全局主开关**，默认 {@code false} = 隔离。
+     *
+     * <p>本 mod 的部件原本都把 {@code canShared()} 写死成 {@code false}（防串配方），
+     * ME 库存族则由玩家在面板上单独拨动；这个开关是那道闸门的兜底。
+     *
+     * <p><b>⚠️ 打开它有三条代价：</b>
+     * <ol>
+     * <li>同一格部件可被两个已成型结构同时占用 ⇒ 会**重新出现「串配方」风险**
+     * （标签、定量、库存列表都是每件独立的，两个控制器会读到同一份，
+     * 原因写在各部件类的 {@code canShared()} 注释里）；</li>
+     * <li><b>只在下一次结构检测时生效</b>：{@code canShared()} 只在
+     * {@code BlockPattern#checkPatternAt} 那一刻被读，所以改配置本身不会让已成型结构立刻复检；</li>
+     * <li><b>多人服慎开。</b></li>
+     * </ol>
+     */
+    @Bilingual(en = "Parts Shareable", cn = "部件可共享")
+    public static final ForgeConfigSpec.BooleanValue PARTS_SHAREABLE;
 
     // ---- 开发者选项 ----
 
@@ -134,6 +197,40 @@ public final class GTETConfig {
     /** 结构检测标出的错误框显示多少秒后自动消失（{@code 0} = 不自动消失）。 */
     @Bilingual(en = "Detect Box Lifetime", cn = "检测框停留时间")
     public static final ForgeConfigSpec.IntValue DETECT_BOX_LIFETIME;
+
+    // ---- 时间流（TF）----
+
+    /** 主控塔是否全服唯一。 */
+    @Bilingual(en = "Master Tower Unique", cn = "主控塔全服唯一")
+    public static final ForgeConfigSpec.BooleanValue MASTER_TOWER_UNIQUE;
+
+    /** 时序潮汐半幅 {@code a}：{@code 0} = 关闭。 */
+    @Bilingual(en = "Tide Amplitude", cn = "潮汐半幅")
+    public static final ForgeConfigSpec.DoubleValue TIDE_AMPLITUDE;
+
+    /** 时序潮汐周期 {@code T}（tick）。 */
+    @Bilingual(en = "Tide Period", cn = "潮汐周期")
+    public static final ForgeConfigSpec.IntValue TIDE_PERIOD;
+
+    /** 超频仓系数 {@code k}。 */
+    @Bilingual(en = "Overclock Factor K", cn = "超频仓系数")
+    public static final ForgeConfigSpec.DoubleValue OVERCLOCK_FACTOR_K;
+
+    /** 时序之瓶系数 {@code K_hand}。 */
+    @Bilingual(en = "Time Bottle Hand Factor", cn = "时序之瓶系数")
+    public static final ForgeConfigSpec.DoubleValue TIME_BOTTLE_HAND_FACTOR;
+
+    /** 主控塔每段塔身的容量（TF）。 */
+    @Bilingual(en = "Tower Segment Capacity", cn = "塔身每段容量")
+    public static final ForgeConfigSpec.LongValue TOWER_SEGMENT_CAPACITY;
+
+    /** 主控塔的结构段数上限。 */
+    @Bilingual(en = "Tower Max Segments", cn = "塔身段数上限")
+    public static final ForgeConfigSpec.IntValue TOWER_MAX_SEGMENTS;
+
+    /** 主控塔白名单（逗号分隔的玩家 UUID）。 */
+    @Bilingual(en = "Tower Whitelist", cn = "主控塔白名单")
+    public static final ForgeConfigSpec.ConfigValue<String> TOWER_WHITELIST;
 
     /** 配置规格；Forge 用它读写 {@code config/gtetcore/gtetcore-common.toml}。 */
     public static final ForgeConfigSpec SPEC;
@@ -169,6 +266,18 @@ public final class GTETConfig {
                         "Whether to send pattern failure messages to players.")
                 .define("sendFormErrorMessage", DEFAULT_SEND_FORM_ERROR_MESSAGE);
 
+        PARTS_SHAREABLE = BUILDER
+                .comment("部件是否可以跨多方块共享：false = 隔离（默认，防串配方）；true = 允许共享。",
+                        "⚠️ 打开后有三条代价：① 同一格部件可被两个已成型结构同时占用，会重新出现「串配方」风险；",
+                        "② 只在下一次结构检测时生效（canShared() 只在结构检查那一刻被读，改配置不会立刻复检）；",
+                        "③ 多人服慎开。",
+                        "Whether parts may be shared among multiple multiblocks. false = isolated (default);",
+                        "true = sharing allowed. WARNING, turning this on: (1) lets one part block be occupied by",
+                        "two formed structures at once, which brings back recipe mixups; (2) only takes effect on the",
+                        "NEXT pattern check, because canShared() is read only while a pattern is being checked;",
+                        "(3) use with care on public servers.")
+                .define("partsShareable", DEFAULT_PARTS_SHAREABLE);
+
         BUILDER.pop();
 
         String a;
@@ -199,6 +308,67 @@ public final class GTETConfig {
         BUILDER.pop();
 
         String a01;
+
+        BUILDER.comment("时间流（TF）：单位、时序潮汐与系数",
+                        "Time flow (TF): unit pricing, tide and coefficients",
+                        "1 TF = 1A IV x 1 tick = 8192 EU; 1 TF = 1 second (flow rate) => 1 hour = 3600 TF")
+                .push("timeflow");
+
+        MASTER_TOWER_UNIQUE = BUILDER
+                .comment("主控塔是否全服唯一。true = 第二座不成型；false = 允许多座，每座各自独立记账。",
+                        "从 false 改成 true 时已存在的多座塔不追溯，只是新塔不能再成型。",
+                        "Whether the master tower is unique per server. true = a second tower will not form;",
+                        "false = many towers are allowed, each keeping its own separate balance.",
+                        "Switching false -> true does not retroactively remove existing towers.")
+                .define("masterTowerUnique", DEFAULT_MASTER_TOWER_UNIQUE);
+
+        TIDE_AMPLITUDE = BUILDER
+                .comment("时序潮汐半幅 a：汇率 = 1 + a × sin(2π·t / T)，均值恒为 1；填 0 = 关闭潮汐。",
+                        "上限 0.1111（11.11%）：往返效率 η = 0.8 时反套利闭式解 a ≤ (1-η)/(1+η) 的取值，",
+                        "超过就会出现「便宜时买、贵时卖」的套利通道，所以配置层直接夹住。",
+                        "Tide amplitude a: rate = 1 + a * sin(2*pi*t / T), mean is always 1; 0 disables the tide.",
+                        "Capped at 0.1111 (11.11%) = (1-eta)/(1+eta) for a round-trip efficiency of 0.8.")
+                .defineInRange("tideAmplitude", DEFAULT_TIDE_AMPLITUDE, 0.0, MAX_TIDE_AMPLITUDE);
+
+        TIDE_PERIOD = BUILDER
+                .comment("时序潮汐周期 T（tick），默认 24000 = 1 游戏日。",
+                        "Tide period T in ticks; the default 24000 is one in-game day.")
+                .defineInRange("tidePeriod", DEFAULT_TIDE_PERIOD, 1, 2400000);
+
+        OVERCLOCK_FACTOR_K = BUILDER
+                .comment("超频仓系数 k：每配方的时间流消耗 = (因超频多出的 EU ÷ 8192) × k，下限 1 TF。",
+                        "默认 0.5 = 付一半能量价值（五折）。",
+                        "Overclock hatch factor k: TF cost = (extra EU from overclocking / 8192) * k, floor 1 TF.",
+                        "The default 0.5 charges half of the energy value.")
+                .defineInRange("overclockFactorK", DEFAULT_OVERCLOCK_FACTOR_K, 0.0, 1000.0);
+
+        TIME_BOTTLE_HAND_FACTOR = BUILDER
+                .comment("时序之瓶系数 K_hand：手持加速的 TF 消耗 = (这次推进本该消耗的 EU ÷ 8192) × K_hand。",
+                        "口径必须是 EU 而不是「秒」——按秒计时系数要抬到 80 才等价。默认 4 = 比走超频仓贵 8 倍。",
+                        "Time bottle factor K_hand: TF cost = (EU the skipped progress would have consumed / 8192) * K_hand.",
+                        "The unit must be EU, not seconds. The default 4 is 8x more expensive than an overclock hatch.")
+                .defineInRange("timeBottleHandFactor", DEFAULT_TIME_BOTTLE_HAND_FACTOR, 0.0, 10000.0);
+
+        TOWER_SEGMENT_CAPACITY = BUILDER
+                .comment("主控塔【每段塔身】的容量（TF）。塔的总容量 = 塔身段数 × 本值，段数由结构决定。",
+                        "⚠️ 默认值 1,000,000 是**占位值**，等最终平衡数值定稿后再改这里；不是定稿数值。",
+                        "Capacity in TF of ONE tower segment. Total capacity = segment count * this value.",
+                        "The default 1,000,000 is a PLACEHOLDER pending the final balance pass, not a final value.")
+                .defineInRange("towerSegmentCapacity", DEFAULT_TOWER_SEGMENT_CAPACITY, 1L, Long.MAX_VALUE);
+
+        TOWER_MAX_SEGMENTS = BUILDER
+                .comment("主控塔最多能接多少段塔身（结构上限，同时决定总容量上限）。",
+                        "Maximum number of tower segments the structure accepts.")
+                .defineInRange("towerMaxSegments", DEFAULT_TOWER_MAX_SEGMENTS, 1, 64);
+
+        TOWER_WHITELIST = BUILDER
+                .comment("主控塔白名单：逗号分隔的玩家 UUID（例如 aaaa...,bbbb...）；留空表示只有所有者能取用。",
+                        "所有者永远在白名单里，不用在这里重复写。",
+                        "Tower whitelist: comma-separated player UUIDs. Empty means the owner only.",
+                        "The owner is always allowed and does not need to be listed.")
+                .define("towerWhitelist", DEFAULT_TOWER_WHITELIST);
+
+        BUILDER.pop();
 
         BUILDER.comment("结构工具覆盖层：颜色与检测框停留时间（只在客户端渲染时用）",
                         "Structure tool overlay: colors and detect box lifetime (client-side rendering only)")
@@ -289,6 +459,14 @@ public final class GTETConfig {
     /** 是否发送成型失败信息。 */
     public static boolean sendFormErrorMessage() { return booleanValue(SEND_FORM_ERROR_MESSAGE, DEFAULT_SEND_FORM_ERROR_MESSAGE);}
 
+    /**
+     * 部件是否可以跨多方块共享（默认 {@code false} = 隔离）。
+     *
+     * <p>被各部件类的 {@code canShared()} 读取：写死 {@code false} 的那几件直接返回本值，
+     * ME 库存族则是「面板开关 OR 本值」。
+     */
+    public static boolean partsShareable() { return booleanValue(PARTS_SHAREABLE, DEFAULT_PARTS_SHAREABLE);}
+
     public static boolean SendThreadDiagnosticLog() {
         return booleanValue(SEND_THREAD,DEFAULT_SEND_THREAD);
     }
@@ -321,6 +499,48 @@ public final class GTETConfig {
         return stringValue(RECIPE_EXPORT_DIRECTORY, DEFAULT_RECIPE_EXPORT_DIRECTORY);
     }
 
+    // ---- 时间流（TF）----
+
+    /** 主控塔是否全服唯一（默认 {@code true}）。塔还没做，这里先把取值入口放好。 */
+    public static boolean masterTowerUnique() {
+        return booleanValue(MASTER_TOWER_UNIQUE, DEFAULT_MASTER_TOWER_UNIQUE);
+    }
+
+    /** 时序潮汐半幅 {@code a}；{@code 0} = 关闭潮汐（默认）。 */
+    public static double tideAmplitude() {
+        return doubleValue(TIDE_AMPLITUDE, DEFAULT_TIDE_AMPLITUDE);
+    }
+
+    /** 时序潮汐周期 {@code T}（tick），默认 24000。 */
+    public static int tidePeriod() {
+        return intValue(TIDE_PERIOD, DEFAULT_TIDE_PERIOD);
+    }
+
+    /** 超频仓系数 {@code k}，默认 0.5。 */
+    public static double overclockFactorK() {
+        return doubleValue(OVERCLOCK_FACTOR_K, DEFAULT_OVERCLOCK_FACTOR_K);
+    }
+
+    /** 时序之瓶系数 {@code K_hand}，默认 4。 */
+    public static double timeBottleHandFactor() {
+        return doubleValue(TIME_BOTTLE_HAND_FACTOR, DEFAULT_TIME_BOTTLE_HAND_FACTOR);
+    }
+
+    /** 主控塔每段塔身的容量（TF）；默认值是**占位值**，见常量注释。 */
+    public static long towerSegmentCapacity() {
+        return longValue(TOWER_SEGMENT_CAPACITY, DEFAULT_TOWER_SEGMENT_CAPACITY);
+    }
+
+    /** 主控塔结构段数上限，默认 10。 */
+    public static int towerMaxSegments() {
+        return intValue(TOWER_MAX_SEGMENTS, DEFAULT_TOWER_MAX_SEGMENTS);
+    }
+
+    /** 主控塔白名单原文（逗号分隔的 UUID 串）；解析见塔侧。 */
+    public static String towerWhitelist() {
+        return stringValue(TOWER_WHITELIST, DEFAULT_TOWER_WHITELIST);
+    }
+
     // ================================================================
     //  读取辅助
     // ================================================================
@@ -336,6 +556,14 @@ public final class GTETConfig {
     }
 
     private static boolean booleanValue(ForgeConfigSpec.BooleanValue value, boolean fallback) {
+        return SPEC.isLoaded() ? value.get() : fallback;
+    }
+
+    private static long longValue(ForgeConfigSpec.LongValue value, long fallback) {
+        return SPEC.isLoaded() ? value.get() : fallback;
+    }
+
+    private static double doubleValue(ForgeConfigSpec.DoubleValue value, double fallback) {
         return SPEC.isLoaded() ? value.get() : fallback;
     }
 

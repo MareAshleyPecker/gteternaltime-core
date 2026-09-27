@@ -26,6 +26,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
+import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilter;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator;
 import rain.gtetcore.gtet.integration.ae2.IMEStockingHost;
@@ -115,7 +116,8 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
     // ////////////////////////////////
 
     /**
-     * <b>仓室隔离（玩家可切换）</b>：默认禁止、面板开关打开后放行，返回值就是 {@link #shareEnabled}。
+     * <b>仓室隔离（玩家可切换）</b>：默认禁止、面板开关打开后放行，
+     * 返回值是「{@link #shareEnabled} OR 全局配置 {@code multiblock.partsShareable}」。
      *
      * <p>
      * 语义、运行时影响（{@code BlockPattern#checkPatternAt} 里
@@ -124,15 +126,24 @@ public class ETTagFilterStockHatchPartMachine extends MEStockingHatchPartMachine
      * {@link ETTagFilterStockBusPartMachine#canShared()} —— 流体侧的配置
      * （{@link #tagWhite} / {@link #tagBlack} / {@code batchSize}）同样是每件独立的，
      * 共享会让两个控制器的配方匹配读到同一份 {@code stock}。
+     *
+     * <p><b>⚠️ 全局配置兜底：</b>返回值现在是「面板开关 OR {@code multiblock.partsShareable}」
+     * —— 默认 {@code false} 时与原来只读 {@link #shareEnabled} <b>完全一致</b>（用 OR 而非 AND 正是为此），
+     * 配置打开后本件无条件放行、**串配方风险随之恢复**（多人服慎开）；
+     * 该值只在 {@code BlockPattern#checkPatternAt} 那一刻被读，改配置不会立刻复检。
      */
     @Override
     public boolean canShared() {
-        return shareEnabled;
+        return shareEnabled || GTETConfig.partsShareable();
     }
 
+    /**
+     * 面板开关的显示状态，与 {@link #canShared()} 同源（同样带配置兜底）：
+     * 配置打开时面板如实显示「允许共享」，此时拨开关不会再改变结果。
+     */
     @Override
     public boolean canBeShared() {
-        return shareEnabled;
+        return shareEnabled || GTETConfig.partsShareable();
     }
 
     /** 同物品版：服务端改值 + 让本件所属的每个多方块立刻复检结构（⚠️ 先复制再遍历，理由见物品版）。 */

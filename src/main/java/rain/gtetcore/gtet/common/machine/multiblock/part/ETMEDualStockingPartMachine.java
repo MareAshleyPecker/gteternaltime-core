@@ -173,6 +173,13 @@ public class ETMEDualStockingPartMachine extends ETTagFilterStockBusPartMachine 
      * 两侧各有一套标签 / 定量 / 库存列表（物品侧在父类字段、流体侧在本类字段），
      * 一旦被两个多方块共享，两个控制器会同时读**同一份两侧配置**，串配方比单侧件更严重。
      * 完整语义与拨动开关两个方向的效果见父类 {@link ETTagFilterStockBusPartMachine#canShared()}。
+     *
+     * <p>
+     * <b>⚠️ 全局配置兜底不用在这里重复写一遍：</b>父类的 {@code canShared()} / {@code canBeShared()}
+     * 已经改成「{@code shareEnabled} OR {@code multiblock.partsShareable}」，本件照旧转发即可 ——
+     * 转发链把配置一并带过来了。默认配置 {@code false} 时与今天<b>完全一致</b>；
+     * 配置打开后本件（一块方块同时挂在两条能力链上）**串配方比单侧件更严重**，多人服慎开。
+     * 该值只在 {@code BlockPattern#checkPatternAt} 那一刻被读，改配置不会立刻复检。
      */
     @Override
     public boolean canShared() {

@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEDualStockingPartMachine
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETTagFilterStockBusPartMachine
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETTagFilterStockHatchPartMachine
+import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /** GTM 的 AE 覆盖层命名空间：贴图在 GTM 自己的 jar 里，我们只引用。 */
@@ -73,14 +74,18 @@ private const val OVERLAY_ME_INPUT_HATCH = "block/overlay/appeng/me_input_hatch"
  * 与 [ETTagFilterHatches] / [ETThreadHatches] 同一套约定：英文名走 `.langValue(...)`、
  * 中文名走 [LangUtil.BLOCK_LANG]；tooltip 保留 GTM 对应件那几条功能说明 + 一条本 mod 的功能说明。
  *
- * ⚠️ 多方块共享那两行：GTM 的 `gtceu.part_sharing.disabled`（"Multiblock Sharing §4Disabled"）
+ * ⚠️ 多方块共享那两行：GTM 的「多方块共享」行（`gtceu.part_sharing.disabled` / `.enabled`，
+ * "Multiblock Sharing §4Disabled" / "…§aEnabled"）
  * 描述的是**默认状态**，三件的机器类（`ETTagFilterStockBusPartMachine` /
  * `ETTagFilterStockHatchPartMachine` / `ETMEDualStockingPartMachine`）现在返回的都是
- * `canShared() = shareEnabled`，而 `shareEnabled` 默认 `false` = 隔离（防串配方，与上手写死的
- * `false` 行为一致），所以这一行照旧写「禁止」不算骗人；紧跟其后那条
- * [ETTagFilterHatches.SHARE_TOOLTIP_KEY] 才是新增的信息：**默认隔离、但玩家能在
+ * `canShared() = shareEnabled || 配置 multiblock.partsShareable`，而 `shareEnabled` 默认 `false` = 隔离
+ * （防串配方，与上手写死的 `false` 行为一致），所以默认配置下这一行照旧显示「禁止」不算骗人；
+ * 紧跟其后那条 [ETTagFilterHatches.SHARE_TOOLTIP_KEY] 才是新增的信息：**默认隔离、但玩家能在
  * 「标签过滤」面板里打开**。开关两个方向分别发生什么、以及「改动在结构重新检查后生效」
  * 都写在开关的 tooltip 里（见 `ETTagFilterConfigurator` 的 LANG_SHARE_TIP_*）。
+ * ⚠️ 因为要看配置取值，这一行现在由
+ * [rain.gtetcore.gtet.util.ETPartSharing.line] 在**渲染时**给出（走 `tooltipBuilder`）；
+ * 配置 `multiblock.partsShareable` 打开后它会变成 `…enabled`，那时面板开关拨不动结果。
  * ⚠️ 一台机器只有**一个**开关（`canShared()` 是机器级的一个方法）：二合一件的流体侧那块面板
  * 不画这一行（`SideConfigurator` 传 `showShareSwitch = false`）。
  *
@@ -150,9 +155,13 @@ object ETStockingInputHatches {
                 Component.translatable("gtceu.machine.me_import_item_hatch.configs.tooltip"),
                 Component.translatable("gtceu.machine.me.copy_paste.tooltip"),
                 Component.translatable("gtceu.machine.me.stocking_item.tooltip.1"),
-                Component.translatable(TAG_FILTER_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.disabled")
+                Component.translatable(TAG_FILTER_TOOLTIP_KEY)
             )
+            // 「多方块共享」那一行仍在原位置（静态行的最后）：本件 `canShared()` 是
+            // 「面板开关 OR 配置 partsShareable」，只能**渲染时**取值，所以走 tooltipBuilder。
+            // ⚠️ tooltips() 与 tooltipBuilder() 在 MachineBuilder 里是**追加**关系、不是覆盖
+            //    （GTM MachineBuilder.java:693-696），上面那六行一行没动。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 
@@ -172,9 +181,10 @@ object ETStockingInputHatches {
                 Component.translatable("gtceu.machine.me_import_fluid_hatch.configs.tooltip"),
                 Component.translatable("gtceu.machine.me.copy_paste.tooltip"),
                 Component.translatable("gtceu.machine.me.stocking_fluid.tooltip.1"),
-                Component.translatable(TAG_FILTER_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.disabled")
+                Component.translatable(TAG_FILTER_TOOLTIP_KEY)
             )
+            // 同上：共享行仍在最后，改走 tooltipBuilder 以便按配置取 enabled / disabled。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 
@@ -202,9 +212,10 @@ object ETStockingInputHatches {
                 Component.translatable("gtceu.machine.me.stocking_fluid.tooltip.0"),
                 Component.translatable(DUAL_TOOLTIP_KEY),
                 Component.translatable(DUAL_HINT_KEY),
-                Component.translatable(ETTagFilterHatches.SHARE_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.disabled")
+                Component.translatable(ETTagFilterHatches.SHARE_TOOLTIP_KEY)
             )
+            // 同上：共享行仍在最后（紧跟在「可以切」那条说明之后），改走 tooltipBuilder。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 

@@ -1,9 +1,11 @@
 package rain.gtetcore.gtet.data
 
 import com.tterrag.registrate.providers.ProviderType
+import net.minecraft.core.HolderLookup
 import net.minecraft.data.DataGenerator
 import rain.gtetcore.gtet.api.registrate.OnlyETreg
 import rain.gtetcore.gtet.data.lang.LangHandler
+import java.util.concurrent.CompletableFuture
 
 /** 数据生成入口。 */
 object GTETDatagen {
@@ -41,8 +43,14 @@ object GTETDatagen {
      * 详见 [rain.gtetcore.gtet.data.recipes.ALLRecipes] 的类注释。
      *
      * ⇒ **不要**在这里加 RecipeProvider / Registrate 的 `ProviderType.RECIPE`，会重现上面那个 NPE。
+     * 唯一的例外是 [GTETDataReport]：它只是把一条**测试配方**用 GTM 自己的 codec 序列化出来留证，
+     * 既不注册配方、也不碰 `GTRegistries.builtinRegistry()`（绕法与理由见那个类的注释）。
+     *
+     * @param gen    datagen 的生成器
+     * @param lookup `GatherDataEvent#getLookupProvider` 的注册表查询器（只有 [GTETDataReport] 用得到）
      */
-    fun init(gen: DataGenerator) {
+    fun init(gen: DataGenerator, lookup: CompletableFuture<HolderLookup.Provider>) {
         gen.addProvider(true, LangHandler.ZhCNProvider(gen.packOutput))
+        gen.addProvider(true, GTETDataReport(gen.packOutput, lookup))
     }
 }

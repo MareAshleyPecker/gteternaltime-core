@@ -46,7 +46,7 @@
 `Predicates.abilities(...)`（`Predicates.java:134-137`）在**构造谓词那一刻**就把 `PartAbility#getAllBlocks()`
 取了出来，而那个集合是 `GTMemoizer.memoize` 缓存的（`PartAbility.java:61-62`，首取即定、之后不再变）。
 先构造谓词、后注册仓 = 谓词里永远没有那些方块 —— **不报错**，只表现为「插上去不成型」。
-本项目的落地就是 `MachineRegister#init` 先 `ALLSmahine.init()`（仓）再 `ALLMmchine.init()`（多方块）（`MachineRegister.kt:8-9`）。
+本项目的落地就是 `MachineRegister#init` 先 `ALLSmachine.init()`（仓）再 `ALLMmachine.init()`（多方块）（`MachineRegister.kt:5-6`）。
 
 **注册窗口 + 监听器**（少一样都不行）：
 
@@ -341,3 +341,5 @@ override fun loadCustomPersistedData(tag: CompoundTag) {
 ---
 
 [← 上一节：04 模块化机器代码案例](04-模块化机器代码案例.md) ｜ [返回目录](<../GTM开发教程(编写中).md>) ｜ [下一节：06 游戏内怎么用 →](06-游戏内怎么用.md)
+
+> 模块化机器与线程怎么写（继承什么 / 覆写什么 / 在哪注册 / 有哪些坑）：见 [07 模块化与线程调用表](07-模块化与线程调用表.md)。

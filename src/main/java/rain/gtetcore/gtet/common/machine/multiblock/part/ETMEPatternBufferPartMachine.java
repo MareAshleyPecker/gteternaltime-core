@@ -22,6 +22,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities;
 import rain.gtetcore.gtet.mixin.GTM.IMEPatternBufferAccess;
 
@@ -174,10 +175,15 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
      * <p>「总成当宿主、镜像装在各机器里」这种主要用法不受影响 —— 那时总成不在任何成型结构里，
      * {@code isFormed()} 为 false，这道闸门不参与判断。与本项目其它 ME 库存件一样，
      * tooltip 要写「禁止共享」（见 {@code ETMEPatternBufferHatches}）。
+     *
+     * <p><b>闸门现在由配置 {@code multiblock.partsShareable} 兜底</b>（默认 false = 仍然隔离，
+     * 与原先写死 false 完全一致）：配置打开后本件可被两个已成型结构同时占用，
+     * 于是上面那条「AE 推样板时原料落在这件自己的库存里」的**串配方风险重新出现**。
+     * ⚠️ 该值只在 {@code BlockPattern#checkPatternAt} 那一刻被读，改配置后要等下一次结构检测才生效。
      */
     @Override
     public boolean canShared() {
-        return false;
+        return GTETConfig.partsShareable();
     }
 
     @Override

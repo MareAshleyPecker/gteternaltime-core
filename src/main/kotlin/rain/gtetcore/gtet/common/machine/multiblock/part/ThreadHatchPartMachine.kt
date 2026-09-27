@@ -15,6 +15,7 @@ import net.minecraft.nbt.CompoundTag
 import net.minecraft.util.Mth
 import rain.gtetcore.gtet.api.capability.IThreadHatch
 import rain.gtetcore.gtet.common.machine.multiblock.part.ThreadHatchPartMachine.Companion.MIN_THREAD
+import rain.gtetcore.gtet.config.GTETConfig
 
 /**
  * 「线程仓」多方块部件。
@@ -84,7 +85,7 @@ class ThreadHatchPartMachine(
      *
      * 第 1 行传的是 **lang key**：ldlib 的 `LabelWidget` 在客户端用 `I18n` 解析，
      * 所以两种语言各显示各的 —— 名字里已经带齐「电压等级 + 线程数」
-     * （中文「MAX 线程仓（256 线程）」/ 英文「MAX Thread Hatch (256 Threads)」）。
+     * （中文「MAX 线程仓（512 线程）」/ 英文「MAX Thread Hatch (512 Threads)」）。
      * 第 2 行是 GTCEu 的 `IntInputWidget`
      * （`Supplier` 读值、`Consumer` 写值，`setMin`/`setMax` 卡范围）。
      *
@@ -143,7 +144,15 @@ class ThreadHatchPartMachine(
 
     override fun getFieldHolder(): ManagedFieldHolder = MANAGED_FIELD_HOLDER
 
-    override fun canShared(): Boolean = false
+    /**
+     * 部件共享的闸门，返回全局开关 [GTETConfig.partsShareable]（默认 `false` = 禁止共享）。
+     *
+     * 原先这里写死 `false`（见类注释「禁止多方块部件共享」）。现在由配置兜底 ——
+     * **打开配置就恢复串配方风险**：本件持有自己的线程池与「已经吃掉的料」，
+     * 被两个已成型结构共享时两个控制器会同时往同一份线程账上派活。
+     * ⚠️ 该值只在 `BlockPattern#checkPatternAt` 那一刻被读，改配置后要等下一次结构检测才生效。
+     */
+    override fun canShared(): Boolean = GTETConfig.partsShareable()
 
     companion object {
 

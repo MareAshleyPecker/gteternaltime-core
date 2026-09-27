@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import rain.gtetcore.gtet.api.capability.ETPartAbility;
 
 /**
- * 让「能插并行仓的多方块」也能插 GTET 的超频仓。
+ * 让「能插并行仓的多方块」也能插 GTET 的超频仓与**时序仓**。
  *
  * <p>{@code Predicates.autoAbilities(boolean checkMaintenance, boolean checkMuffler, boolean checkParallel)}
  * 是 GTM 里给多方块结构配「通用部件槽」的工厂方法，其中 {@code checkParallel == true} 的那一支
@@ -22,8 +22,9 @@ import rain.gtetcore.gtet.api.capability.ETPartAbility;
  * </pre>
  *
  * <p>这里在 {@code @At("RETURN")} 处，当 {@code checkParallel == true} 时往返回值上再
- * {@code .or(...)} 一条 GTET 超频仓能力（{@code ETPartAbility.OVERCLOCK_HATCH}），
- * 与并行仓同规格：{@code setMaxGlobalLimited(1)}、{@code setPreviewCount(1)}。
+ * {@code .or(...)} 两条 GTET 能力（{@code ETPartAbility.OVERCLOCK_HATCH} 与
+ * {@code ETPartAbility.TF_HATCH}），与并行仓同规格：{@code setMaxGlobalLimited(1)}、
+ * {@code setPreviewCount(1)}。
  * {@code TraceabilityPredicate.or(...)} 返回的是**新对象**
  * （内部把 common/limited 两个 list 复制过去），不会污染 GTM 原返回值以外的任何东西。
  *
@@ -38,13 +39,23 @@ import rain.gtetcore.gtet.api.capability.ETPartAbility;
  * 变成「能插但不生效」的装饰部件，因此 {@code ETPartAbility.THREAD_HATCH} 由 GTET 自己的多方块
  * 在机壳谓词上显式加槽（见 {@code ETTestMultiblocks} 的 {@code 'X'} 谓词）。
  *
+ * <p><b>为什么时序仓走这里</b>：设定 §8.3 把它列为「必做接线」—— 时序仓是「给任意机器供 TF」的
+ * 通用部件，语义与超频仓一样是全局可插；而且它插上去**一定生效**：只要多方块的配方里带
+ * {@code time_flow} 的 tick 输入，扣费就走仓自己的 {@code IRecipeHandlerTrait}，
+ * 与多方块是不是 GTET 的完全无关。反过来说，不追加这条能力，时序仓就只能插在 GTET 自己的多方块里
+ * （能力登记 ≠ 结构能插）。
+ *
  * <p>为什么只改这个三重载：其它重载（{@code autoAbilities(GTRecipeType...)} 等）压根不加
  * {@code PARALLEL_HATCH}，那些多方块本来也插不了并行仓，保持原样即可。
  *
  * <p>该方法签名里唯一的坑是它是 <b>static</b> 的，所以注入处理器必须也是 {@code private static}
  * （且 {@code remap = false} —— GTM 是 mod，方法名不混淆，但参数描述符要按运行时原名写全，
  * 因为有 {@code autoAbilities} 的多个重载）。
- * <p>⚠️ GTM 的 {@code autoAbilities} 里没有任何 hook / SPI 扩展点，追加这条能力只能靠 mixin 注入。
+ * <p>⚠️ GTM 的 {@code autoAbilities} 里没有任何 hook / SPI 扩展点，追加这两条能力只能靠 mixin 注入。
+ * <p>⚠️ {@code PartAbility#getAllBlocks()} 是**懒记忆化**的快照（首取即定），而
+ * {@code Predicates.abilities(...)} 在构造谓词那一刻就把它取出来。本 mixin 只在**结构谓词构造时**
+ * 被调到，而 GTM/GTET 的多方块图案都是 {@code Supplier}（运行期才构造），所以快照一定发生在
+ * 全部机器注册完之后；若要改这条前提，请确认 {@code ALLSmachine.init()} 仍早于一切用到本能力的图案构造。
  *
  * @author rain fox
  */
@@ -69,7 +80,11 @@ public class MixinPredicatesAutoAbilities {
         TraceabilityPredicate overclockHatch = Predicates.abilities(ETPartAbility.OVERCLOCK_HATCH)
                 .setMaxGlobalLimited(1)
                 .setPreviewCount(1);
+        // 时序仓同规格：一台多方块一个 TF 仓就够（两个仓会自动合池，见 ETTimeFlowHandler#handleRecipeInner）
+        TraceabilityPredicate timeFlowHatch = Predicates.abilities(ETPartAbility.TF_HATCH)
+                .setMaxGlobalLimited(1)
+                .setPreviewCount(1);
 
-        cir.setReturnValue(original.or(overclockHatch));
+        cir.setReturnValue(original.or(overclockHatch).or(timeFlowHatch));
     }
 }

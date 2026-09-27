@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETTagFilterStockBusPartMachine
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETTagFilterStockHatchPartMachine
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator
+import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 /** GTM 的 AE 覆盖层命名空间：贴图在 GTM 自己的 jar 里，我们只引用。 */
@@ -52,7 +53,10 @@ private const val OVERLAY_ME_INPUT_HATCH = "block/overlay/appeng/me_input_hatch"
  * 与 [ETThreadHatches] / [ETOverclockHatches] 同一套约定：英文名走 `.langValue(...)`、
  * 中文名走 [LangUtil.BLOCK_LANG]，**规格并进名字**（中文名里直接写「标签过滤 + 定量拉取」），
  * 不额外生成说明性 tooltip 键；tooltip 只有一条 GTET 自己的功能说明 + GTM 自带的
- * `gtceu.part_sharing.disabled`。
+ * 「多方块共享」那一条（`gtceu.part_sharing.disabled` / `.enabled`）。
+ * ⚠️ 那一条**不是写死的**：两件的机器类 `canShared()` 取「面板开关 OR 全局配置 `multiblock.partsShareable`」，
+ * 所以它改走 `MachineBuilder#tooltipBuilder` 在渲染时按键取值（见 [ETPartSharing.line]）；
+ * 默认配置下显示的仍是 `…disabled`。
  *
  * 面板用的 8 条界面键（标题 / 白名单 / 黑名单 / 定量 / 4 行说明）也在这里用 [LangUtil.add] 一次登记 ——
  * 它们是 `LangUtil.CUSTOM_LANG`，由 `data.lang.LangHandler` 同时写进 en_us 与 zh_cn。
@@ -61,7 +65,7 @@ private const val OVERLAY_ME_INPUT_HATCH = "block/overlay/appeng/me_input_hatch"
  *
  * 放在 `common/data/machine/hatch/` 与超频 / 线程 / 并行三族同目录，由 [rain.gtetcore.gtet.common.data.machine.ALLSmachine.registerMachines] 调用，
  * 理由：这三族与本族都是**多方块部件仓**，同一张表、同一个入口，加一件只需要在这里加一行；
- * 而 `multiblock.ALLMmchine` 那边是多方块本体，不该混部件。
+ * 而 `multiblock.ALLMmachine` 那边是多方块本体，不该混部件。
  *
  * @author rain fox
  */
@@ -106,9 +110,15 @@ object ETTagFilterHatches {
                 Component.translatable("gtceu.machine.item_bus.import.tooltip"),
                 Component.translatable("gtceu.machine.me.stocking_item.tooltip.0"),
                 Component.translatable(TAG_FILTER_TOOLTIP_KEY),
-                Component.translatable(SHARE_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.disabled")
+                Component.translatable(SHARE_TOOLTIP_KEY)
             )
+            // 「多方块共享」那一行（默认 Disabled）仍在原位置 —— 即所有静态行的**最后**：
+            // 本族机器类的 `canShared()` 是「面板开关 OR 配置 partsShareable」，所以它只能**渲染时**取值，
+            // 走 tooltipBuilder（见 [ETPartSharing.line]）。
+            // ⚠️ tooltips() 与 tooltipBuilder() 在 MachineBuilder 里是**追加**关系、不是覆盖
+            //    （GTM MachineBuilder.java:693-696：先 `components.addAll(tooltips)` 再跑 builder），
+            //    所以上面那四行一个都没动，只是共享行换了取法。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 
@@ -126,9 +136,10 @@ object ETTagFilterHatches {
                 Component.translatable("gtceu.machine.fluid_hatch.import.tooltip"),
                 Component.translatable("gtceu.machine.me.stocking_fluid.tooltip.0"),
                 Component.translatable(TAG_FILTER_TOOLTIP_KEY),
-                Component.translatable(SHARE_TOOLTIP_KEY),
-                Component.translatable("gtceu.part_sharing.disabled")
+                Component.translatable(SHARE_TOOLTIP_KEY)
             )
+            // 同上：共享行仍在最后，改走 tooltipBuilder 以便按配置取 enabled / disabled。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 
@@ -139,8 +150,12 @@ object ETTagFilterHatches {
      * 「多方块共享」那条 tooltip 的键（三件 ME 库存件共用）。
      *
      * ⚠️ 三件的共享开关**默认关（隔离）**、可在「标签过滤」面板里切换，所以
-     * 光留 GTM 的 `gtceu.part_sharing.disabled`（"Multiblock Sharing §4Disabled"）会让玩家以为改不了 ——
-     * 那条保留（它描述的正是默认状态），后面再补这一条说明「可以切」。
+     * 光留 GTM 的「多方块共享」那一行（`gtceu.part_sharing.disabled` = "Multiblock Sharing §4Disabled"）
+     * 会让玩家以为改不了 —— 那条保留（它描述的正是默认状态），后面再补这一条说明「可以切」。
+     *
+     * ⚠️ 全局配置 `multiblock.partsShareable` 打开后，那一行会自己变成 `…enabled`（见
+     * [rain.gtetcore.gtet.util.ETPartSharing.line]），此时面板开关拨不动结果 —— 本行仍成立：
+     * 它说的是「默认状态」，配置打开时默认状态就是「允许」。
      */
     const val SHARE_TOOLTIP_KEY: String = "gtetcore.machine.et_tag_filter.share.tooltip"
 

@@ -26,10 +26,12 @@ import rain.gtetcore.gtet.common.item.recipe.FluidCountSlotWidget
 import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget
 import rain.gtetcore.gtet.common.item.terminal.AdvancedTerminalLang
 import rain.gtetcore.gtet.common.item.terminal.TerminalLang
+import rain.gtetcore.gtet.common.item.timeflow.TimeBottleLang
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleHostMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleMachine
 import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
+import rain.gtetcore.gtet.common.machine.multiblock.timeflow.TimeFlowHatchLang
 import rain.gtetcore.gtet.config.GTETConfig
 import rain.gtetcore.gtet.data.GTETDatagen
 import rain.gtetcore.gtet.integration.jade.GTETJadeLang
@@ -74,6 +76,10 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         ETModularMachine.initLang()
         ETModuleMachine.initLang()
         ETModuleHostMachine.initLang()
+        // 时序之瓶的运行时 tooltip 文案（汇率 / 相位 / 往返损耗 / 绑定行；同前）
+        TimeBottleLang.init()
+        // 时序仓的运行时文案 + TF 的配方能力显示名 `recipe.capability.time_flow.name`（同前）
+        TimeFlowHatchLang.init()
         // GTET 的 Jade provider 也要在 Jade 的插件配置界面里有翻译键：Jade 会遍历所有 provider 的 uid 并断言
         // `config.jade.plugin_<ns>.<uid>` 存在，缺一条就在标题界面抛 AssertionError 崩客户端 —— 同上，必须赶在数据生成前
         GTETJadeLang.initLang()
@@ -133,7 +139,8 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
      */
     @SubscribeEvent
     fun onGatherData(event: GatherDataEvent) {
-        GTETDatagen.init(event.generator)
+        // lookupProvider 只有 GTETDataReport（TF 测试配方的序列化留证）用得到，见那个类的注释
+        GTETDatagen.init(event.generator, event.lookupProvider)
     }
 }
 

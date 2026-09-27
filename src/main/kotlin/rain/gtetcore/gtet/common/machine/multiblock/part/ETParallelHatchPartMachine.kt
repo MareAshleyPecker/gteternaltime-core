@@ -13,6 +13,7 @@ import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup
 import com.lowdragmc.lowdraglib.syncdata.annotation.Persisted
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder
 import net.minecraft.util.Mth
+import rain.gtetcore.gtet.config.GTETConfig
 
 /**
  * GTET 的「并行仓」多方块部件（IV ~ MAX 共 10 档）。
@@ -80,7 +81,15 @@ class ETParallelHatchPartMachine(
 
     override fun getFieldHolder(): ManagedFieldHolder = MANAGED_FIELD_HOLDER
 
-    override fun canShared(): Boolean = false
+    /**
+     * 部件共享的闸门，返回全局开关 [GTETConfig.partsShareable]（默认 `false` = 禁止共享）。
+     *
+     * 原先这里写死 `false`（与线程仓 / 超频仓同一条约定）。现在由配置兜底 ——
+     * **打开配置就恢复串配方风险**：本件是控制器唯一的并行仓（`getParallelHatch()` 只取一个实例），
+     * 被两个已成型结构共享时两边会同时读同一个并行数。
+     * ⚠️ 该值只在 `BlockPattern#checkPatternAt` 那一刻被读，改配置后要等下一次结构检测才生效。
+     */
+    override fun canShared(): Boolean = GTETConfig.partsShareable()
 
     companion object {
 

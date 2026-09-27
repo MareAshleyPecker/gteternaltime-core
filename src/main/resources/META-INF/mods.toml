@@ -37,3 +37,14 @@ mandatory = true
 versionRange = "[4.12,5)"
 ordering = "NONE"
 side = "BOTH"
+
+# FTB Teams：**软依赖**（设定 §2.4「装了 FTB Teams 时同队视为同一人」）。
+# mandatory = false ⇒ 不装照常加载；调用点全部关在 `rain.gtetcore.gtet.util.ETTeamAccess` 里，
+# 按 `ModList.isLoaded("ftbteams")` 分派，缺它时那段代码根本不会被类加载（见该文件的类注释）。
+# versionRange 照它自己的元数据（jar 内 mods.toml：`modId = "ftbteams"`, version = "2001.3.2"）写。
+[[dependencies."${mod_id}"]]
+modId = "ftbteams"
+mandatory = false
+versionRange = "[2001,)"
+ordering = "NONE"
+side = "BOTH"

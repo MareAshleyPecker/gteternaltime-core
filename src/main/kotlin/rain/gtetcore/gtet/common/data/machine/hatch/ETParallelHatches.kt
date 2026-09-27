@@ -9,9 +9,9 @@ import com.gregtechceu.gtceu.api.machine.property.GTMachineModelProperties
 import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTieredHullMachineModel
-import net.minecraft.network.chat.Component
 import rain.gtetcore.gtet.common.data.machine.hatch.ETParallelHatches.VARIANTS
 import rain.gtetcore.gtet.common.machine.multiblock.part.ETParallelHatchPartMachine
+import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 
@@ -112,9 +112,11 @@ object ETParallelHatches {
                         model.addReplaceableTextures("bottom", "top", "side")
                     }
             )
-            .tooltips(
-                Component.translatable("gtceu.part_sharing.disabled")
-            )
+            // 提示只剩「多方块共享」那一条（说明性文字已经并进名字）。
+            // 走 tooltipBuilder 而不是 tooltips()：本件的 `canShared()` 读全局配置 `multiblock.partsShareable`，
+            // 那一行要**渲染时**才决定取 `gtceu.part_sharing.enabled` 还是 `…disabled`（见 [ETPartSharing.line]）。
+            // ⚠️ 两者的关系是**追加**、不是覆盖（GTM MachineBuilder.java:693-696：先 addAll(tooltips) 再跑 builder）。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 }

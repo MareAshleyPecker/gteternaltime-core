@@ -8,13 +8,13 @@ import com.gregtechceu.gtceu.api.machine.trait.RecipeLogic
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.api.registry.registrate.MachineBuilder
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createWorkableTieredHullMachineModel
-import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import rain.gtetcore.gtet.api.capability.ETPartAbility
 import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches.VARIANTS
 import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches.register
 import rain.gtetcore.gtet.common.data.machine.hatch.ETThreadHatches.registerOne
 import rain.gtetcore.gtet.common.machine.multiblock.part.ThreadHatchPartMachine
+import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
 
 
@@ -37,8 +37,8 @@ import rain.gtetcore.gtet.util.lang.LangUtil
  * 线程数直接写进方块**名字**（注册时已由变体表确定，不需要运行期字符串插值）。
  *
  * ## 接线位置
- * 本文件的 [register] 由 `rain.gtetcore.gtet.common.data.machine.ALLMmchine.init()`
- * 调用一次（结果存进 `ALLMmchine.THREAD_HATCHES`），走的是与 [ETOverclockHatches] 完全相同的那条路径
+ * 本文件的 [register] 由 `rain.gtetcore.gtet.common.data.machine.ALLSmachine.init()`
+ * 调用一次（结果存进 `ALLSmachine.THREAD_HATCHES`），走的是与 [ETOverclockHatches] 完全相同的那条路径
  * —— 那里也是机器表 `unfreeze()` / `freeze()` 的窗口所在，不要另找入口重复注册。
  *
  * ⚠️ GTO 那侧的线程调度实现在加密 native 里（`libs/gtolib-1.0.jar` 的 `native0/native/`），
@@ -118,8 +118,9 @@ object ETThreadHatches {
      * 不要重排既有行、也不要改既有 id。
      *
      * 从 ZPM 起步：最低档 4 线程，往后每级翻倍。
-     * ⚠️ 「线程数」与并行仓的「并行数」不是同一个量 —— 线程 = 同时跑**几种不同配方**，
-     * 并行 = 同一种配方**同时跑几次**，所以两族的档位不用对齐。
+     * ⚠️ 「线程数」与并行仓的「并行数」不是同一个量：线程是机器同时能跑的**配方实例数**上限
+     * （先给不同配方各占一条，空闲线程再发给已经在跑的同一种配方，见 `IThreadedRecipeMachine`），
+     * 而并行仓那个数是**每条线程**各吃的并行倍率，整机处理量 ≈ 线程数 × 并行倍数 —— 两族档位不用对齐。
      */
     val VARIANTS: List<ThreadHatchVariant> = listOf(
         ThreadHatchVariant("thread_hatch_zpm", 4, GTValues.ZPM),
@@ -154,7 +155,7 @@ object ETThreadHatches {
      * 中英双语走 GTET 现有机制，**只登记名字这一条键**（与 [ETOverclockHatches] 同一套显示约定）：
      * - 英文名 → `.langValue(...)`，由 Registrate 写进 `en_us` 的 `block.gtetcore.<id>`；
      * - 中文名 → [LangUtil.BLOCK_LANG]，由 `LangHandler` 写进 `zh_cn` 的同名键。
-     * 两个名字里都带「电压等级 + 线程数」，一眼就能分出七档，不需要额外的说明行。
+     * 两个名字里都带「电压等级 + 线程数」，一眼就能分出八档，不需要额外的说明行。
      *
      * 删掉的键（原设计有、现已随显示简化一并移除，`runData` 后不再出现在 `src/generated` 里）：
      * `gtetcore.machine.<id>.tooltip.0` / `.tooltip.1` / `.tooltip.2`（三条说明性提示）与
@@ -166,7 +167,7 @@ object ETThreadHatches {
         val threads = v.threads
         val tierName = GTValues.VN[v.tier]
 
-        // 中文名按「电压等级 + 名称（线程数）」写：例如 MAX 线程仓（256 线程）
+        // 中文名按「电压等级 + 名称（线程数）」写：例如 MAX 线程仓（512 线程）
         LangUtil.BLOCK_LANG[v.id] = "$tierName 线程仓（$threads 线程）"
 
         return registrate
@@ -191,10 +192,12 @@ object ETThreadHatches {
                         model.addReplaceableTextures("bottom", "top", "side")
                     }
             )
-            // 提示只剩 GTM 自带的那条：部件的说明性文字已经并进名字，不再单独生成 tooltip 键
-            .tooltips(
-                Component.translatable("gtceu.part_sharing.disabled")
-            )
+            // 提示只剩「多方块共享」那一条：部件的说明性文字已经并进名字，不再单独生成 tooltip 键。
+            // 走 tooltipBuilder 而不是 tooltips()：本件的 `canShared()` 读全局配置 `multiblock.partsShareable`，
+            // 那一行要**渲染时**才决定取 `gtceu.part_sharing.enabled` 还是 `…disabled`（见 [ETPartSharing.line]）。
+            // ⚠️ MachineBuilder 里 tooltips() 与 tooltipBuilder() 是**追加**关系（GTM MachineBuilder.java:693-696），
+            //    这里原样搬进 lambda 只为保住原有的「只有这一行」的排布，不是被覆盖。
+            .tooltipBuilder { _, list -> list.add(ETPartSharing.line()) }
             .register()
     }
 }

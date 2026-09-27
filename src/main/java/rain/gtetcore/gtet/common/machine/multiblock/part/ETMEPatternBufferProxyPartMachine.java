@@ -25,6 +25,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 import rain.gtetcore.gtet.Gtetcore;
+import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.integration.ae2.ETProxySlotRecipeHandler;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -209,10 +210,15 @@ public class ETMEPatternBufferProxyPartMachine extends TieredIOPartMachine
      * 每台机器的镜像都是各自那一格，{@code hasController(该控制器)} 永远成立；
      * 这道闸门只在「同一格属于两个已成型结构」时才触发（判定见
      * {@link ETTagFilterStockBusPartMachine#canShared()}）。
+     *
+     * <p><b>闸门现在由配置 {@code multiblock.partsShareable} 兜底</b>（默认 false = 仍然隔离，
+     * 与原先写死 false 完全一致）：配置打开后同一格镜像可同时算作两个已成型结构的一部分，
+     * 于是上面那条「两个控制器从同一条转发链取料」的**串配方风险重新出现**。
+     * ⚠️ 该值只在 {@code BlockPattern#checkPatternAt} 那一刻被读，改配置后要等下一次结构检测才生效。
      */
     @Override
     public boolean canShared() {
-        return false;
+        return GTETConfig.partsShareable();
     }
 
     @Override

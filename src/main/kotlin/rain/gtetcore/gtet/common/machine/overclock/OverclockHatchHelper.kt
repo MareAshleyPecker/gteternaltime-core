@@ -16,10 +16,11 @@ import java.math.RoundingMode
  * 「超频仓」替代超频的静态入口 —— 自己算出 `OCs` 与 `OCParams`，再交给超频算法。
  *
  * ## 为什么这里要自己算一遍这段前置逻辑
- * `OverclockingLogic#getModifier(...)` 是被 [rain.gtetcore.gtet.mixin.GTM.MixinOverclockingLogic]
- * 注入（`@At("HEAD")` + `setReturnValue`）的**同一个方法**。如果本 helper 里再去调
- * `logic.getModifier(...)`，就会立刻重新进入注入点 → 无限递归。所以这里只把
- * 「算 OCs → 组 `OCParams`」这一段自己算一遍，最后直接调 `logic.runOverclockingLogic(...)`。
+ * [rain.gtetcore.gtet.mixin.GTM.MixinOverclockingLogic] 用的是 `@Redirect`：它只改
+ * `GTRecipeModifiers` 里那 5 个 `getModifier` 调用点，所以在别处调 `logic.getModifier(...)`
+ * 并不会递归。这里自己算一遍是为了两件事：① 在进算法之前就把 `ocs <= 0` 挡掉（见下一节，
+ * 这是与 GTM 原版的有意差异）；② 按 GTM 的口径把 `OCParams.maxParallels` 组好 ——
+ * `runOverclockingLogic(...)` 只吃 `OCParams`，`getModifier(...)` 里那段并行预算拿不到。
  *
  * ## 与 GTM 原版的唯一一处（有意）差异
  * GTM 7.5.3 写的是 `if (OCs == 0) return ModifierFunction.IDENTITY;`（只挡 0，不挡负数）。

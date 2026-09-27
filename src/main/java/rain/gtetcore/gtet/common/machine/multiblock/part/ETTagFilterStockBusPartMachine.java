@@ -25,6 +25,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import rain.gtetcore.gtet.config.GTETConfig;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilter;
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator;
 import rain.gtetcore.gtet.integration.ae2.IMEStockingHost;
@@ -112,6 +113,9 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
      * ⚠️ 带 {@code @DescSynced}（而不是只有 {@code @Persisted}）：开关面板在客户端要读这个值来画
      * 按下状态与状态文字，只写 {@code @Persisted} 的话客户端拿到的是默认值。
      * GTM 自己的 {@code MEStockingBusPartMachine#autoPull} 就是 {@code @DescSynced @Persisted} 两件套。
+     *
+     * <p>⚠️ 本字段只是「玩家那一侧的意愿」：{@link #canShared()} 取的是它与全局配置
+     * {@code multiblock.partsShareable} 的**或**，配置打开时本字段拨不动结果。
      */
     @DescSynced
     @Persisted
@@ -133,7 +137,8 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
 
     /**
      * <b>仓室隔离（玩家可切换）</b>：默认禁止本件被两个多方块同时占用（防串配方），
-     * 面板上的「多方块共享」开关打开后放行。返回值就是 {@link #shareEnabled}。
+     * 面板上的「多方块共享」开关打开后放行。返回值是「{@link #shareEnabled} OR 全局配置
+     * {@code multiblock.partsShareable}」（后者默认 false，故默认行为与开关单独决定时完全一致）。
      *
      * <h2>⚠️ 时序：这个值只在「结构检查那一刻」被读</h2>
      * 全 GTM 唯一的消费点是 {@code BlockPattern#checkPatternAt}（下面详述），也就是说拨动开关
@@ -188,15 +193,26 @@ public class ETTagFilterStockBusPartMachine extends MEStockingBusPartMachine
      * ⚠️ 这**不是**「一个结构里只能放一件」：它只挡「同一格方块同时属于两个已成型结构」，
      * 一个结构里放两件各自独立的库存总线照旧允许（仓库去重由 {@code distinct} 与
      * {@link #testConfiguredInOtherPart} 管）。
+     *
+     * <p><b>⚠️ 全局配置兜底：</b>返回值现在是「面板开关 OR {@code multiblock.partsShareable}」
+     * —— 默认 {@code false} 时与原来只读 {@link #shareEnabled} <b>完全一致</b>（用 OR 而非 AND 正是为此），
+     * 而配置一旦打开就**无条件放行**、面板开关失去作用，上面那条「两个控制器读同一份 stock 与同一套标签闸门」
+     * 的<b>串配方风险随之恢复</b>（多人服慎开）。
+     * ⚠️ 该值只在 {@code BlockPattern#checkPatternAt} 那一刻被读，所以拨开关 / 改配置都不会立刻复检。
      */
     @Override
     public boolean canShared() {
-        return shareEnabled;
+        return shareEnabled || GTETConfig.partsShareable();
     }
 
+    /**
+     * 面板开关的显示状态（{@link IMEStockingHost#canBeShared()}）：与 {@link #canShared()} 同源，
+     * 同样带上配置兜底 —— 配置打开时面板显示「允许共享」，如实反映「此刻确实允许」，
+     * 此时拨开关不会再改变结果（{@link #setCanBeShared(boolean)} 只写 {@link #shareEnabled}）。
+     */
     @Override
     public boolean canBeShared() {
-        return shareEnabled;
+        return shareEnabled || GTETConfig.partsShareable();
     }
 
     /**

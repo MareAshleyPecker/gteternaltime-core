@@ -39,4 +39,24 @@ object ETPartAbility {
      */
     @JvmField
     val THREAD_HATCH: PartAbility = PartAbility("gtet_thread_hatch")
+
+    /**
+     * 时序仓（TF 供给仓）专用能力 —— **「这台多方块支持 TF」的标记位**。
+     *
+     * 设定 §2.3 的投放规则是「TF 只给支持 TF 的机器或含支持 TF 的多方块」，判定就落在这条能力上：
+     * 结构谓词里写了 `Predicates.abilities(TF_HATCH)` 的多方块才吃「含时序仓」这套结构，
+     * 因此也才可能拿到 TF。
+     *
+     * ⚠️ **必须独立**，不得复用 [OVERCLOCK_HATCH]：超频仓是「让配方吃 TF」的那一环（下一轮才做），
+     * 与时序仓是两件正交的事 —— 复用会让「装了超频仓」被当成「这台机器支持 TF」，
+     * 而两者可以只装其一。
+     *
+     * ⚠️ 能力方块表是**首取即定**的快照（`PartAbility#getAllBlocks` 内部记忆化），所以本仓必须在
+     * 「用到它的多方块」之前注册 —— 实际顺序由 `MachineRegister` 保证
+     * （`ALLSmachine.init()` 在 `ALLMmachine.init()` 之前），见 `ETTimeFlowHatches` 的类注释。
+     *
+     * 名称同样带 `gtet_` 前缀。
+     */
+    @JvmField
+    val TF_HATCH: PartAbility = PartAbility("gtet_tf_hatch")
 }

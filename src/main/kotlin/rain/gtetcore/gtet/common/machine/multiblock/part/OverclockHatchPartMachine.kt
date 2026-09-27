@@ -9,6 +9,7 @@ import com.lowdragmc.lowdraglib.gui.widget.Widget
 import com.lowdragmc.lowdraglib.gui.widget.WidgetGroup
 import com.lowdragmc.lowdraglib.syncdata.field.ManagedFieldHolder
 import rain.gtetcore.gtet.api.capability.IOverclockHatch
+import rain.gtetcore.gtet.config.GTETConfig
 
 /**
  * 「超频仓」多方块部件。
@@ -16,7 +17,7 @@ import rain.gtetcore.gtet.api.capability.IOverclockHatch
  * 一个分级多方块部件（方块本体只是一个分级 part machine）：
  * - 实现 [IFancyUIMachine] 给一个只读信息面板；
  * - 实现 [IOverclockHatch] 让超频逻辑能认出它；
- * - `canShared() = false`，禁止多方块部件共享。
+ * - `canShared()` 默认禁止多方块部件共享，闸门由配置 `multiblock.partsShareable` 兜底（见 [canShared]）。
  *
  * 真正的超频改写发生在 [rain.gtetcore.gtet.mixin.GTM.MixinOverclockingLogic]：
  * 它扫控制器的 `getParts()`，找到本类实例后用 [overclockSpeed] / [overclockEnergyFactor]
@@ -50,8 +51,8 @@ class OverclockHatchPartMachine(
     /**
      * 面板里**只有名字一行**（不需要任何输入控件，也不再单独显示规格）。
      *
-     * 名字键 `block.gtetcore.<id>` 本身已经带齐信息 —— 中文「UV 超频仓（8×/×4）」、
-     * 英文「UV Overclock Hatch (8× Speed / ×4 Energy)」，也就是「电压等级 + 速度 + 能效」；
+     * 名字键 `block.gtetcore.<id>` 本身已经带齐信息 —— 中文「ZPM 超频仓（4× Speed|×32 Energy）」、
+     * 英文「ZPM Overclock Hatch (4× Speed / ×32 Energy)」，也就是「电压等级 + 速度 + 能效」；
      * 原先那行 `gtetcore.machine.<id>.info`（以及物品提示里的 `tooltip.0` / `tooltip.1`）
      * 已随显示简化一并删除，`runData` 后不再出现在语言文件里。
      *
@@ -68,7 +69,15 @@ class OverclockHatchPartMachine(
 
     override fun getFieldHolder(): ManagedFieldHolder = MANAGED_FIELD_HOLDER
 
-    override fun canShared(): Boolean = false
+    /**
+     * 部件共享的闸门，返回全局开关 [GTETConfig.partsShareable]（默认 `false` = 禁止共享）。
+     *
+     * 原先这里写死 `false`：本件不能被两个已成型结构同时占用（防串配方）。
+     * 现在由配置兜底 —— **打开配置就恢复串配方风险**：本件属于 `IOverclockHatch`，
+     * 超频改写扫的是控制器的 `getParts()`，共享后两个控制器会同时按本件的 S / E 改写自己的配方。
+     * ⚠️ 该值只在 `BlockPattern#checkPatternAt` 那一刻被读，改配置后要等下一次结构检测才生效。
+     */
+    override fun canShared(): Boolean = GTETConfig.partsShareable()
 
     companion object {
 

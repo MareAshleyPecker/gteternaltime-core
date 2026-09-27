@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "gtetcore:block/machine/tf_hatch_1h",
+      "x": 90
+    },
+    "facing=east": {
+      "model": "gtetcore:block/machine/tf_hatch_1h",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "gtetcore:block/machine/tf_hatch_1h"
+    },
+    "facing=south": {
+      "model": "gtetcore:block/machine/tf_hatch_1h",
+      "y": 180
+    },
+    "facing=up": {
+      "gtceu:z": 180,
+      "model": "gtetcore:block/machine/tf_hatch_1h",
+      "x": 270
+    },
+    "facing=west": {
+      "model": "gtetcore:block/machine/tf_hatch_1h",
+      "y": 270
+    }
+  }
+}

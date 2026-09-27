@@ -8,6 +8,7 @@ import rain.gtetcore.gtet.api.registrate.OnlyETreg
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.item.recipe.RecipeEditorBehavior
 import rain.gtetcore.gtet.common.item.terminal.AdvancedTerminalBehavior
+import rain.gtetcore.gtet.common.item.timeflow.TimeBottleBehavior
 import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior
 import rain.gtetcore.gtet.common.item.tool.StructureWriteBehavior
 import rain.gtetcore.gtet.common.item.tool.TerminalBehavior
@@ -92,5 +93,30 @@ object ETItems {
         .properties { p -> p.stacksTo(1) }
         .model { ctx, prov -> prov.generated(ctx, Gtetcore.id("item/advanced_terminal")) }
         .onRegister { it.attachComponents(AdvancedTerminalBehavior.INSTANCE) }
+        .register()
+
+    /**
+     * 时序之瓶 — 时间流（TF）的显示 / 搬运道具。
+     *
+     * - **显示**：tooltip 里报当前汇率与相位、`1 TF = 8192 EU`、当前往返损耗、瓶内 TF 与其折算 EU、档位与容量上限；
+     *   汇率是 `f(gameTime)` 的纯函数，客户端本地算，不需要同步包（见 [rain.gtetcore.gtet.api.timeflow.ETTimeFlow]）。
+     * - **搬运**：TF 用 long 存在物品 NBT 里，没有亚 TF 精度。
+     * - **档位**：一件物品按升级提升 —— L1 = 1A ZPM = 16 TF、L2 = 1A UEV = 1024 TF、L3 = 1A OpV = 65536 TF；
+     *   升级件只抬容量上限，瓶内 TF 不丢、物品不换（升级件的形态与配方本期不做）。
+     * - **绑定主控塔**：NBT 里存一个 `GlobalPos`（维度 + 坐标），手势沿用 GTM 闪存范式。
+     *
+     * 贴图：`assets/gtetcore/textures/item/time_bottle.png` 是本仓自制的 16×16 极简占位图。
+     * TODO 待画师替换（本仓目前没有画师，见 README/zh_CN/计划.md）。
+     */
+    val TIME_BOTTLE: ItemEntry<ComponentItem> = OnlyETreg.ETRegistrate
+        .itemAndLang("time_bottle", "§bTime Bottle", "§b时序之瓶", ComponentItem::create)
+        .tooltips(
+            "time_bottle",
+            "Stores time flow (TF); bind it to a master tower to carry TF across dimensions" to "存储时间流（TF）；绑定主控塔后可跨维度搬运",
+            "Upgrade items raise the capacity tier (L1 -> L3); stored TF is kept" to "用升级件提升容量档位（L1 → L3），瓶内 TF 不丢",
+        )
+        .properties { p -> p.stacksTo(1) }
+        .model { ctx, prov -> prov.generated(ctx, Gtetcore.id("item/time_bottle")) }
+        .onRegister { it.attachComponents(TimeBottleBehavior.INSTANCE) }
         .register()
 }
