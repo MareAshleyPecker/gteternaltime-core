@@ -35,5 +35,6 @@ object ALLRecipes {
     fun init(provider: Consumer<FinishedRecipe>) {
         MixerRecipes.init(provider)
         ChemicalRecipes.init(provider)
+        TerminalRecipes.init(provider)
     }
 }

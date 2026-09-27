@@ -129,8 +129,7 @@ class ETREGISTRATE(modid: String) : GTRegistrate(modid) {
         val itemPath = tagPrefix.idPattern().format(material.name)
         return super.item(itemPath) { properties: Item.Properties ->
             tagPrefix.itemConstructor().create(
-                if (material.hasFlag(MaterialFlags.FIRE_RESISTANT)) properties.fireResistant() else properties,
-                tagPrefix, material
+                if (material.hasFlag(MaterialFlags.FIRE_RESISTANT)) properties.fireResistant() else properties, tagPrefix, material
             )
         }
             .setData(ProviderType.LANG, NonNullBiConsumer.noop())  // 由 Material+TagPrefix 系统提供翻译

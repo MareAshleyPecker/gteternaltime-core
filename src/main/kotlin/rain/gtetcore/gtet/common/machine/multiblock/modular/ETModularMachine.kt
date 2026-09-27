@@ -55,6 +55,12 @@ abstract class ETModularMachine(holder: IMachineBlockEntity) : WorkableElectricM
     /** 等级 → 结构图案。 */
     protected abstract fun patternOfTier(tier: Int): BlockPattern
 
+    /**
+     * [patternOfTier] 的公开入口：高级终端的「模块搭建」按档位取第 N 套结构时要能调到它。
+     * 非法档位的表现由子类决定（可能抛异常），调用方自己兜。
+     */
+    fun patternForTier(tier: Int): BlockPattern = patternOfTier(tier)
+
     /** 该等级允许的配方电压等级上限（`GTValues` 里的档位）；返回 -1 表示不限。 */
     open fun maxRecipeTier(): Int = moduleTier - 1
 

@@ -14,7 +14,7 @@ object Lang {
      * 错误最终由 `PatternStringError#getErrorInfo()` 变成 `Component.translatable(键)`。
      *
      * ⚠️ 这个键 GTM 自己的 7 个语言文件里**一个都没有**（实测：解出 gtceu-1.20.1-7.5.3.jar 的
-     * `assets/gtceu/lang/` 下那 7 份 json，全库 grep `multiblocked` 零命中），LDLib、GTMThings 的语言文件里
+     * `assets/gtceu/lang/` 下那 7 份 json，全库 grep `multiblocked` 零命中），LDLib 的语言文件里
      * 也没有；键名带着别的命名空间（Multiblocked，LDLib 同作者的那套多方块框架），GTM 只是引用了它。
      * 所以一旦有界面把它渲染出来，玩家看到的就是键名本身。
      *

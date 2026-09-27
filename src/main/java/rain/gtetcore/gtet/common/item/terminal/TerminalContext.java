@@ -5,9 +5,8 @@ import net.minecraft.world.item.ItemStack;
 /**
  * 搭建期间的临时上下文。
  *
- * <p>GTMThings 的 {@code AutoBuildSetting#apply} 拿不到终端物品，
- * 而它是在 {@code useOn} 的调用栈里同步执行的，所以在 {@code useOn} 里记一下当前终端，
- * 供分级方块偏好查询使用。
+ * <p>自动搭建是在 {@code useOn} 的调用栈里同步执行的，那一层拿不到终端物品，
+ * 所以在 {@code useOn} 里记一下当前终端，供分级方块偏好查询使用。
  *
  * @author rain fox
  */

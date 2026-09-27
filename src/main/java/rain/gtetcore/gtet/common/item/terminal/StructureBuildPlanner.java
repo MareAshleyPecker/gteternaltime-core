@@ -27,8 +27,7 @@ import java.util.*;
  * 都会被自动识别成一个个「分级组」，玩家在终端里按组挑具体方块即可，
  * 不需要为每种方块硬编码等级枚举。
  *
- * <p>{@code BlockPattern} 的 {@code blockMatches} 等字段是 protected，
- * 与 GTMThings 同样的办法：反射读取。
+ * <p>{@code BlockPattern} 的 {@code blockMatches} 等字段是 protected，用反射读取。
  *
  * @author rain fox
  */
@@ -96,6 +95,31 @@ public final class StructureBuildPlanner {
     }
 
     /**
+     * 规划选项（{@link #planCells} 用）。
+     *
+     * @param repeatCount     可重复层的重复次数；只对「最小 ≠ 最大」的层生效
+     * @param flip            坐标映射的镜像位（与机器自身的 {@code isFlipped()} 取或）
+     * @param includeOccupied 是否把「已经有方块」的格子也收进清单
+     */
+    public record Options(int repeatCount, boolean flip, boolean includeOccupied) {
+
+        /** 默认：按最小重复数展开、不额外镜像、只收空格子。 */
+        public static final Options DEFAULT = new Options(0, false, false);
+    }
+
+    /**
+     * 一个格子。
+     *
+     * @param occupied 这一格世界上已经有方块（{@code candidates} 此时是「谓词的普通候选 ∪ 限次候选」）
+     * @param required 这一格的候选是「限次谓词的最小数量」逼出来的（必须放），而不是兜底挑出来的
+     */
+    public record Cell(BlockPos pos, List<ItemStack> candidates, @Nullable String groupKey, boolean occupied,
+                       boolean required) {}
+
+    /** {@link #planCells} 的结果。 */
+    public record CellPlan(List<Cell> cells, Map<String, Group> groups) {}
+
+    /**
      * 扫描结构，产出规划。
      *
      * @param pattern 控制器上的结构
@@ -103,7 +127,27 @@ public final class StructureBuildPlanner {
      * @param level   世界（用于判断哪些格子已经是空的）
      */
     public static Plan plan(BlockPattern pattern, MultiblockState state, net.minecraft.world.level.Level level) {
+        CellPlan cells = planCells(pattern, state, level, Options.DEFAULT);
         List<Slot> slots = new ArrayList<>();
+        for (Cell cell : cells.cells()) {
+            if (cell.occupied()) continue;
+            slots.add(new Slot(cell.pos(), cell.candidates(), cell.groupKey()));
+        }
+        return new Plan(List.copyOf(slots), cells.groups());
+    }
+
+    /**
+     * 与 {@link #plan} 同一套遍历顺序与坐标映射，额外支持三件事（都要靠选项开启）：
+     * <ul>
+     *   <li>把「已经有方块」的格子也收进清单 —— 线圈替换模式与拆除模式必须看到这些格子，
+     *       否则换不了线圈、也拆不掉方块；</li>
+     *   <li>可重复层的实际重复数 = 把 {@code repeatCount} 夹到 [最小, 最大]（最小 == 最大时用该固定值）；</li>
+     *   <li>坐标映射的镜像位 = 选项 <b>或</b> 机器自身的 {@code isFlipped()}。</li>
+     * </ul>
+     */
+    public static CellPlan planCells(BlockPattern pattern, MultiblockState state,
+                                     net.minecraft.world.level.Level level, Options options) {
+        List<Cell> cells = new ArrayList<>();
         Map<String, Group> groups = new LinkedHashMap<>();
 
         try {
@@ -114,11 +158,11 @@ public final class StructureBuildPlanner {
             int[] centerOffset = (int[]) F_CENTER_OFFSET.get(pattern);
 
             var controller = state.getController();
-            if (controller == null) return new Plan(List.of(), Map.of());
+            if (controller == null) return new CellPlan(List.of(), Map.of());
             BlockPos centerPos = controller.self().getPos();
             Direction facing = controller.self().getFrontFacing();
             Direction upwardsFacing = controller.self().getUpwardsFacing();
-            boolean flipped = controller.self().isFlipped();
+            boolean flipped = controller.self().isFlipped() || options.flip();
             RelativeDirection[] structureDir = pattern.structureDir;
 
             var cacheGlobal = state.getGlobalCount();
@@ -126,7 +170,12 @@ public final class StructureBuildPlanner {
 
             int minZ = -centerOffset[4];
             for (int c = 0, z = minZ++; c < finger; c++) {
-                for (int rep = 0; rep < pattern.aisleRepetitions[c][0]; rep++) {
+                // 可重复层：最小 == 最大时恒用该固定值；否则把设置里的重复次数夹到 [最小, 最大]
+                int repMin = pattern.aisleRepetitions[c][0];
+                int repMax = pattern.aisleRepetitions[c][1];
+                int reps = repMin == repMax ? repMin
+                        : Math.max(repMin, Math.min(options.repeatCount(), Math.max(repMax, repMin)));
+                for (int rep = 0; rep < reps; rep++) {
                     cacheLayer.clear();
                     for (int b = 0, y = -centerOffset[1]; b < thumb; b++, y++) {
                         for (int a = 0, x = -centerOffset[0]; a < palm; a++, x++) {
@@ -137,22 +186,32 @@ public final class StructureBuildPlanner {
                                     x, y, z, facing, upwardsFacing, flipped, structureDir);
                             BlockPos pos = local.offset(centerPos.getX(), centerPos.getY(), centerPos.getZ());
 
-                            // 已经有方块的位置不用管（和 autoBuild 一致：只补空格）
+                            // 已经有方块的位置不用管（和 autoBuild 一致：只补空格）；
+                            // 但线圈替换 / 拆除要看这些格子，所以选项开着时也收进清单
                             if (!level.isEmptyBlock(pos)) {
                                 state.update(pos, predicate);
                                 for (SimplePredicate limit : predicate.limited) {
                                     limit.testLimited(state);
                                 }
+                                if (options.includeOccupied()) {
+                                    List<ItemStack> raw = rawCandidates(predicate);
+                                    if (!raw.isEmpty()) {
+                                        String key = groupKey(raw);
+                                        groups.computeIfAbsent(key, k -> new Group(k, raw));
+                                        cells.add(new Cell(pos, raw, key, true, false));
+                                    }
+                                }
                                 continue;
                             }
 
                             state.update(pos, predicate);
-                            List<ItemStack> candidates = candidatesOf(predicate, state, cacheGlobal, cacheLayer);
+                            Picked picked = candidatesOf(predicate, state, cacheGlobal, cacheLayer);
+                            List<ItemStack> candidates = picked.candidates();
                             if (candidates.isEmpty()) continue;
 
                             String key = groupKey(candidates);
                             groups.computeIfAbsent(key, k -> new Group(k, candidates));
-                            slots.add(new Slot(pos, candidates, key));
+                            cells.add(new Cell(pos, candidates, key, false, picked.required()));
                         }
                     }
                     z++;
@@ -162,13 +221,46 @@ public final class StructureBuildPlanner {
             throw new IllegalStateException("无法读取 BlockPattern 内部结构", e);
         }
 
-        return new Plan(List.copyOf(slots), Map.copyOf(groups));
+        return new CellPlan(List.copyOf(cells), Map.copyOf(groups));
     }
 
+    /**
+     * 谓词的「普通候选 ∪ 限次候选」—— 不按限次顺序挑，就是要这一格<b>接受的全集</b>。
+     * 拆除模式的防误删判定与线圈替换都用它。
+     */
+    private static List<ItemStack> rawCandidates(TraceabilityPredicate predicate) {
+        Set<net.minecraft.world.level.block.Block> blocks = new LinkedHashSet<>();
+        collect(blocks, predicate.common);
+        collect(blocks, predicate.limited);
+        List<ItemStack> candidates = new ArrayList<>();
+        for (net.minecraft.world.level.block.Block block : blocks) {
+            if (block == Blocks.AIR) continue;
+            ItemStack stack = block.asItem().getDefaultInstance();
+            if (!stack.isEmpty()) candidates.add(stack);
+        }
+        return candidates;
+    }
+
+    private static void collect(Set<net.minecraft.world.level.block.Block> out, List<SimplePredicate> predicates) {
+        for (SimplePredicate predicate : predicates) {
+            if (predicate.candidates == null) continue;
+            BlockInfo[] infos = predicate.candidates.get();
+            if (infos == null) continue;
+            for (BlockInfo info : infos) out.add(info.getBlockState().getBlock());
+        }
+    }
+
+    /**
+     * 从谓词里挑出的候选。
+     *
+     * @param required 这批候选是「限次谓词的最小数量」逼出来的（这一格<b>必须</b>放），不是兜底挑的
+     */
+    public record Picked(List<ItemStack> candidates, boolean required) {}
+
     /** 从谓词里挑出这一格的候选物品（与 GTCEu autoBuild 同序）。 */
-    private static List<ItemStack> candidatesOf(TraceabilityPredicate predicate, MultiblockState state,
-                                                Reference2IntOpenHashMap<SimplePredicate> cacheGlobal,
-                                                Reference2IntOpenHashMap<SimplePredicate> cacheLayer) {
+    private static Picked candidatesOf(TraceabilityPredicate predicate, MultiblockState state,
+                                       Reference2IntOpenHashMap<SimplePredicate> cacheGlobal,
+                                       Reference2IntOpenHashMap<SimplePredicate> cacheLayer) {
         BlockInfo[] infos = null;
         boolean find = false;
 
@@ -232,7 +324,8 @@ public final class StructureBuildPlanner {
                 }
             }
         }
-        return candidates;
+        // find = true 表示这次是被「层 / 全局最小数量」逼出来的一格：这一格必须放，不能算作「多出来的仓室」
+        return new Picked(candidates, find);
     }
 
     /** 一组候选的稳定标识：把所有候选的物品 id 排序后拼起来。 */

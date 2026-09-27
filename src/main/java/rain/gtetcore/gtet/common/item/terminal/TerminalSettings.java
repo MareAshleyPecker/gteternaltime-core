@@ -34,6 +34,7 @@ public final class TerminalSettings {
     private static final String PREFS = "group_prefs";
     private static final String PREF_KEY = "group";
     private static final String PREF_ITEM = "item";
+    private static final String UI_GROUP = "ui_group";
 
     private TerminalSettings() {}
 
@@ -128,16 +129,27 @@ public final class TerminalSettings {
 
     /**
      * 按偏好在这格的候选里挑一个方块；没设偏好就用第一个候选。
+     *
+     * <p>⚠️ 每次调用都会重读一遍物品 NBT。逐格调用（一次搭建几百格）请改用
+     * {@link #resolve(StructureBuildPlanner.Slot, Map, Map)}：把偏好表与组表在循环外读一次。
      */
     public static ItemStack resolve(ItemStack terminal, StructureBuildPlanner.Slot slot) {
+        return resolve(slot, getPreferences(terminal), plannedGroups(terminal));
+    }
+
+    /**
+     * 同 {@link #resolve(ItemStack, StructureBuildPlanner.Slot)}，但偏好表与已规划组表由调用方
+     * 预先读好传进来 —— 一次搭建里只读一次 NBT。
+     */
+    public static ItemStack resolve(StructureBuildPlanner.Slot slot, Map<String, String> prefs,
+                                    Map<String, List<String>> planned) {
         if (slot.candidates().isEmpty()) return ItemStack.EMPTY;
-        String wanted = lookupPreference(terminal, slot.groupKey(), slot.candidates());
+        String wanted = lookupPreference(slot.groupKey(), slot.candidates(), prefs, planned);
         ItemStack hit = findById(slot.candidates(), wanted);
         if (hit != null) return hit;
-        // 偏好不在这一格的候选里：只有「整格候选都是线圈」才把它补回来 ——
-        // GTMThings 的 AutoBuildSetting#apply 组装线圈候选时会砍掉最后一档（见 lookupPreference 注释），
-        // 而线圈谓词本来就接受任何一级线圈，补回来是安全的。其它情况一律回退第一档：
-        // 把谓词不接受的方块放到那格里只会让结构永远不成型。
+        // 偏好不在这一格的候选里：只有「整格候选都是线圈」才把它补回来。
+        // 线圈谓词本来就接受任何一级线圈（搭建侧按线圈等级砍过候选，见 AdvancedTerminalBuilder），
+        // 补回来是安全的；其它情况一律回退第一档：把谓词不接受的方块放到那格里只会让结构永远不成型。
         if (wanted != null && allCoils(slot.candidates())) {
             ItemStack extra = StructureBuildPlanner.itemStackOf(wanted);
             if (extra != null && !extra.isEmpty()) return extra;
@@ -145,19 +157,38 @@ public final class TerminalSettings {
         return slot.candidates().get(0);
     }
 
+    // ======================== 右下那块面板当前显示哪一组 ========================
+
+    /** 右下「分级方块（勾选）」当前显示哪一组（组键）；没设过时为 null。 */
+    @Nullable
+    public static String getUiGroup(ItemStack stack) {
+        CompoundTag tag = root(stack, false);
+        if (tag == null || !tag.contains(UI_GROUP, Tag.TAG_STRING)) return null;
+        return tag.getString(UI_GROUP);
+    }
+
+    /** 写「右下显示哪一组」；传 null 等于清掉（界面会退回第 1 组）。 */
+    public static void setUiGroup(ItemStack stack, @Nullable String groupKey) {
+        CompoundTag tag = Objects.requireNonNull(root(stack, true));
+        if (groupKey == null) {
+            tag.remove(UI_GROUP);
+        } else {
+            tag.putString(UI_GROUP, groupKey);
+        }
+    }
+
     // ======================== 组键 → 偏好 ========================
 
     /**
      * 找出「这一格该用哪一档」的偏好物品 id（注册名）；没有可用偏好时返回 {@code null}。
      *
-     * <p><b>第一步：组键精确命中</b> —— 面板/扫描两边用同一套
+     * <p><b>第一步：组键精确命中</b> —— 面板 / 扫描 / 搭建三处用同一套
      * {@link StructureBuildPlanner#groupKey} 算键，键一样就直接取。
      *
      * <p>⚠️ <b>第二步：候选集回退</b>（这一步是必须的，否则「面板里选了却不生效」）。
-     * 静态表（{@link TerminalStaticGroups}）与结构扫描谓词给的候选集**不保证完全一致**：
-     * 典型是线圈 —— GTCEu 的 {@code Predicates.heatingCoils()} 给全部线圈，而 GTMThings 的
-     * {@code AutoBuildSetting#apply} 组装候选时把最后一档砍掉了（{@code i < blockInfos.length - 1}），
-     * 于是搭建时的键与面板里的键对不上。回退规则（按「同类」判定，避免误配到别的格）：
+     * 静态表（{@link TerminalStaticGroups}）与结构扫描谓词给的候选集不保证完全一致：
+     * 搭建侧按「线圈等级」收窄过候选时，它的键与面板里那一组的键就不相等。
+     * 回退规则（按「同类」判定，避免误配到别的格）：
      *
      * <ul>
      *   <li>偏好所属的组（{@code plan.groups} 里的候选集 {@code G}）与本格候选集 {@code S}
@@ -175,8 +206,14 @@ public final class TerminalSettings {
      */
     @Nullable
     public static String lookupPreference(ItemStack terminal, @Nullable String groupKey, List<ItemStack> candidates) {
+        return lookupPreference(groupKey, candidates, getPreferences(terminal), plannedGroups(terminal));
+    }
+
+    /** 同 {@link #lookupPreference(ItemStack, String, List)}，但偏好表与已规划组表由调用方预先读好。 */
+    @Nullable
+    public static String lookupPreference(@Nullable String groupKey, List<ItemStack> candidates,
+                                          Map<String, String> prefs, Map<String, List<String>> planned) {
         if (candidates.isEmpty()) return null;
-        Map<String, String> prefs = getPreferences(terminal);
         if (prefs.isEmpty()) return null;
 
         Set<String> slotIds = idsOf(candidates);
@@ -185,7 +222,6 @@ public final class TerminalSettings {
             if (wanted != null && slotIds.contains(wanted)) return wanted;
         }
 
-        Map<String, List<String>> planned = plannedGroups(terminal);
         if (planned.isEmpty()) return null;
         String best = null;
         int bestOverlap = -1;
@@ -334,18 +370,33 @@ public final class TerminalSettings {
      *   <li>{@link TerminalStaticGroups} 的 6 类静态组不会被扫描结果清掉（面板要一直有这几类可选）；</li>
      *   <li>上一次扫描留下的、这次没再出现的组会被丢掉（和原来的替换语义一致，不留陈旧分组）。</li>
      * </ul>
+     *
+     * <p>⚠️ 内容与控制器位置都没变时<b>一个字节都不写</b>：写 NBT 会触发一次物品同步，
+     * 每次 Shift+右键都白发一次没必要。
      */
     public static void cachePlan(ItemStack stack, BlockPos controller, ResourceLocation dimension,
                                  Map<String, List<String>> groups) {
         CompoundTag root = Objects.requireNonNull(root(stack, true));
-        CompoundTag plan = root.contains(PLAN, Tag.TAG_COMPOUND) ? root.getCompound(PLAN).copy() : new CompoundTag();
+
+        Map<String, List<String>> merged = new LinkedHashMap<>(groups);
+        TerminalStaticGroups.groups().forEach(merged::putIfAbsent);
+
+        CompoundTag existing = root.contains(PLAN, Tag.TAG_COMPOUND) ? root.getCompound(PLAN) : null;
+        if (existing != null
+                && dimension.toString().equals(existing.getString(PLAN_DIM))
+                && controller.getX() == existing.getInt(PLAN_X)
+                && controller.getY() == existing.getInt(PLAN_Y)
+                && controller.getZ() == existing.getInt(PLAN_Z)
+                && readGroups(existing).equals(merged)) {
+            return;
+        }
+
+        CompoundTag plan = existing == null ? new CompoundTag() : existing.copy();
         plan.putString(PLAN_DIM, dimension.toString());
         plan.putInt(PLAN_X, controller.getX());
         plan.putInt(PLAN_Y, controller.getY());
         plan.putInt(PLAN_Z, controller.getZ());
 
-        Map<String, List<String>> merged = new LinkedHashMap<>(groups);
-        TerminalStaticGroups.groups().forEach(merged::putIfAbsent);
         writeGroups(plan, merged);
         root.put(PLAN, plan);
     }

@@ -1,6 +1,6 @@
 # patchJar/ —— 仓内 vendored 的补丁 jar
 
-这个目录里装的是**打过补丁、随包分发**的两份模组 jar。它们不是官方原件，克隆仓库即有，
+这个目录里装的是**打过补丁、随包分发**的模组 jar。它不是官方原件，克隆仓库即有，
 所以 `gradlew classes / build / jar` 都不需要外部源码检出、不需要 mavenLocal、也不需要联网下载 GTM。
 
 ## 目录布局
@@ -8,7 +8,6 @@
 ```
 patchJar/
   README.md                                           本文件
-  gtmthings-1.6.0-forge.jar                           补丁 GTMThings（flatDir 依赖，文件名不能改）
   maven/com/gregtechceu/gtceu/gtceu-1.20.1/7.5.3/
       gtceu-1.20.1-7.5.3.jar                          补丁 GTM（唯一一份，见下）
       gtceu-1.20.1-7.5.3.pom
@@ -37,13 +36,6 @@ dev 编译期会拿到那一份 —— **能编译通过，但运行期行为不
 
 `mavenLocal()` 保留作兜底（外部检出版 rebuild 时 `publishToMavenLocal` 的产物仍可被解析）。
 
-## GTMThings 为什么还留在平铺位置
-
-`scripts/dependencies.gradle` 用的是 flatDir 坐标 `fg.deobf("jarjar:gtmthings-1.6.0:forge")`，
-flatDir **忽略 group、只按 `<name>-<version>.jar` 匹配文件名**，所以该 jar 必须待在
-`flatDir { dir "patchJar" }` 指向的这一层，且文件名必须正好是 `gtmthings-1.6.0-forge.jar`。
-不要为了"整齐"把它挪进 maven 子目录。
-
 ## 没有 vendored 的文件
 
 - **`gtceu-1.20.1-7.5.3-sources.jar`（约 10.8 MB）没有放进仓库。**
@@ -62,7 +54,6 @@ flatDir **忽略 group、只按 `<name>-<version>.jar` 匹配文件名**，所�
 | 文件 | 大小 (B) | sha256 |
 | --- | --- | --- |
 | `maven/.../gtceu-1.20.1-7.5.3.jar` | 18216233 | `d29d038f5f7f13b64b7326b954573adcf873aa48da682d17bc26790e93e2cef0` |
-| `gtmthings-1.6.0-forge.jar` | 930790 | `afdc2e7e07d3e6ab1a6304b631aec0b109c314131c06e13dac10eee70768b46c` |
 
 对照：官方未打补丁的 GTM 7.5.3 是 18209988 B —— 大小相近，所以**不要靠体积判断是不是补丁版**，
 判据是 jar 内 `com/gregtechceu/gtceu/api/machine/multiblock/MultiblockControllerMachine.class`
@@ -70,20 +61,19 @@ flatDir **忽略 group、只按 `<name>-<version>.jar` 匹配文件名**，所�
 
 ## 怎么重建
 
-两份 jar 都由 `scripts/patches.gradle` 从**外部源码检出**构建（本仓库内绝不编译它们的补丁源码），
-产物已在则走快路径跳过。外部检出的路径与构建 JDK 写死在该文件顶部的三个属性：
+补丁 jar 由 `scripts/patches.gradle` 从**外部源码检出**构建（本仓库内绝不编译它的补丁源码），
+产物已在则走快路径跳过。外部检出的路径与构建 JDK 写死在该文件顶部的属性：
 
 | 属性 | 含义 |
 | --- | --- |
 | `gtmRepo` | GTM 补丁源码检出目录 |
-| `gtmtRepo` | GTMThings 补丁源码检出目录 |
-| `patchJdk` | 上面两个外部检出构建时用的 JDK 17 |
+| `patchJdk` | 外部检出构建时用的 JDK 17 |
 
 ```powershell
 # 缺产物时自动补建；已有产物想强制重建加 -PgtetPatchBuild=true
-gradlew buildPatchedGtmThings buildPatchedGtm
+gradlew buildPatchedGtm
 
-# 只校验：内嵌的两份到底是不是补丁版（换机 / CI 自检）
+# 只校验：内嵌的那份到底是不是补丁版（换机 / CI 自检）
 gradlew verifyPatchedJarjar
 ```
 
@@ -92,6 +82,5 @@ gradlew verifyPatchedJarjar
 所以这个目录里的东西永远是"上一次通过校验的那份"。
 
 升级版本时要改的地方（`scripts/patches.gradle` 头注释里也列了）：
-`gtmVersion`/`gtmtVersion`（该文件）+ `gradle.properties` 的 `gtm_version`
-+ `scripts/dependencies.gradle` 的 GTMThings flatDir 坐标。
+`gtmVersion`（该文件）+ `gradle.properties` 的 `gtm_version`。
 maven 子目录路径由 `mc_version`/`gtmVersion` 拼出，自动跟着变（旧版本的目录要手工删掉）。

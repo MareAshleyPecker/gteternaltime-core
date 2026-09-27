@@ -3,11 +3,12 @@ package rain.gtetcore.gtet.common.data.item
 import com.gregtechceu.gtceu.api.item.ComponentItem
 import com.tterrag.registrate.util.entry.ItemEntry
 import net.minecraft.resources.ResourceLocation
+import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.api.registrate.OnlyETreg
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.item.recipe.RecipeEditorBehavior
+import rain.gtetcore.gtet.common.item.terminal.AdvancedTerminalBehavior
 import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior
-import rain.gtetcore.gtet.common.item.tool.StructureToolBehavior
 import rain.gtetcore.gtet.common.item.tool.StructureWriteBehavior
 import rain.gtetcore.gtet.common.item.tool.TerminalBehavior
 import rain.gtetcore.gtet.util.tooltips
@@ -61,21 +62,6 @@ object ETItems {
         .onRegister { it.attachComponents(StructureDetectBehavior) }
         .register()
 
-    /** 结构工具（合并版） — 一个物品三种工作模式，对着空气 Shift+滚轮切换 */
-    val STRUCTURE_TOOL: ItemEntry<ComponentItem> = OnlyETreg.ETRegistrate
-        .itemAndLang("structure_tool", "结构工具（合并版）", ComponentItem::create)
-        .tooltips(
-            "structure_tool",
-            "Aim at air + Shift + scroll to switch work mode" to "对着空气 Shift+滚轮 切换工作模式",
-            "Modes: area export / recheck / detect" to "模式：选区导出 / 结构重检 / 结构检测",
-            "Export: the first right-click sets the fixed start corner, later right-clicks drag the opposite end corner, Shift+right-click to clear" to "导出模式：第一下右键确定固定起点，之后右键拖动对角终点（可扩可缩），Shift+右键清空",
-            "Recheck: Shift+right-click a controller / Detect: right-click a controller" to "重检模式：Shift+右键控制器 / 检测模式：右键控制器",
-        )
-        .properties { p -> p.stacksTo(1) }
-        .model { ctx, prov -> prov.generated(ctx, ResourceLocation.withDefaultNamespace("item/stick")) }
-        .onRegister { it.attachComponents(StructureToolBehavior.INSTANCE) }
-        .register()
-
     /** 配方编辑器 — 右键空气打开可视化配方编辑界面，导出 GT datagen 代码 */
     val RECIPE_EDITOR: ItemEntry<ComponentItem> = OnlyETreg.ETRegistrate
         .itemAndLang("recipe_editor", "配方编辑器", ComponentItem::create)
@@ -88,5 +74,23 @@ object ETItems {
         .properties { p -> p.stacksTo(1) }
         .model { ctx, prov -> prov.generated(ctx, ResourceLocation.withDefaultNamespace("item/paper")) }
         .onRegister { it.attachComponents(RecipeEditorBehavior) }
+        .register()
+
+    /**
+     * 高级终端 — 潜行右键控制器自动搭建 / 拆除；潜行右键无线接入点绑定 AE 网络；右键空气打开设置。
+     *
+     * 贴图自备（`assets/gtetcore/textures/item/advanced_terminal.png`），不引用任何第三方命名空间的资源。
+     */
+    val ADVANCED_TERMINAL: ItemEntry<ComponentItem> = OnlyETreg.ETRegistrate
+        .itemAndLang("advanced_terminal", "§bAdvanced Terminal", "§b高级终端", ComponentItem::create)
+        .tooltips(
+            "advanced_terminal",
+            "Sneak + right-click a multiblock controller: auto build (or demolish)" to "潜行右键多方块控制器：自动搭建（或拆除）",
+            "Sneak + right-click a wireless access point or ME block: link the AE network" to "潜行右键无线接入点或 ME 方块：绑定 AE 网络",
+            "Right-click air: open the terminal settings" to "右键空气：打开终端设置",
+        )
+        .properties { p -> p.stacksTo(1) }
+        .model { ctx, prov -> prov.generated(ctx, Gtetcore.id("item/advanced_terminal")) }
+        .onRegister { it.attachComponents(AdvancedTerminalBehavior.INSTANCE) }
         .register()
 }

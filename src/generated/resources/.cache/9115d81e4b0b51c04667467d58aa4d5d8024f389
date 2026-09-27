@@ -1,4 +1,4 @@
-// 1.20.1	2026-09-26T21:47:25.3554567	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+// 1.20.1	2026-09-27T16:36:18.0654368	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
 57375fd1dd4f83da9450300914e600351f266292 assets/gtetcore/blockstates/abs_black_casing.json
 05b4585ed8fb47eef6b0b7eeb576ff25e4581b8c assets/gtetcore/blockstates/abs_blue_casing.json
 e898d78548a15a903b06c13012efea35e48825ac assets/gtetcore/blockstates/abs_brown_casing.json
@@ -289,8 +289,8 @@ e3f934d8264c99a036bd51c4a7705825e46bf171 assets/gtetcore/blockstates/vacuum_cham
 c284137e985d999c28241bc1b27b60acb6a12a9d assets/gtetcore/blockstates/vacuum_chamber_protection_casing.json
 4702b0f7a4f53833a0750095e17b3bb63b83330b assets/gtetcore/blockstates/vibrant_photovoltaic_block.json
 dea1cadb7aab786f814fa619b5827139b7a11be7 assets/gtetcore/blockstates/zirconia_ceramic_high_strength_bending_resistance_mechanical_block.json
-876c6c084dcd267fd67ae47f0679e1a595efac5e assets/gtetcore/lang/en_ud.json
-561858927eb219db3350f11eac48998029401b2c assets/gtetcore/lang/en_us.json
+93f6d87db15b9caed2f005bf36b45fddcafb23cf assets/gtetcore/lang/en_ud.json
+16ec3d4dfc03eb4160a7ee6215cb21f6166d1837 assets/gtetcore/lang/en_us.json
 a3e5be219240789ffe6fbb05d051292c0d928df5 assets/gtetcore/models/block/abs_black_casing.json
 de571bbc8b5c50ea45312b4efa8ae7346d311b5a assets/gtetcore/models/block/abs_blue_casing.json
 f3597b8d3a9bb06573c4f0bf5e9b90d22cb2fd82 assets/gtetcore/models/block/abs_brown_casing.json
@@ -605,6 +605,7 @@ f4d9fa6a71f0527b0b48f0c20195e82cba7c40db assets/gtetcore/models/item/accelerator
 d4e6235ac02b20e725a0955f1bacc158d3f2a6b2 assets/gtetcore/models/item/accelerator_observation_glass.json
 e307e7b1be2d558ebe2104a5e004cdc90a2fcf5d assets/gtetcore/models/item/accelerator_particle_instant_condensation_casing.json
 57e324e03ce90fa054cc0763be3ca9eba30de617 assets/gtetcore/models/item/accelerator_protection_casing.json
+1321d3ace5c828db928792d06dd94444629d58c8 assets/gtetcore/models/item/advanced_terminal.json
 4e9fc911f11907fafdf6f6cfcb7a3b968ceadfbb assets/gtetcore/models/item/aggregatione_core.json
 4748a8a564cc661c6069ee6a4ee0083523494cd1 assets/gtetcore/models/item/alfsteel_casing.json
 a961947d08d88182972ed7fd526e9be1ee3a1161 assets/gtetcore/models/item/aluminium_bronze_casing.json
@@ -845,7 +846,6 @@ ce8c0908bd86ce382ccf7a4a0bc963e4b5c8081b assets/gtetcore/models/item/strengthen_
 0b7239c1d78f07faf7f6450f984d96478e51202f assets/gtetcore/models/item/strontium_carbonate_ceramic_ray_absorbing_mechanical_cube.json
 744fcbaebd95fae62e2d4cbe57af5eecf8d92c98 assets/gtetcore/models/item/structure_checker.json
 744fcbaebd95fae62e2d4cbe57af5eecf8d92c98 assets/gtetcore/models/item/structure_detect.json
-744fcbaebd95fae62e2d4cbe57af5eecf8d92c98 assets/gtetcore/models/item/structure_tool.json
 744fcbaebd95fae62e2d4cbe57af5eecf8d92c98 assets/gtetcore/models/item/structure_tools.json
 56d5f3cfaa492de73c477fb35c5943fe67cec5d2 assets/gtetcore/models/item/supercritical_turbine_casing.json
 d6db72ea65335e74e3b8b6853713d7ce9b9cb521 assets/gtetcore/models/item/terrasteel_casing.json

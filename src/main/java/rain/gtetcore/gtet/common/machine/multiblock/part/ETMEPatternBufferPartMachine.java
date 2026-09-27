@@ -31,36 +31,19 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 「多阶段 ME 样板总成」：容量大于 GTM 原生 27 的样板总成，四个阶段各一件（LuV/UV/UEV/UXV）。
+ * 「多阶段 ME 样板总成」：容量大于 GTM 原生 27 的样板总成，四档各一件（LuV/UV/UEV/UXV）。
  *
- * <h2>它是什么</h2>
- * 就是 GTM 的 {@link MEPatternBufferPartMachine}（AE2 集成式样板供应器：一盘样板 + 一块共享库存
- * + 一块共享流体仓），**只把样板槽位数从写死的 27 变成按档取值**。四种能力
- * （物品/流体 进/出）、AE 终端交互、数据棒绑定镜像、取回(退款)、Jade 显示等全部沿用父类。
+ * <p>就是 GTM 的 {@link MEPatternBufferPartMachine}，只把样板槽位数从写死的 27 变成按档取值；
+ * 四种能力、AE 终端交互、数据棒绑定镜像、取回、Jade 显示全部沿用父类。容量靠
+ * {@code MixinMEPatternBufferCapacity} 在父类构造期把内联的 3 个 27 换成查表值
+ * （父类字段初始化早于子类字段，继承 + 覆写拿不到），取舍见 {@link ETPatternBufferCapacities}。
  *
- * <h2>容量怎么变大的（本类只有"收尾"，主戏在 mixin）</h2>
- * 父类的容量是 {@code protected static final int MAX_PATTERN_COUNT = 27}，且被**内联**进父类自己的
- * 三个字段初始化表达式（{@code patternInventory}/{@code internalInventory}/{@code detailsSlotMap}），
- * 那发生在父类构造期 —— 子类此刻还没有任何字段，所以「继承 + 覆写」拿不到更大的容量。
- * 本项目**不复制**父类那 707 行，而是让 {@code MixinMEPatternBufferCapacity} 把构造器里内联的 3 个 27
- * 换成「按本机器的方块定义查表」，三个字段一出生就是本档容量；父类后续一切
- * （构造后段的槽实例填充、{@code InternalSlotRecipeHandler} 建表、{@code onLoad} 的样板解码、
- * 取回、Jade 汇总）自动按真实容量工作。取舍与证据见 {@link ETPatternBufferCapacities}。
+ * <p>本类只补父类剩下还写着 27 的三处：{@link #getTerminalPatternInventory()}（AE 终端能放几盘）、
+ * {@link #createUIWidget()}（面板版式）、{@link #getTerminalGroup()}（未成型时的图标与名字）。
  *
- * <h2>本类要补的三件事（父类里唯一还写着 27 的地方）</h2>
- * <ol>
- * <li>{@link #getTerminalPatternInventory()}：父类返回的那个匿名 {@code InternalInventory}
- * 的 {@code size()} 也是内联的 27（AE 终端据此决定能放几盘样板），换成按真实格子数；</li>
- * <li>{@link #createUIWidget()}：父类的面板写死 9×3，换成「9 列一块、最多并 2 块 = 一页 216 格」的网格
- * （**不滚动**：一页铺满、四档全部一眼看全；容量超过 216 就<b>翻页</b>，面板尺寸不变 ——
- * 见该方法的注释与 {@link #createUI(Player)}）；</li>
- * <li>{@link #getTerminalGroup()}：父类在「未成型」分支把图标与名字写死成 GTM 自己的
- * {@code me_pattern_buffer}，换成我们自己这一档的定义。</li>
- * </ol>
- *
- * <p>⚠️ 面板与实际格子数以**实际存储**（{@code getPatternInventory().getSlots()}）为准，
- * 不再相信任何常量：mixin 万一没生效也只是面板变小，不会出现「面板 216 格、实际只能放 27 盘」
- * 这种错位（{@link ETPatternBufferCapacities#verify} 会在日志里吵一次）。
+ * <p>⚠️ 面板与格子数一律以**实际存储**为准（{@code getPatternInventory().getSlots()}）：mixin 万一
+ * 没生效也只是面板变小，不会出现「面板 126 格、实际只能放 27 盘」这种错位
+ * （{@link ETPatternBufferCapacities#verify} 会在日志里吵一次）。
  *
  * @author rain fox
  */
@@ -75,35 +58,30 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
     private static final int BLOCK_COLUMNS = 9;
 
     /**
-     * 一个网格块最多几行（12 行 = 216px）。
+     * 一个网格块最多几行（7 行 = 126px）。
      *
-     * <p>⚠️ 这个数**不是**"可见行数上限"（面板不滚动），而是"一页最多几行 + 要不要再并一块"的阈值：
-     * 行数一多先横向再铺一块 9 列的块（最多 {@link #MAX_BLOCKS} 块），再放不下就翻页
-     * （见 {@link #PAGE_CAPACITY}）。取 12 的依据见 {@link #createUIWidget()} 里的高度账。
+     * <p>它同时是"要不要再并一块"的阈值：行数一多先横向铺第二块 9 列（最多 {@link #MAX_BLOCKS} 块），
+     * 再放不下就翻页（见 {@link #PAGE_CAPACITY}）。取 7 而不是 12：12 行那版一页 216 格、窗口 326px 高，
+     * 1080p 的缩放 4/自动（逻辑高 270）放不进屏幕。
      */
-    private static final int MAX_ROWS_PER_BLOCK = 12;
+    private static final int MAX_ROWS_PER_BLOCK = 7;
 
     /**
      * 面板最多并几块（2 块 = 18 列 = 340px 宽）。
      *
-     * <p>宽度也要有上限：GTM 的 fancy UI 把页码侧栏画在窗口**左侧外面**
-     * （{@code FancyMachineUIWidget} 的 {@code VerticalTabsWidget} 在 x=-20），窗口一旦宽过屏幕，
-     * 侧栏会被挤出屏幕、玩家连翻页都点不到。所以宁可让高度那侧靠翻页解决（见 {@link #PAGE_CAPACITY}），
-     * 也不让宽度无限长。
+     * <p>宽度上限来自 GTM：fancy UI 把页码侧栏画在窗口**左侧外面**（{@code VerticalTabsWidget} 在
+     * x = -20），窗口一宽过屏幕，侧栏就被挤出去、连翻页都点不到。所以宽度卡住，高度那侧靠翻页解决。
      */
     private static final int MAX_BLOCKS = 2;
 
     /**
-     * 一页能放几格 = {@link #BLOCK_COLUMNS} × {@link #MAX_ROWS_PER_BLOCK} × {@link #MAX_BLOCKS}
-     * = 9 × 12 × 2 = <b>216</b>。这就是面板的尺寸上限（340 × 232px）。
+     * 一页几格 = 9 × 7 × 2 = <b>126</b>（面板 340 × 142px）。
      *
-     * <p>容量正好 216 时一页铺满、零滚动；**再大就翻页**（面板一个像素都不变），
-     * 512 → 3 页、1024 → 5 页；容量不到一页时只渲染实际行数（27 → 1 块 × 3 行、
-     * 63 → 1 块 × 7 行、126 → 2 块 × 7 行）。
+     * <p>容量不满一页时只渲染实际行数（27 → 1 块 × 3 行、63 → 1 块 × 7 行、126 → 2 块 × 7 行），
+     * 超过就翻页、面板尺寸一个像素都不变（216 → 2 页、512 → 5 页）。
      *
-     * <p>⚠️ 想换成"9 列 × 24 行"那种更高的版式，只改 {@link #MAX_ROWS_PER_BLOCK} /
-     * {@link #MAX_BLOCKS} 两个常量即可：本类其余部分（页数、每页块数行数、面板尺寸）全是从它们推出来的。
-     * （唯一要顺带看的是翻页控件的横向位置 —— 它是按"满页 340px 宽"摆的，版式变窄就得一起调。）
+     * <p>版式只由 {@link #MAX_ROWS_PER_BLOCK} / {@link #MAX_BLOCKS} 决定，页数、每页块数行数、
+     * 面板尺寸全是从它们推出来的；改版式时顺带看翻页控件的横向位置（它按满页 340px 宽摆）。
      */
     private static final int PAGE_CAPACITY = BLOCK_COLUMNS * MAX_ROWS_PER_BLOCK * MAX_BLOCKS;
 
@@ -117,10 +95,16 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
     /** 右上角改名按钮的宽度（翻页控件要贴着它左边摆，所以抽出来）。 */
     private static final int RENAME_WIDTH = 70;
 
-    /** 翻页按钮边长 / 页号文本的占位宽度 / 控件之间的间隙（都在 {@link #HEADER} 那一行里）。 */
+    /** 翻页按钮边长 / 控件之间的间隙（都在 {@link #HEADER} 那一行里）。 */
     private static final int PAGE_BUTTON = 12;
-    private static final int PAGE_LABEL_WIDTH = 32;
     private static final int PAGE_GAP = 4;
+
+    /**
+     * 页号一个字符占的宽度（MC 默认字体里数字与 {@code /} 都是 5px 字形 + 1px 间距）。
+     *
+     * <p>页号那把尺子是**估**的而不是量的：控件树两端各建一次，服务端没有字体可量。
+     */
+    private static final int PAGE_CHAR = 6;
 
     /** 翻页控件与改名按钮之间的间隙。 */
     private static final int PAGE_RENAME_GAP = 6;
@@ -128,28 +112,19 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
     /**
      * 当前翻到第几页（0 起）。
      *
-     * <p>⚠️ 这是**纯界面状态**：不持久化、不写 NBT、也没进任何同步字段。两条理由：
-     * <ul>
-     * <li>真正必须两端一致的是<b>控件树结构</b>（也就是页数），而页数只由容量推出来，
-     * 两端各建一次必然一致；</li>
-     * <li>页码本身不需要同步：LDLib 的 {@code ButtonWidget} 回调**两端都会跑**
-     * （客户端在 {@code mouseClicked} 里本地跑一次，同时 {@code writeClientAction} 让服务端的
-     * {@code handleClientAction} 再跑一次 —— javap 本项目实际编译用的 ldlib jar 实证），
-     * 两端各自把自己那份翻到同一页就够了。页码只影响"哪一页可见"，不影响槽位编号，
-     * 所以即便某一侧没跟上也不会串槽（见 {@link #createUIWidget()} 的「页怎么藏」）。</li>
-     * </ul>
-     * 放在机器字段而不是控件里的局部变量：{@code createUIWidget()} 会在 GTM fancy UI 换页时被重新
-     * 调用一次（{@code FancyMachineUIWidget#setupFancyUI}），字段能记住玩家翻到哪一页。
+     * <p>纯界面状态：不持久化、不同步。必须两端一致的只有控件树结构（= 页数，由容量推出，天然一致）；
+     * 页码只决定"哪一页可见"、不影响槽位编号，而 {@code ButtonWidget} 的回调两端都会跑（javap 实证），
+     * 两端各自翻到同一页就够，某一侧没跟上也不会串槽。放机器字段而不是控件局部量：fancy UI 换页会重建
+     * 控件（{@code setupFancyUI}），字段能记住玩家翻到哪一页。
      */
     private int uiPage;
 
     /**
      * AE 终端看到的样板库存视图（尺寸 = 真实格子数）。
      *
-     * <p>⚠️ 只能覆写 {@link #getTerminalPatternInventory()}：父类那个匿名实现是私有字段、
-     * 而且它的 {@code size()} 返回的是内联常量 27，绕不过去。这里的三段逻辑与父类逐字对应
-     * （写槽 → 通知内容变化 → {@code onPatternChange} 更新 AE 索引表），
-     * 少了最后一段，第 28 格往后放进去的样板就不会被 {@code pushPattern} 认出来。
+     * <p>父类那个匿名实现的 {@code size()} 也是内联的 27 且字段私有，只能整个覆写。三段逻辑与父类逐字
+     * 对应（写槽 → 通知内容变化 → {@code onPatternChange} 更新 AE 索引表），少最后一段，第 28 格往后
+     * 放进去的样板就不会被 {@code pushPattern} 认出来。
      */
     private final InternalInventory terminalPatternInventory = new InternalInventory() {
 
@@ -187,39 +162,18 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
     }
 
     /**
-     * <b>仓室隔离</b>：禁止这一件样板总成被两个多方块同时占用（防串配方）。
+     * <b>仓室隔离</b>：一件总成不能被两个多方块同时占用（防串配方）。
      *
-     * <h2>为什么本件必须隔离（与上一批给 ME 库存件加的是同一条闸门）</h2>
-     * {@code IMultiPart#canShared()} 默认返回 {@code true}，全 GTM 只有一个消费点：
-     * {@code BlockPattern#checkPatternAt} 逐格匹配时，
-     * {@code if (part.isFormed() && !part.canShared() && !part.hasController(worldState.controllerPos))}
-     * → 该格判失败并把错误设成 {@code PatternStringError("multiblocked.pattern.error.share")}，
-     * 于是<b>第二个多方块结构成不了型</b>。语义与代价见
-     * {@link ETTagFilterStockBusPartMachine#canShared()} 的类注释。
+     * <p>{@code IMultiPart#canShared()} 默认 true，GTM 只在 {@code BlockPattern#checkPatternAt} 里消费它：
+     * 第二件控制器把这件总成收进部件表时该格判失败、结构成不了型（错误是
+     * {@code multiblocked.pattern.error.share}）。本件必须隔离有两条理由：GTM 自己就假设「一件总成只属于
+     * 一个控制器」（父类 {@code getTerminalGroup()} 直接取 {@code getControllers().first()}）；
+     * 而 AE 推样板时原料落在**这一件自己的**库存里（{@code pushPattern} →
+     * {@code pushInputsToExternalInventory}），共用时谁先跑谁吃掉。
      *
-     * <h2>样板总成为什么也在这一列（用户口径 + GTM 自己的假设）</h2>
-     * <ul>
-     * <li><b>GTM 自己就假设「一件总成只属于一个控制器」</b>：父类
-     * {@code MEPatternBufferPartMachine#getTerminalGroup()} 直接取
-     * {@code getControllers().first()}（GTM 7.5.3 源码实测）—— 被两个控制器共享时，
-     * AE 终端里这块总成的分组名会变成"任取一个控制器"，玩家看不出自己那盘样板归谁；</li>
-     * <li><b>推入的原料是"这一件自己的"库存</b>：AE 合成推样板走
-     * {@code pushPattern} → {@code patternDetails.pushInputsToExternalInventory(inputHolder, this::add)}，
-     * 原料落在这一件自己的 {@code InternalSlot} 库存里，再由多方块的配方逻辑
-     * （{@code handleItemInternal} / {@code handleFluidInternal}）从这里取。</li>
-     * </ul>
-     * 两件控制器都把这件总成收进自己的部件表之后，控制器 A 的合成原料会摆在控制器 B 也能取用的同一个
-     * 库存里 —— 谁先跑谁吃掉，这正是「串配方」。
-     *
-     * <h2>不影响正常用法</h2>
-     * <ul>
-     * <li><b>「总成当宿主、镜像装在各机器里」</b>（本族的主要用法）不受影响：那时总成压根不在任何
-     * 成型的多方块里，{@code isFormed()} 为 false，这道闸门不参与判断；</li>
-     * <li>它只挡「同一格方块同时属于两个<b>已成型</b>结构」，同一结构里放两件各自独立的总成照旧允许。</li>
-     * </ul>
-     *
-     * <p>⚠️ 与本项目自己的 ME 库存件一样，这一条同时意味着 tooltip 必须写「禁止共享」
-     * （见 {@code ETMEPatternBufferHatches} 里换成 {@code gtceu.part_sharing.disabled}）。
+     * <p>「总成当宿主、镜像装在各机器里」这种主要用法不受影响 —— 那时总成不在任何成型结构里，
+     * {@code isFormed()} 为 false，这道闸门不参与判断。与本项目其它 ME 库存件一样，
+     * tooltip 要写「禁止共享」（见 {@code ETMEPatternBufferHatches}）。
      */
     @Override
     public boolean canShared() {
@@ -248,15 +202,9 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
     }
 
     /**
-     * 机器 UI：一行与 GTM 的 {@code IFancyUIMachine#createUI} **逐字对应**，只把
-     * {@code FancyMachineUIWidget} 换成会"底边贴屏"的子类（见 {@link ETPatternBufferUIWidget}）。
-     *
-     * <p>为什么必须在这里换、而不能只在 {@code createUIWidget()} 里做：窗口的尺寸与屏幕定位由
-     * {@code FancyMachineUIWidget#setupFancyUI} 决定（它按内容算尺寸、再 {@code getGui().setSize()}），
-     * 面板控件自己没有屏幕坐标。用户的要求是"面板从物品栏分割线向上/左/右扩"，而"往上长"这件事
-     * 在 LDLib 里是**窗口居中**的表现，窗口一高就会上下一起出屏 —— 所以要在窗口这一层兜底。
-     * 层级关系（GTM {@code IFancyUIMachine}）：{@code ModularUI.mainGroup} ← 本类（FancyMachineUIWidget）
-     * ← {@code pageContainer} ← {@code createUIWidget()} 返回的面板。
+     * 机器 UI：与 GTM 的 {@code IFancyUIMachine#createUI} 逐字对应，只把 {@code FancyMachineUIWidget}
+     * 换成会"底边贴屏"的子类（见 {@link ETPatternBufferUIWidget}）。必须在这一层换：窗口的尺寸与屏幕
+     * 定位由 {@code setupFancyUI} 决定，面板控件自己没有屏幕坐标。
      */
     @Override
     public ModularUI createUI(Player entityPlayer) {
@@ -265,76 +213,40 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
     }
 
     /**
-     * 样板槽面板：**9 列一块、最多并 2 块 = 一页 216 格；容量超过 216 就翻页**。
+     * 样板槽面板：9 列一块、最多并 2 块 = **一页 126 格**；容量超过一页就翻页，面板尺寸不变。
      *
-     * <h2>布局规则与四档的实际尺寸</h2>
      * <pre>
-     * 一页的格数  = 9 × 12 × 2 = 216              （{@link #PAGE_CAPACITY}）
-     * 页数        = ⌈容量 / 216⌉                  （512 → 3 页、1024 → 5 页）
-     * 某一页的块数 = clamp(⌈这一页的格数 / 108⌉, 1, 2)；行数 = ⌈这一页的格数 / (9 × 块数)⌉
-     * 面板(宽×高) = 按"一页铺满"算 ⇒ 容量 ≥ 216 时恒为 340 × 232，**翻页时一个像素都不变**
+     * 一页的格数   = 9 × 7 × 2 = 126              （{@link #PAGE_CAPACITY}）
+     * 页数         = ⌈容量 / 126⌉                 （216 → 2 页、512 → 5 页）
+     * 某一页的块数 = clamp(⌈这一页的格数 / 63⌉, 1, 2)；行数 = ⌈这一页的格数 / (9 × 块数)⌉
+     * 面板(宽×高)  = 按"一页铺满"算 ⇒ 340 × 142，**翻页时一个像素都不变**
      *
      * 档位  容量  块数×行数   面板(宽×高)   整个窗口高 = 面板高 + 8(边框) + 86(玩家物品栏)
      * LuV    27   1 × 3      178 ×  70        164
      * UV     63   1 × 7      178 × 142        236
      * UEV   126   2 × 7      340 × 142        236
-     * UXV   216   2 × 12     340 × 232        326
+     * UXV   216   2 × 7      340 × 142        236（2 页）
      * </pre>
-     * ⚠️ 玩家物品栏那 86 是 LDLib {@code PlayerInventoryWidget} 的**默认尺寸 172×86**
-     * （javap 本项目实际编译用的 ldlib deobf jar：构造器里 {@code super(0,0,172,86)}）；
-     * 8 是 {@code FancyMachineUIWidget#setupFancyUI} 的 {@code border*2}（border 默认 4）。
+     * 8 是 {@code FancyMachineUIWidget#setupFancyUI} 的 {@code border*2}，86 是 LDLib
+     * {@code PlayerInventoryWidget} 的默认高度（javap 本项目实际编译用的 ldlib jar 可复核）。
      *
-     * <h2>为什么是"翻页"，而不是"继续并块 / 继续长高 / 滚动"</h2>
-     * 用户口径：**面板尺寸就以 216 那一档为上限**（容量 216 时正好铺满、零滚动），再大就翻页；
-     * 容量不到 216 的档只渲染实际行数。三条被否掉的路各自撞的墙：
-     * <ul>
-     * <li><b>滚动</b>：用户明确否掉了（要么靠拖动、要么一屏看不全）；</li>
-     * <li><b>继续并块</b>：宽度会被屏幕卡住 —— GTM 的 fancy UI 把页码侧栏画在窗口**左侧外面**
-     * （{@code VerticalTabsWidget} 在 x=-20），窗口一宽过屏幕，侧栏就被挤出去、连翻页都点不到
-     * （见 {@link #MAX_BLOCKS} 与 {@link ETPatternBufferUIWidget} 的横向说明）；</li>
-     * <li><b>继续长高</b>：24 行 = 448px 面板 ⇒ 542px 窗口，1080p 缩放 2（540）都放不下，
-     * 只能靠 {@link ETPatternBufferUIWidget} 的底边贴屏去裁顶部 —— 连状态行都会被裁掉。</li>
-     * </ul>
-     * 翻页还有个白拿的好处：页数与每页尺寸都由 {@link #PAGE_CAPACITY} 推出来，
-     * 玩家后来自己加多大的档位（注册上限 4096 ⇒ 19 页）都不用再改这里的代码。
+     * <p>为什么是"翻页"：用户口径是**一屏看全、不滚动**。继续并块会被宽度卡住（页栏画在窗口左侧外面，
+     * 见 {@link #MAX_BLOCKS}）；继续长高更不行 —— 12 行那版（一页 216 格）窗口就已经 326px 高，
+     * 1080p 缩放 4/自动放不下，靠底边贴屏会连状态行一起裁掉。页数只由容量推出，
+     * 玩家以后自己加大档位（注册上限 4096 ⇒ 33 页）也不用改代码。
      *
-     * <h2>页怎么藏（LDLib/原版实证，都打在**本项目实际编译用的**两个 jar 上）</h2>
-     * 每一页都**真的建出来**（控件树结构在界面存活期间两端必须一致，不能"按当前页建树"），
-     * 只把非当前页 {@code setVisible(false)}。三条把关的路径：
-     * <ol>
-     * <li><b>画</b>：{@code WidgetGroup#drawWidgetsBackground} / {@code drawWidgetsForeground} 都跳过
-     * {@code isVisible() == false} 的子控件；而槽里的物品本来就是 LDLib 自己画的
-     * （{@code SlotWidget#drawInBackground} 直接取 {@code Slot#getItem()} —— LDLib 的
-     * {@code ModularUIGuiContainer#render} **不调**原版的 {@code AbstractContainerScreen#render}，
-     * javap 里没有这条 invokespecial），所以藏起来的页连物品都画不出来；</li>
-     * <li><b>点</b>：{@code WidgetGroup#mouseClicked} 从后往前逐个子控件要求
-     * {@code isVisible() && isActive()} ⇒ 藏起来的页里的槽控件根本收不到点击；</li>
-     * <li><b>原版那条格子判定（双保险）</b>：LDLib 的 {@code SlotWidget#isEnabled()} 就是
-     * {@code isActive() && isVisible()}，而它造的 {@code WidgetSlotItemHandler#isActive()} 正转发到这里；
-     * LDLib 落一次槽点击走的是 {@code SlotWidget#mouseClicked} → {@code ModularUIGuiContainer#superMouseClicked}
-     * → 原版 {@code AbstractContainerScreen#mouseClicked}，那里**按坐标重新扫 {@code menu.slots}** 并要求
-     * {@code Slot#isActive()} ⇒ 即便所有页的格子坐标完全重合（都在同一个 340×232 的网格里），
-     * 原版也只会选中当前页的那个格子，不会串页。</li>
-     * </ol>
+     * <p>页怎么藏：每一页都**真的建出来**（控件树两端必须一致，不能按当前页建树），只把非当前页
+     * {@code setVisible(false)}。LDLib 的绘制和 {@code mouseClicked} 都跳过 {@code isVisible()} 为假的
+     * 子控件，所以藏起来的页连物品都画不出、点击也收不到；落槽再走原版 {@code AbstractContainerScreen}
+     * 按坐标重扫 {@code menu.slots} 的那一步，即便各页格子坐标完全重合也不会串页。
+     * ⚠️ 页容器**不**调 {@code setActive(false)}：LDLib 的 {@code detectAndSendChanges} 按 {@code isActive}
+     * 过滤子控件，藏起来的页仍要同步（两端槽内容必须一致）。
      *
-     * <p>⚠️ 页容器**不**跟着 {@code setActive(false)}：LDLib 的 {@code detectAndSendChanges} /
-     * {@code updateScreen} 是按 {@code isActive} 过滤子控件的，藏起来的页照旧走同步是**要**的行为
-     * （两端的槽内容一致）；真正让格子失效的是上面第 3 条的 {@code isVisible}。
+     * <p>翻页控件 `[◀] 当前页/总页数 [▶]` 摆在 {@link #HEADER} 那行、右对齐贴着改名按钮 —— 不占网格
+     * 高度。只有页数 &gt; 1 时才加这几个控件，所以 27 / 63 / 126 三档的面板与以前逐像素相同。
      *
-     * <h2>翻页控件</h2>
-     * `[◀] 当前页/总页数 [▶]`，摆在最上面那行状态行（{@link #HEADER} = 14px）里、右对齐贴着改名按钮。
-     * 选这个位置的依据：**不占网格高度**（另起一行会把面板撑高 12px，正好违反"面板不要再变大"），
-     * 而需要翻页时面板必然是满页的 340px 宽，状态行左边只有 ME 状态文本
-     * （"Network Status: Online" 这类，约 110px 量级），中间那一大段本来就是空的。箭头用 GTM 现成的
-     * {@code GuiTextures.BUTTON_LEFT/BUTTON_RIGHT}（GTMThings 高级终端的线圈步进器就是这个组合）；
-     * 页号写成"当前页/总页数"，纯数字，不新增语言文件键（也就不会牵动 datagen）。
-     * 点到底再点是循环（与 GTMThings 那边的档位循环一致）。只有页数 &gt; 1 时才加这几个控件，
-     * 所以四档现有面板与今天**逐像素相同**。
-     *
-     * <h2>页内怎么排</h2>
-     * 第 p 页放槽位 {@code [p*216, (p+1)*216)}，页内块内**先列后行**
-     * （与 GTM 面板一致：{@code x = i%9, y = i/9}）。所以槽号沿着一块从上往下、再换到右面一块、
-     * 再翻到下一页，与"总成里的第 N 盘样板"一一对应、不跳号。
+     * <p>页内块内**先列后行**（{@code x = i%9, y = i/9}）：槽号先沿一块往下、再换右面一块、再翻页，
+     * 与"总成里的第 N 盘样板"一一对应、不跳号。
      */
     @Override
     public Widget createUIWidget() {
@@ -406,8 +318,11 @@ public class ETMEPatternBufferPartMachine extends MEPatternBufferPartMachine {
             Runnable applyPage = () -> {
                 for (int i = 0; i < pageViews.size(); i++) pageViews.get(i).setVisible(i == uiPage);
             };
+            // 页号预留宽度按"最宽的可能值"（总页数写两遍 = 页数位数 × 2 + 1 个 '/'）算，不写死常量：
+            // 写死会在页数少时把 [◀] 推到很左边（页号两边留一大段空），页数多时又不够用
+            int labelWidth = (String.valueOf(pageCount).length() * 2 + 1) * PAGE_CHAR;
             int nextX = pageWidth - PADDING_X - RENAME_WIDTH - PAGE_RENAME_GAP - PAGE_BUTTON;
-            int labelX = nextX - PAGE_GAP - PAGE_LABEL_WIDTH;
+            int labelX = nextX - PAGE_GAP - labelWidth;
             int prevX = labelX - PAGE_GAP - PAGE_BUTTON;
             panel.addWidget(new ButtonWidget(prevX, 1, PAGE_BUTTON, PAGE_BUTTON,
                     new GuiTextureGroup(GuiTextures.BUTTON, GuiTextures.BUTTON_LEFT),

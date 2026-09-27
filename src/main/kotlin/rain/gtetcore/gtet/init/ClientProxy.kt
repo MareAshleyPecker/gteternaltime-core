@@ -22,8 +22,6 @@ open class ClientProxy(context: FMLJavaModLoadingContext) : CommonProxy(context)
         bus.register(this)
         MinecraftForge.EVENT_BUS.register(ClientForgeEvents)
         StructureOverlayRenderer.register()
-        // 对着空气 Shift+滚轮 切换结构工具工作模式
-        rain.gtetcore.gtet.client.ToolScrollHandler.register()
     }
 
     @OnlyIn(Dist.CLIENT)

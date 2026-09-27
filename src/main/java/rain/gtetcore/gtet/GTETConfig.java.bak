@@ -85,12 +85,6 @@ public class GTETConfig {
         @Configurable.Comment({ "结构导出文件的输出目录（相对游戏目录）。",
                 "Output directory for exported block patterns (relative to the game directory)." })
         public String exportDirectory = "logs/bp";
-
-        /** 高级终端里是否显示「分级方块」选择栏（GTMThings 终端扩展）。 */
-        @Configurable
-        @Configurable.Comment({ "是否在高级终端（GTMThings）里显示分级方块选择栏；关闭后只保留原版那几项设置。",
-                "Whether to show the tiered-block selector in the GTMThings advanced terminal." })
-        public boolean tierSelectEnabled = true;
     }
 
     public static class Multiblock {
@@ -175,11 +169,5 @@ public class GTETConfig {
     public static String exportDirectory() {
         GTETConfig instance = INSTANCE;
         return instance != null ? instance.dev.exportDirectory : "logs/bp";
-    }
-
-    /** 高级终端是否显示分级方块选择栏。 */
-    public static boolean tierSelectEnabled() {
-        GTETConfig instance = INSTANCE;
-        return instance == null || instance.dev.tierSelectEnabled;
     }
 }

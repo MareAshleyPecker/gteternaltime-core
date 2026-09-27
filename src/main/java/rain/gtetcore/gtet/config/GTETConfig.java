@@ -4,6 +4,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import org.antlr.v4.parse.GrammarTreeVisitor;
 import rain.gtetcore.gtet.Gtetcore;
 import rain.gtetcore.gtet.util.lang.Bilingual;
 import rain.gtetcore.gtet.util.lang.ConfigLangRegistry;
@@ -67,9 +68,6 @@ public final class GTETConfig {
     /** 配方代码导出目录的默认值（相对游戏目录）。 */
     public static final String DEFAULT_RECIPE_EXPORT_DIRECTORY = "GtetExport/recipes";
 
-    /** 高级终端里是否显示分级方块选择栏的默认值。 */
-    public static final boolean DEFAULT_TIER_SELECT_ENABLED = true;
-
     /** 结构工具「选区导出」覆盖层颜色默认值：绿色线框 + 淡绿填充（{@code R;G;B;线透明度;填充透明度}）。 */
     public static final String DEFAULT_WRITE_OVERLAY_COLOR = "0.2;0.9;0.2;1.0;0.15";
 
@@ -120,10 +118,6 @@ public final class GTETConfig {
     /** 配方编辑器导出代码的目录（相对游戏目录）。 */
     @Bilingual(en = "Recipe Export Directory", cn = "配方导出目录")
     public static final ForgeConfigSpec.ConfigValue<String> RECIPE_EXPORT_DIRECTORY;
-
-    /** 高级终端里是否显示「分级方块」选择栏（GTMThings 终端扩展）。 */
-    @Bilingual(en = "Tiered Block Selector", cn = "分级方块选择栏")
-    public static final ForgeConfigSpec.BooleanValue TIER_SELECT_ENABLED;
 
     @Bilingual(en = "send thread diagnose", cn = "发送线程诊断")
     public static final  ForgeConfigSpec.BooleanValue SEND_THREAD;
@@ -196,11 +190,6 @@ public final class GTETConfig {
                         "Output directory for exported recipe code (relative to the game directory).",
                         "One .kt snippet per recipe; re-exporting overwrites it.")
                 .define("recipeExportDirectory", DEFAULT_RECIPE_EXPORT_DIRECTORY);
-
-        TIER_SELECT_ENABLED = BUILDER
-                .comment("是否在高级终端（GTMThings）里显示分级方块选择栏；关闭后只保留原版那几项设置。",
-                        "Whether to show the tiered-block selector in the GTMThings advanced terminal.")
-                .define("tierSelectEnabled", DEFAULT_TIER_SELECT_ENABLED);
 
         SEND_THREAD = BUILDER
                 .comment("是否在日志里发送线程诊断。",
@@ -280,9 +269,7 @@ public final class GTETConfig {
     // ================================================================
 
     /** 结构检测失败后的重试间隔（tick）。 */
-    public static int checkFailedWaitingTime() {
-        return intValue(CHECK_FAILED_WAITING_TIME, DEFAULT_CHECK_FAILED_WAITING_TIME);
-    }
+    public static int checkFailedWaitingTime() {return intValue(CHECK_FAILED_WAITING_TIME, DEFAULT_CHECK_FAILED_WAITING_TIME);}
 
     /** 放置后首次结构检测的延迟（tick）。 */
     public static int placementCheckDelay() {
@@ -313,9 +300,6 @@ public final class GTETConfig {
     public static String exportDirectory() {
         return stringValue(EXPORT_DIRECTORY, DEFAULT_EXPORT_DIRECTORY);
     }
-
-    /** 高级终端是否显示分级方块选择栏。 */
-    public static boolean tierSelectEnabled() { return booleanValue(TIER_SELECT_ENABLED, DEFAULT_TIER_SELECT_ENABLED);}
 
     /** 结构工具「选区导出」覆盖层颜色串（{@code R;G;B[;线透明度;填充透明度]}）。 */
     public static String writeOverlayColor() {

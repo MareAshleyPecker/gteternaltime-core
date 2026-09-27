@@ -41,8 +41,7 @@ import java.util.*;
  * 排序后拼起来）。面板是按组键把玩家的选择写进 {@code group_prefs} 的，搭建时再按键取用 ——
  * 两边算出来的键不一样，玩家在面板里选了就等于没选。这张表算出来的键与「同一套候选被扫描出来时」
  * 的键天然相同；但静态表与谓词给的候选集**并不保证完全一致**（典型是线圈：
- * GTCEu 的 {@code Predicates.heatingCoils()} 给全部线圈，而 GTMThings 的
- * {@code AutoBuildSetting#apply} 组装候选时会砍掉最后一档），所以
+ * GTCEu 的 {@code Predicates.heatingCoils()} 给全部线圈，而自动搭建组装候选时会砍掉最后一档），所以
  * {@link TerminalSettings#lookupPreference} 还有一层「按候选集包含关系回退匹配」的兜底。
  *
  * @author rain fox

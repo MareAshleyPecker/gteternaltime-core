@@ -24,8 +24,8 @@ import rain.gtetcore.gtet.common.data.material.ETElementMaterials
 import rain.gtetcore.gtet.common.data.material.ETMaterialRegister
 import rain.gtetcore.gtet.common.item.recipe.FluidCountSlotWidget
 import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget
+import rain.gtetcore.gtet.common.item.terminal.AdvancedTerminalLang
 import rain.gtetcore.gtet.common.item.terminal.TerminalLang
-import rain.gtetcore.gtet.common.item.tool.ToolNetwork
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleHostMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleMachine
@@ -51,12 +51,10 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
     }
 
     /** Kotlin 端初始化：配置、语言键（必须在数据生成之前）、网络包、物品 / 方块与创造页。 */
-    protected fun kotlinInit() {
+    private fun kotlinInit() {
         // 配置：config/gtetcore/gtetcore-common.toml（ForgeConfigSpec，COMMON 类型）
         GTETConfig.init(context)
         initLang()
-        // 结构工具的网络包（客户端滚轮切模式 → 服务端改 NBT）
-        ToolNetwork.register()
         GTETCreativeModeTabs.init()
         ETItems.init()
         ETBlock.init()
@@ -65,6 +63,8 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
     private fun initLang() {
         // 高级终端扩展用到的双语条目（必须在数据生成前注册）
         TerminalLang.init()
+        // 自建高级终端的全部语言键（设置面板 / 两块分级面板 / AE 绑定提示）
+        AdvancedTerminalLang.init()
         // 线程状态文本（机器 UI 与 GTET 的 Jade provider 共用；⚠️ 必须赶在数据生成之前登记 —— Jade 插件类加载太晚）
         ThreadedRecipeStatus.initLang()
         // 配方编辑器「中键改数量」对话框的文案（同上）

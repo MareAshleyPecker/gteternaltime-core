@@ -14,10 +14,7 @@
       "GTM.material.MixinGTFluids",
       "GTM.material.MixinGTMaterialBlocks",
       "GTM.material.MixinGTMaterialItems",
-      "GTM.material.MixinGTMaterialOreBlocks",
-      "GTMT.AdvancedBlockPatternMixin",
-      "GTMT.AdvancedTerminalBehaviorMixin",
-      "GTMT.AutoBuildSettingMixin"
+      "GTM.material.MixinGTMaterialOreBlocks"
     ],
     "client": [
       "GTM.Jade.MixinParallelProviderTooltip",
