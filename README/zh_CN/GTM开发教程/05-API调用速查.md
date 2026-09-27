@@ -326,8 +326,8 @@ override fun loadCustomPersistedData(tag: CompoundTag) {
 
 | 现象 | 最可能的原因 | 怎么确认 |
 |---|---|---|
-| 材质紫黑块 | 缺 blockstate / model json：① 注册链一个模型都没给，走了不存在的 `block/machine/template/<name>` 兜底（`MachineBuilder.java:659-661`）；② 这份 jar 只跑过 `build` 没跑过 `runData`（jar 里根本没有那些 json） | 看 `src/generated/resources/assets/<modid>/blockstates` 与 `models/`；打包进内嵌 jar 的那份跑 `gradlew verifyPatchedJarjar`（`scripts/patches.gradle:382-408`，它会探 assets 条目数与 `models/block/` 是否存在，`:95-117`） |
-| 开机日志里 `Exception loading blockstate definition: '<modid>:blockstates/xxx.json' missing model for variant` | 同上（缺 json 的表现就是这个） | 同上；GTMThings 那侧的历史记录与基线数字在 `scripts/patches.gradle:277-288` |
+| 材质紫黑块 | 缺 blockstate / model json：① 注册链一个模型都没给，走了不存在的 `block/machine/template/<name>` 兜底（`MachineBuilder.java:659-661`）；② 这份 jar 只跑过 `build` 没跑过 `runData`（jar 里根本没有那些 json） | 看 `src/generated/resources/assets/<modid>/blockstates` 与 `models/`；`gradlew verifyPatchedJarjar`（`scripts/patches.gradle:196-208`，校验的是补丁标记 `MultiblockConfigHook`，`jarjarPatchProblems` 在 `:101-109`，**不探** assets） |
+| 开机日志里 `Exception loading blockstate definition: '<modid>:blockstates/xxx.json' missing model for variant` | 同上（缺 json 的表现就是这个） | 同上 |
 | EMI 里没有这台机器的多方块预览 | ① `.multiblockPreviewRenderer(false, ...)` 关掉了（EMI 按 `isRenderXEIPreview` 过滤，`MultiblockInfoEmiCategory.java:26`）；② `shapes` 供应商抛异常（`getPreview` 的 AIOOBE，见第 3 节） | 日志搜 `getPreview` / `ArrayIndexOutOfBounds`；把 `definition.shapes` 换成真的打印一遍页数 |
 | EMI 里**一整批**东西不见了：配方类别在、里面是空的，多方块信息 / 矿脉图 / 编程电路全都没有 | 某台机器的 `shapes` 供应商在**构造期**炸了：ldlib 1.0.50 的 `ModularEmiRecipe` 构造器就调 `widget.get()`（`ModularEmiRecipe.java:46`），异常从 `MultiblockInfoEmiCategory.registerDisplays(:28)` 穿到 `GTEMIPlugin.register:68`，EMI 放弃该插件余下注册 | 日志里搜 `Exception loading plugin provided by gtceu`；确认这个会话**再也没有** `Reloaded plugin from gtceu`（见第 3 节的实测栈） |
 | 机器完全不出现（创造页 / EMI / `GTRegistries` 里都没有，且**无任何报错**） | 注册监听器的泛型写错了（不是 `RegisterEvent<*, *>`），方法一次都没被调用 | 断点或日志打在 `registerMachines` 第一行；数一下 `GTRegistries.MACHINES.registry().size()`（`CommonProxy.kt:104-107` 就是这行的日志） |
@@ -335,8 +335,8 @@ override fun loadCustomPersistedData(tag: CompoundTag) {
 | 仓能放上去，但多方块不成型 / 该槽位「没识别」 | 能力的方块表是**首取即定的快照**，谓词构造早于仓注册（`PartAbility.java:61-62`） | 确认注册顺序：仓在前、多方块在后（`MachineRegister.kt:8-9`） |
 | 「能插仓但没效果」 | 多方块的图案没有走 `autoAbilities(..., checkParallel=true)` 那一支（超频仓靠 mixin 追加，`MixinPredicatesAutoAbilities.java:59-77`）；或结构里超频仓不止一个（只取第一个命中的，`MixinOverclockingLogic.java:193-199`） | 看这台机器图案里 `autoAbilities` 的第三个参数；JEI 预览里看几个预览格 |
 | 玩家改的设定重载存档就丢 / 越界值漏进逻辑 | 字段没 `@Persisted`、`getFieldHolder()` 没接父类，或者夹取写在了 trait 里（`MetaMachine` 那层只转发 traits，`MetaMachine.java:250-254`） | 覆写机器类的 `loadCustomPersistedData` 并先 `super`（见第 5 节） |
-| dev 里一切正常，打包后异常 | 三件事分别查：① **SRG ↔ Mojmap**：dev 是 Mojmap、产物走 `reobfJar`，对第三方补丁类的 mixin 要 `remap = false`（照 `AdvancedTerminalBehaviorMixin.java:41`）；② **jarjar 内嵌版本写死**，与编译用的版本必须一致（`build.gradle:57-76`、`scripts/patches.gradle:26-41`），不一致就是「编译过、装包里是另一份」；③ **`ContainedDeps` 是无条件加载**，整合包里**不能**再单独放 GTM / GTMThings，否则同一个 mod 两份（`build.gradle:67-68`、`:125-132`） | `gradlew verifyPatchedJarjar` 校验内嵌的两个 jar 是不是补丁版；`build/jarjar/` 看实际嵌进去的文件名与 sha256 |
-| 内嵌 jar 是官方原件（GTMThings 界面看起来没打过补丁） | `collectJarjarDeps` 找不到补丁产物时**只 warn 不失败**（`build.gradle:100-113`），会把 curse 上的原件嵌进去 | 跑 `gradlew verifyPatchedJarjar`，或看构建日志里的 `[gtetcore] 本次退回 curse 官方原件` |
+| dev 里一切正常，打包后异常 | 三件事分别查：① **SRG ↔ Mojmap**：dev 是 Mojmap、产物走 `reobfJar`，对第三方补丁类的 mixin 要 `remap = false`（照 `GTM/MixinPredicatesAutoAbilities.java:51`）；② **jarjar 内嵌版本写死**，与编译用的版本必须一致（`build.gradle:57-75`、`scripts/patches.gradle:30-42`），不一致就是「编译过、装包里是另一份」；③ **`ContainedDeps` 是无条件加载**，整合包里**不能**再单独放 GTM，否则同一个 mod 两份（`build.gradle:67-68`、`:111`、`:114-118`） | `gradlew verifyPatchedJarjar` 校验内嵌的 jar 是不是补丁版；`build/jarjar/` 看实际嵌进去的文件名与 sha256 |
+| 内嵌 jar 是官方原件（异步结构检测不生效） | `collectJarjarDeps` 找不到补丁产物时**只 warn 不失败**（`build.gradle:90-99`），`patchJar` 里那份也不会被官方原件顶替 | 跑 `gradlew verifyPatchedJarjar`，或看构建日志里的 `[gtetcore] 本次不会内嵌 GTM` |
 
 ---
 

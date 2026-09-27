@@ -75,6 +75,10 @@ GTCEu 7.5.3 在 `GTAEMachines` 里已经注册了整套 ME 部件，类在 `inte
   | 三 | UEV | **126** | 9×14（原定 125 = 13×9+8，余 8 补满） |
   | 四 | UXV | **216** | 9×24 |
 
+  > 上表的"面板行数"只是当初按 9 列面板规整容量的口径。实际版式后来定成
+  > **9 列一块、最多并 2 块、一页 126 格（2 块 × 7 行），超过一页就翻页**（216 档 = 2 页），
+  > 见 `ETMEPatternBufferPartMachine#createUIWidget()`。
+
 - ⚠️ **容量必须复制实现，不能继承**：GTM 的 `MAX_PATTERN_COUNT = 27` 是 `protected static final`，而且**用在父类的字段初始化里**
   （`patternInventory = new CustomItemStackHandler(27)`、`internalInventory = new InternalSlot[27]`、`detailsSlotMap`）——
   子类无论怎么写都还是 27。要做更大容量只能把那份实现（约 600 行）复制过来参数化。
