@@ -54,4 +54,7 @@ dependencies {
     //embeddium
     implementation fg.deobf("curse.maven:embeddium-908741:5681725")
 
+    //创世神
+    implementation fg.deobf("curse.maven:worldedit-225608:4586218")
+
 }

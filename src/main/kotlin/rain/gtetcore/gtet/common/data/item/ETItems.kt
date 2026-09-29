@@ -108,10 +108,10 @@ object ETItems {
      * 贴图：`assets/gtetcore/textures/item/time_bottle.png` 是本仓自制的 16×16 极简占位图。
      * TODO 待画师替换（本仓目前没有画师，见 README/zh_CN/计划.md）。
      */
-    val TIME_BOTTLE: ItemEntry<ComponentItem> = OnlyETreg.ETRegistrate
-        .itemAndLang("time_bottle", "§bTime Bottle", "§b时序之瓶", ComponentItem::create)
+    val CLOCK_TIME_SEQUENCE: ItemEntry<ComponentItem> = OnlyETreg.ETRegistrate
+        .itemAndLang("clock_of_time_sequence", "§bClock of Time Sequence", "§b时序之钟", ComponentItem::create)
         .tooltips(
-            "time_bottle",
+            "clock_of_time_sequence",
             "Stores time flow (TF); bind it to a master tower to carry TF across dimensions" to "存储时间流（TF）；绑定主控塔后可跨维度搬运",
             "Upgrade items raise the capacity tier (L1 -> L3); stored TF is kept" to "用升级件提升容量档位（L1 → L3），瓶内 TF 不丢",
         )
