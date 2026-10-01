@@ -1,4 +1,4 @@
-// 1.20.1	2026-09-27T20:32:31.1148982	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
+// 1.20.1	2026-10-01T15:57:32.9576053	Registrate Provider for gtetcore [Recipes, Advancements, Loot Tables, Tags (blocks), Tags (items), Tags (fluids), Tags (entity_types), generic_server_provider, Blockstates, Item models, Lang (en_us/en_ud), generic_client_provider]
 57375fd1dd4f83da9450300914e600351f266292 assets/gtetcore/blockstates/abs_black_casing.json
 05b4585ed8fb47eef6b0b7eeb576ff25e4581b8c assets/gtetcore/blockstates/abs_blue_casing.json
 e898d78548a15a903b06c13012efea35e48825ac assets/gtetcore/blockstates/abs_brown_casing.json
@@ -407,8 +407,8 @@ dbf5cf300de235365348928741d7ca2af776f49d assets/gtetcore/blockstates/wireless_en
 5147bac86a0f843319ad4bab05188ef29e420cb5 assets/gtetcore/blockstates/wireless_energy_hatch_65536a_uxv.json
 6098bef02d66f8ca6841fa3282659a9cb789b7e4 assets/gtetcore/blockstates/wireless_energy_hatch_65536a_zpm.json
 dea1cadb7aab786f814fa619b5827139b7a11be7 assets/gtetcore/blockstates/zirconia_ceramic_high_strength_bending_resistance_mechanical_block.json
-d625ae257e60a867f9dd1da3fc9124740b61c010 assets/gtetcore/lang/en_ud.json
-fd64d3614c2bd2f64a1a65814c3a2f761f73809e assets/gtetcore/lang/en_us.json
+88c1972c33557ee242a951df54d7bf8bcec4933e assets/gtetcore/lang/en_ud.json
+6e1f1ad17ddadc579454e0c6c23dba12fc0b70b6 assets/gtetcore/lang/en_us.json
 a3e5be219240789ffe6fbb05d051292c0d928df5 assets/gtetcore/models/block/abs_black_casing.json
 de571bbc8b5c50ea45312b4efa8ae7346d311b5a assets/gtetcore/models/block/abs_blue_casing.json
 f3597b8d3a9bb06573c4f0bf5e9b90d22cb2fd82 assets/gtetcore/models/block/abs_brown_casing.json
@@ -579,7 +579,7 @@ c31109712672cc01c1be7b9e2d02632cd89f1f4e assets/gtetcore/models/block/machine/pa
 fbfcea634d29afdf69c452d394086eead35c52df assets/gtetcore/models/block/machine/parallel_hatch_uv.json
 fca9ac0b10ac8b28f2275bbe7bfa1e08197db96e assets/gtetcore/models/block/machine/parallel_hatch_uxv.json
 111ed21e0ba429ab78531b704db5ed30d6e5ccf7 assets/gtetcore/models/block/machine/parallel_hatch_zpm.json
-3f89c05a55e624d3e61672c27a352ed0b46e1ddf assets/gtetcore/models/block/machine/test_multiblock.json
+26f821f11108a81cdb3191fc89675b78d49abf76 assets/gtetcore/models/block/machine/test_multiblock.json
 c4150ceafe091c3e062ee2de08ea8940b4322389 assets/gtetcore/models/block/machine/tf_hatch_1024h.json
 9b3022ee2c8d343bc9043df20f53394c18f6141a assets/gtetcore/models/block/machine/tf_hatch_16384h.json
 e3d3427f00dc40b5cd978271807a7e6d3e08b6aa assets/gtetcore/models/block/machine/tf_hatch_16h.json
@@ -868,6 +868,7 @@ d8e80940f57e820393bcfa9063be69e3921b6270 assets/gtetcore/models/item/calcium_oxi
 45dae35d2b904a854e401e560e4b8696f5a3f623 assets/gtetcore/models/item/celestial_matter_guidance_casing.json
 676cc6da15ac8a8b23305dc465034e6087663013 assets/gtetcore/models/item/chemical_corrosion_resistant_pipe_casing.json
 844917f9db67c114202a2c80ada769e46b548977 assets/gtetcore/models/item/chemical_grade_glass.json
+17726a2d4d720e16a32ace2abe625c5c10eee99c assets/gtetcore/models/item/clock_of_time_sequence.json
 121009cdd30258c2950e31aa60e79ed087e82640 assets/gtetcore/models/item/cloud_chamber_detector_block.json
 9fbfbc3fbc78a28b7925a4b151c64c67724d1361 assets/gtetcore/models/item/cobalt_oxide_ceramic_strong_thermally_conductive_mechanical_block.json
 837a8335eacc065f982b6dd781fc692acd621506 assets/gtetcore/models/item/composite_armor_protective_layer.json
@@ -1107,7 +1108,6 @@ f3ae62822a0fc2acc86c8e3d38afb5592cef1192 assets/gtetcore/models/item/thread_hatc
 f84abda08d5a1cfd9e2419073380634496f773cf assets/gtetcore/models/item/thread_hatch_uxv.json
 60bff4abf2f3876a78d65d79c375cef2d6013960 assets/gtetcore/models/item/thread_hatch_zpm.json
 b116fff78b42c2613ba5085cf11e3dc85679bcac assets/gtetcore/models/item/three_proof_computer_casing.json
-17726a2d4d720e16a32ace2abe625c5c10eee99c assets/gtetcore/models/item/time_bottle.json
 ec891d728d85e4d9de7b4d58ac6a7d9f4f433fc4 assets/gtetcore/models/item/titanium_alloy_internal.json
 a405bca3dbc43905d860edadabf70762cffa71ad assets/gtetcore/models/item/titanium_alloy_protective_mechanical_block.json
 5136025a13e6efa5af485c54f78a4b7fa1706658 assets/gtetcore/models/item/titanium_alloy_tb6_mechanical_block.json

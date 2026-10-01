@@ -1,6 +1,7 @@
 package rain.gtetcore.gtet.api.capability
 
 import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility
+import rain.gtetcore.gtet.api.capability.ETPartAbility.OVERCLOCK_HATCH
 
 /**
  * GTET 自己的多方块部件能力（[PartAbility]）表。

@@ -8,7 +8,7 @@ import rain.gtetcore.gtet.api.registrate.OnlyETreg
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import rain.gtetcore.gtet.common.item.recipe.RecipeEditorBehavior
 import rain.gtetcore.gtet.common.item.terminal.AdvancedTerminalBehavior
-import rain.gtetcore.gtet.common.item.timeflow.TimeBottleBehavior
+import rain.gtetcore.gtet.common.item.timeflow.TimeClockBehavior
 import rain.gtetcore.gtet.common.item.tool.StructureDetectBehavior
 import rain.gtetcore.gtet.common.item.tool.StructureWriteBehavior
 import rain.gtetcore.gtet.common.item.tool.TerminalBehavior
@@ -92,7 +92,7 @@ object ETItems {
         )
         .properties { p -> p.stacksTo(1) }
         .model { ctx, prov -> prov.generated(ctx, Gtetcore.id("item/advanced_terminal")) }
-        .onRegister { it.attachComponents(AdvancedTerminalBehavior.INSTANCE) }
+        .onRegister { it.attachComponents(AdvancedTerminalBehavior) }
         .register()
 
     /**
@@ -117,6 +117,6 @@ object ETItems {
         )
         .properties { p -> p.stacksTo(1) }
         .model { ctx, prov -> prov.generated(ctx, Gtetcore.id("item/time_bottle")) }
-        .onRegister { it.attachComponents(TimeBottleBehavior.INSTANCE) }
+        .onRegister { it.attachComponents(TimeClockBehavior.INSTANCE) }
         .register()
 }

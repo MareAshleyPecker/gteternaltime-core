@@ -4,7 +4,13 @@ import com.gregtechceu.gtceu.api.data.chemical.material.Material
 import com.gregtechceu.gtceu.api.data.chemical.material.info.MaterialFlags.*
 import com.gregtechceu.gtceu.common.data.GTMaterials.*
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.common.data.ETMaterial.*
+import rain.gtetcore.gtet.common.data.material.ETMaterial.Al2O3
+import rain.gtetcore.gtet.common.data.material.ETMaterial.CaO
+import rain.gtetcore.gtet.common.data.material.ETMaterial.GFRP
+import rain.gtetcore.gtet.common.data.material.ETMaterial.GlassFiber
+import rain.gtetcore.gtet.common.data.material.ETMaterial.K2O
+import rain.gtetcore.gtet.common.data.material.ETMaterial.Na2O
+import rain.gtetcore.gtet.common.data.material.ETMaterial.Resin
 import rain.gtetcore.gtet.util.lang.cn
 
 

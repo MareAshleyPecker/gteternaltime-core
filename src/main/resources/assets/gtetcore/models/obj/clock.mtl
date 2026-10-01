@@ -1,0 +1,10 @@
+# 机器渲染工作室（studio）M0 —— 材质表
+# 贴图全部复用仓库里已有的 16x16 贴图（不新增任何 PNG）。
+# 渲染方式（cutout / eyes / translucent）不在这里写，由 config/gtetstudio/clock.json 的 materials 段决定。
+newmtl frame
+Kd 1.000000 1.000000 1.000000
+map_Kd gtetcore:block/coil/testcoil/machine_coil_cupronickel
+
+newmtl glow
+Kd 1.000000 1.000000 1.000000
+map_Kd gtetcore:block/coil/testcoil/machine_coil_cupronickel_bloom

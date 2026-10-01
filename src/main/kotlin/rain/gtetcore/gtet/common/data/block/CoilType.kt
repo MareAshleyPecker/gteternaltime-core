@@ -5,7 +5,7 @@ import com.gregtechceu.gtceu.api.data.chemical.material.Material
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.util.StringRepresentable
 import rain.gtetcore.gtet.Gtetcore.Companion.id
-import rain.gtetcore.gtet.common.data.ETMaterial
+import rain.gtetcore.gtet.common.data.material.ETMaterial
 import rain.gtetcore.gtet.util.lang.LangUtil
 import java.util.function.Supplier
 

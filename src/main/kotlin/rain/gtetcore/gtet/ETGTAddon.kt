@@ -12,8 +12,8 @@ import net.minecraftforge.event.BuildCreativeModeTabContentsEvent
 import net.minecraftforge.fml.ModList
 import net.minecraftforge.fml.javafmlmod.FMLModContainer
 import net.minecraftforge.registries.ForgeRegistries
-import rain.gtetcore.gtet.api.capability.ETTimeFlowCapability
 import rain.gtetcore.gtet.api.registrate.OnlyETreg
+import rain.gtetcore.gtet.api.timeflow.ETTimeFlowCapability
 import rain.gtetcore.gtet.common.data.block.ETBlock
 import rain.gtetcore.gtet.common.data.item.ETItems
 import rain.gtetcore.gtet.common.data.machine.ALLMmachine

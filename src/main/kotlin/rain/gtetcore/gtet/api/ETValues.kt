@@ -1,6 +1,10 @@
 package rain.gtetcore.gtet.api
 
 import com.gregtechceu.gtceu.api.GTValues
+import rain.gtetcore.gtet.api.ETValues.ETV_NAME
+import rain.gtetcore.gtet.api.ETValues.gtmTierOf
+import rain.gtetcore.gtet.api.ETValues.nameOf
+import rain.gtetcore.gtet.api.ETValues.voltageOf
 
 /**
  * GTET 自己的档位表 —— 目前只承载一个「**虚档位**」：`ETV`（= `MAX + 1`）。

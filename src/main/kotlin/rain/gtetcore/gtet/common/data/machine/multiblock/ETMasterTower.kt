@@ -19,9 +19,9 @@ import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 import net.minecraft.world.level.block.Block
 import rain.gtetcore.gtet.api.timeflow.ETTimeFlow
-import rain.gtetcore.gtet.common.machine.multiblock.timeflow.MasterTowerLang
+import rain.gtetcore.gtet.common.data.machine.multiblock.ETMasterTower.MAX_SEGMENTS
 import rain.gtetcore.gtet.common.machine.multiblock.timeflow.MasterTowerMachine
-import rain.gtetcore.gtet.config.GTETConfig
+import rain.gtetcore.gtet.data.lang.MasterTowerLang
 import rain.gtetcore.gtet.util.lang.LangUtil
 import java.util.function.Supplier
 

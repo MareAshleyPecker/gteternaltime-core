@@ -13,10 +13,11 @@ import rain.gtetcore.gtet.api.ETValues
 import rain.gtetcore.gtet.api.capability.ETPartAbility
 import rain.gtetcore.gtet.api.timeflow.ETTimeFlow
 import rain.gtetcore.gtet.common.data.machine.hatch.ETTimeFlowHatches.VARIANTS
+import rain.gtetcore.gtet.common.data.machine.hatch.ETTimeFlowHatches.overlayFor
 import rain.gtetcore.gtet.common.data.machine.hatch.ETTimeFlowHatches.register
 import rain.gtetcore.gtet.common.data.machine.hatch.ETTimeFlowHatches.registerOne
-import rain.gtetcore.gtet.common.machine.multiblock.part.TimeFlowHatchPartMachine
-import rain.gtetcore.gtet.common.machine.multiblock.timeflow.TimeFlowHatchLang
+import rain.gtetcore.gtet.common.machine.multiblock.timeflow.TimeFlowHatchPartMachine
+import rain.gtetcore.gtet.data.lang.TimeFlowHatchLang
 import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
 

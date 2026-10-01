@@ -28,7 +28,6 @@ import net.minecraft.world.level.block.GlassBlock
 import net.minecraft.world.level.block.state.BlockBehaviour
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.material.MapColor
-import rain.gtetcore.gtet.api.registrate.OnlyETreg
 import rain.gtetcore.gtet.api.registrate.OnlyETreg.ETRegistrate
 import rain.gtetcore.gtet.common.data.GTETCreativeModeTabs
 import rain.gtetcore.gtet.util.GtocoreAssets
@@ -39,7 +38,7 @@ object ETBlockReg {
     /** 玻璃机壳。 */
     fun createGlassCasingBlock(name: String, cn: String, texture: ResourceLocation?): BlockEntry<GlassBlock?> {
         LangUtil.BLOCK_LANG[name] = cn
-        return OnlyETreg.ETRegistrate.block(name) { name: BlockBehaviour.Properties? -> GlassBlock(name!!) }
+        return ETRegistrate.block(name) { name: BlockBehaviour.Properties? -> GlassBlock(name!!) }
             .initialProperties(NonNullSupplier { Blocks.GLASS })
             .properties { p: BlockBehaviour.Properties? -> p!!.isValidSpawn { state: BlockState?, level: BlockGetter?, pos: BlockPos?, ent: EntityType<*>? -> false } }
             .addLayer { Supplier { RenderType.cutoutMipped() } }
@@ -52,9 +51,14 @@ object ETBlockReg {
             .register()
     }
 
-    fun createGlassCasingBlock(name: String, cn: String, texture: ResourceLocation?, type: Supplier<Supplier<RenderType?>?>): BlockEntry<GlassBlock?> {
+    fun createGlassCasingBlock(
+        name: String,
+        cn: String,
+        texture: ResourceLocation?,
+        type: Supplier<Supplier<RenderType?>?>
+    ): BlockEntry<GlassBlock?> {
         LangUtil.BLOCK_LANG[name] = cn
-        return OnlyETreg.ETRegistrate.block(name) { name: BlockBehaviour.Properties? -> GlassBlock(name!!) }
+        return ETRegistrate.block(name) { name: BlockBehaviour.Properties? -> GlassBlock(name!!) }
             .initialProperties(NonNullSupplier { Blocks.GLASS })
             .properties { p: BlockBehaviour.Properties? -> p!!.isValidSpawn { state: BlockState?, level: BlockGetter?, pos: BlockPos?, ent: EntityType<*>? -> false } }
             .addLayer(type)
@@ -66,15 +70,19 @@ object ETBlockReg {
             .build()
             .register()
     }
+
     /** 目录型机壳：目录里只有 side.png + top.png，用 cubeColumn 拼。 */
     fun createSidedCasingBlock(name: String, cn: String, texture: ResourceLocation?): BlockEntry<Block?> {
         LangUtil.BLOCK_LANG[name] = cn
-        return OnlyETreg.ETRegistrate.block(name) { p: BlockBehaviour.Properties -> Block(p) }
+        return ETRegistrate.block(name) { p: BlockBehaviour.Properties -> Block(p) }
             .initialProperties(NonNullSupplier { Blocks.IRON_BLOCK })
             .properties { p: BlockBehaviour.Properties? -> p!!.isValidSpawn { _: BlockState?, _: BlockGetter?, _: BlockPos?, _: EntityType<*>? -> false } }
             .addLayer { Supplier { RenderType.solid() } }
             .exBlockstate { ctx, prov ->
-                prov.simpleBlock(ctx.get(), prov.models().cubeColumn(ctx.name, texture!!.withSuffix("/side"), texture.withSuffix("/top")))
+                prov.simpleBlock(
+                    ctx.get(),
+                    prov.models().cubeColumn(ctx.name, texture!!.withSuffix("/side"), texture.withSuffix("/top"))
+                )
             }
             .tag(CustomTags.MINEABLE_WITH_CONFIG_VALID_PICKAXE_WRENCH)
             .item(NonNullBiFunction { pBlock: Block?, pProperties: Item.Properties? ->
@@ -91,12 +99,13 @@ object ETBlockReg {
             texture, NonNullSupplier { Blocks.IRON_BLOCK }, { Supplier { RenderType.solid() } })
     }
 
-    fun createCasingBlock(name: String,
-                          cn: String,
-                          blockSupplier: NonNullFunction<BlockBehaviour.Properties, Block>,
-                          texture: ResourceLocation?,
-                          properties: NonNullSupplier<out Block>,
-                          type: Supplier<Supplier<RenderType?>?>
+    fun createCasingBlock(
+        name: String,
+        cn: String,
+        blockSupplier: NonNullFunction<BlockBehaviour.Properties, Block>,
+        texture: ResourceLocation?,
+        properties: NonNullSupplier<out Block>,
+        type: Supplier<Supplier<RenderType?>?>
     ): BlockEntry<Block?> {
         LangUtil.BLOCK_LANG[name] = cn
         return ETRegistrate.block(name, blockSupplier)
@@ -113,7 +122,7 @@ object ETBlockReg {
     }
 
 
-    fun createActiveCasing(name: String,cn: String, baseModelPath: String): BlockEntry<ActiveBlock?> {
+    fun createActiveCasing(name: String, cn: String, baseModelPath: String): BlockEntry<ActiveBlock?> {
         LangUtil.BLOCK_LANG[name] = cn
         return GTRegistration.REGISTRATE.block(name) { properties: BlockBehaviour.Properties? -> ActiveBlock(properties!!) }
             .initialProperties(NonNullSupplier { Blocks.IRON_BLOCK })
@@ -163,14 +172,17 @@ object ETBlockReg {
 
     fun createStarStone(): Array<BlockEntry<GlowingBlock>> = Array(STAR_STONE_NUM.size) { i ->
         LangUtil.BLOCK_LANG["star_stone_${i + 1}"] = "星辰石 " + STAR_STONE_NUM[i]
-        OnlyETreg.ETRegistrate.block("star_stone_${i + 1}") { p: BlockBehaviour.Properties ->
+        ETRegistrate.block("star_stone_${i + 1}") { p: BlockBehaviour.Properties ->
             GlowingBlock(p, i + 4, MapColor.TERRACOTTA_WHITE)
         }
             .lang("Star Stone " + STAR_STONE_NUM[i])
             .exBlockstate { ctx, prov ->
                 prov.simpleBlock(
                     ctx.get(),
-                    prov.models().cubeAll(ctx.name, ResourceLocation.fromNamespaceAndPath(GtocoreAssets.NAMESPACE, "block/star_stone"))
+                    prov.models().cubeAll(
+                        ctx.name,
+                        ResourceLocation.fromNamespaceAndPath(GtocoreAssets.NAMESPACE, "block/star_stone")
+                    )
                 )
             }
             .tag(BlockTags.MINEABLE_WITH_PICKAXE)

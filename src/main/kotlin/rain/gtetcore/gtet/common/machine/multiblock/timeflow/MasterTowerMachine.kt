@@ -18,10 +18,10 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
 import rain.gtetcore.gtet.api.timeflow.ETTimeFlow
 import rain.gtetcore.gtet.api.timeflow.ITimeFlowTower
-import rain.gtetcore.gtet.common.item.timeflow.TimeBottleData
+import rain.gtetcore.gtet.common.item.timeflow.TimeClockData
 import rain.gtetcore.gtet.config.GTETConfig
-import java.util.Locale
-import java.util.UUID
+import rain.gtetcore.gtet.data.lang.MasterTowerLang
+import java.util.*
 
 /**
  * **主控塔** —— 全服时间流（TF）的收储与换汇处（设定 §2 / §6.1）。
@@ -292,23 +292,23 @@ class MasterTowerMachine(holder: IMachineBlockEntity) :
     // ================================================================
 
     /**
-     * GTM 闪存右键转发。**保留**为备用入口（[TimeBottleData.onDataStickUse] 那套没删）。
+     * GTM 闪存右键转发。**保留**为备用入口（[TimeClockData.onDataStickUse] 那套没删）。
      *
      * ⚠️ 实话：这条路今天**不会**触发绑瓶子 —— GTM 的 `DataItemBehavior` 分发只在手里拿的是**闪存本体**时
      * 才回调到这里，而它传进来的 `dataStick` 是那根闪存、不是时序之瓶，所以
      * `TimeBottleData.isTimeBottle(...)` 恒为 false、恒返回 PASS。瓶子的真实入口是
-     * [TimeBottleBehavior][rain.gtetcore.gtet.common.item.timeflow.TimeBottleBehavior] 自己那条
+     * [TimeBottleBehavior][rain.gtetcore.gtet.common.item.timeflow.TimeClockBehavior] 自己那条
      * `onItemUseFirst` / `useOn`（见任务 B）。保留它只是不给将来留坑、也不改变闪存的任何现有行为。
      */
     override fun onDataStickUse(player: Player, dataStick: ItemStack): InteractionResult {
         val lvl = level ?: return InteractionResult.PASS
-        return TimeBottleData.onDataStickUse(player, dataStick, lvl, pos, frontFacing)
+        return TimeClockData.onDataStickUse(player, dataStick, lvl, pos, frontFacing)
     }
 
     /** 同上，潜行那一档。 */
     override fun onDataStickShiftUse(player: Player, dataStick: ItemStack): InteractionResult {
         val lvl = level ?: return InteractionResult.PASS
-        return TimeBottleData.onDataStickShiftUse(player, dataStick, lvl, pos, frontFacing)
+        return TimeClockData.onDataStickShiftUse(player, dataStick, lvl, pos, frontFacing)
     }
 
     // ================================================================

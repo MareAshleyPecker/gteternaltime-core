@@ -1,19 +1,17 @@
 package rain.gtetcore.gtet.data.recipes
 
 import com.gregtechceu.gtceu.api.data.chemical.ChemicalHelper
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix.plate
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix.screw
-import com.gregtechceu.gtceu.api.data.tag.TagPrefix.wireFine
+import com.gregtechceu.gtceu.api.data.tag.TagPrefix.*
 import com.gregtechceu.gtceu.common.data.GTMaterials
 import net.minecraft.advancements.critereon.InventoryChangeTrigger
 import net.minecraft.core.registries.Registries
 import net.minecraft.data.recipes.FinishedRecipe
 import net.minecraft.data.recipes.RecipeCategory
 import net.minecraft.data.recipes.ShapedRecipeBuilder
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.tags.TagKey
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.crafting.Ingredient
+import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.common.data.item.ETItems
 import java.util.function.Consumer
 
@@ -36,7 +34,7 @@ object TerminalRecipes {
             .pattern("PBP")
             .pattern("PWP")
             .define('S', Ingredient.of(ChemicalHelper.get(screw, GTMaterials.Steel)))
-            .define('G', Ingredient.of(TagKey.create(Registries.ITEM, ResourceLocation("forge", "glass_panes"))))
+            .define('G', Ingredient.of(TagKey.create(Registries.ITEM, Gtetcore.id("forge", "glass_panes"))))
             .define('B', Items.BOOK)
             .define('P', Ingredient.of(ChemicalHelper.get(plate, GTMaterials.Steel)))
             .define('W', Ingredient.of(ChemicalHelper.get(wireFine, GTMaterials.Tin)))

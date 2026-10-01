@@ -1,5 +1,7 @@
 package rain.gtetcore.gtet.api.timeflow
 
+import rain.gtetcore.gtet.api.timeflow.ETTimeFlow.euToTfMinOne
+import rain.gtetcore.gtet.api.timeflow.ETTimeFlow.scaledCostTf
 import rain.gtetcore.gtet.config.GTETConfig
 import kotlin.math.PI
 import kotlin.math.sin

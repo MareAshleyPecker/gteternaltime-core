@@ -42,3 +42,8 @@ runData-*.txt
 
 # 本机自用脚本（例如重算补丁哈希的维护脚本），不进公开仓
 local/
+
+# 仅本机 dev 运行时用的模组 jar：**不入库**（WorldEdit 是 GPL-3.0，且体积大）。
+# 依赖声明在 scripts/dependencies.gradle（runtimeOnly），缺 jar 时那边会自动跳过。
+/libs/worldedit-*.jar
+/libs/WorldEditCUI-*.jar

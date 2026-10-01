@@ -7,7 +7,6 @@ import com.gregtechceu.gtceu.api.machine.TickableSubscription
 import com.gregtechceu.gtceu.api.machine.feature.IInteractedMachine
 import com.gregtechceu.gtceu.api.machine.feature.multiblock.IMultiController
 import com.gregtechceu.gtceu.api.machine.multiblock.WorkableMultiblockMachine
-import com.gregtechceu.gtceu.api.machine.multiblock.part.MultiblockPartMachine
 import com.gregtechceu.gtceu.api.machine.multiblock.part.TieredIOPartMachine
 import com.gregtechceu.gtceu.api.machine.trait.NotifiableEnergyContainer
 import com.gregtechceu.gtceu.utils.FormattingUtil
@@ -29,10 +28,11 @@ import net.minecraft.world.phys.BlockHitResult
 import rain.gtetcore.gtet.api.timeflow.ETTimeFlow
 import rain.gtetcore.gtet.api.timeflow.ITimeFlowTower
 import rain.gtetcore.gtet.api.timeflow.TimeFlowTowers
-import rain.gtetcore.gtet.common.item.timeflow.TimeBottleData
+import rain.gtetcore.gtet.common.item.timeflow.TimeClockData
 import rain.gtetcore.gtet.common.machine.multiblock.timeflow.MasterTowerRegistry
 import rain.gtetcore.gtet.config.GTETConfig
-import java.util.Locale
+import rain.gtetcore.gtet.data.lang.WirelessEnergyHatchLang
+import java.util.*
 
 /**
  * 「无线能源仓」多方块部件 —— 把主控塔的**时间流（TF）换成本仓的 EU**（设定 §2.1 / §2.3）。
@@ -433,10 +433,10 @@ class WirelessEnergyHatchPartMachine(
         hit: BlockHitResult
     ): InteractionResult {
         val stack = player.getItemInHand(hand)
-        if (!TimeBottleData.isTimeBottle(stack)) return InteractionResult.PASS
+        if (!TimeClockData.isTimeBottle(stack)) return InteractionResult.PASS
 
         if (!level.isClientSide) {
-            val tower = TimeBottleData.getBoundTower(stack)
+            val tower = TimeClockData.getBoundTower(stack)
             if (tower == null) {
                 player.displayClientMessage(
                     Component.translatable(WirelessEnergyHatchLang.BOTTLE_UNBOUND).withStyle(ChatFormatting.RED), true

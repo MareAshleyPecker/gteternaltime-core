@@ -24,17 +24,13 @@ import rain.gtetcore.gtet.common.data.material.ETElementMaterials
 import rain.gtetcore.gtet.common.data.material.ETMaterialRegister
 import rain.gtetcore.gtet.common.item.recipe.FluidCountSlotWidget
 import rain.gtetcore.gtet.common.item.recipe.PhantomCountSlotWidget
-import rain.gtetcore.gtet.common.item.terminal.AdvancedTerminalLang
-import rain.gtetcore.gtet.common.item.terminal.TerminalLang
-import rain.gtetcore.gtet.common.item.timeflow.TimeBottleLang
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModularMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleHostMachine
 import rain.gtetcore.gtet.common.machine.multiblock.modular.ETModuleMachine
 import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
-import rain.gtetcore.gtet.common.machine.multiblock.timeflow.TimeFlowHatchLang
 import rain.gtetcore.gtet.config.GTETConfig
 import rain.gtetcore.gtet.data.GTETDatagen
-import rain.gtetcore.gtet.integration.jade.GTETJadeLang
+import rain.gtetcore.gtet.data.lang.*
 
 /**
  * 通用代理 —— 客户端和服务端都需要加载的初始化逻辑。
@@ -143,4 +139,3 @@ open class CommonProxy(private val context: FMLJavaModLoadingContext) {
         GTETDatagen.init(event.generator, event.lookupProvider)
     }
 }
-

@@ -1,5 +1,15 @@
 {
   "parent": "minecraft:block/block",
+  "dynamic_renders": [
+    {
+      "type": "gtetcore:studio",
+      "model": "gtet:test_clock"
+    },
+    {
+      "type": "gtetcore:studio",
+      "model": "gtet:test_dial"
+    }
+  ],
   "loader": "gtceu:machine",
   "machine": "gtetcore:test_multiblock",
   "texture_overrides": {

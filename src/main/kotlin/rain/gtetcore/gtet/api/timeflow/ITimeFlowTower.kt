@@ -5,7 +5,7 @@ import net.minecraft.core.BlockPos
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.level.Level
 import rain.gtetcore.gtet.util.ETTeamAccess
-import java.util.UUID
+import java.util.*
 
 /**
  * 主控塔侧的 TF 取用契约 —— **塔本期不做**，这里只把接口与字段留好。

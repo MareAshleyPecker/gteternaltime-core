@@ -4,7 +4,6 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
-import org.antlr.v4.parse.GrammarTreeVisitor;
 import rain.gtetcore.gtet.Gtetcore;
 import rain.gtetcore.gtet.util.lang.Bilingual;
 import rain.gtetcore.gtet.util.lang.ConfigLangRegistry;

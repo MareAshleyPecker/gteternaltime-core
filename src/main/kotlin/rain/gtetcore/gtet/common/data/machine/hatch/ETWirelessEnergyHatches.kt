@@ -9,14 +9,15 @@ import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import com.gregtechceu.gtceu.common.data.models.GTMachineModels.createOverlayTieredHullMachineModel
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
+import rain.gtetcore.gtet.common.data.machine.hatch.ETWirelessEnergyHatches.AMPERAGES
 import rain.gtetcore.gtet.common.data.machine.hatch.ETWirelessEnergyHatches.VARIANTS
+import rain.gtetcore.gtet.common.data.machine.hatch.ETWirelessEnergyHatches.modelFor
 import rain.gtetcore.gtet.common.data.machine.hatch.ETWirelessEnergyHatches.register
-import rain.gtetcore.gtet.common.data.machine.hatch.ETWirelessEnergyHatches.registerOne
-import rain.gtetcore.gtet.common.machine.multiblock.part.WirelessEnergyHatchLang
 import rain.gtetcore.gtet.common.machine.multiblock.part.WirelessEnergyHatchPartMachine
+import rain.gtetcore.gtet.data.lang.WirelessEnergyHatchLang
 import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
-import java.util.Locale
+import java.util.*
 
 /**
  * 「无线能源仓」注册入口 —— **10 个电压档 × 11 个安培档 = 110 个方块定义**（设定 §2.1）。

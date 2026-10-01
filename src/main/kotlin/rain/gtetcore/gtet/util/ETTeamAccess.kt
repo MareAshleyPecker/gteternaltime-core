@@ -1,7 +1,8 @@
 package rain.gtetcore.gtet.util
 
 import net.minecraftforge.fml.ModList
-import java.util.UUID
+import rain.gtetcore.gtet.util.ETTeamAccess.sameTeam
+import java.util.*
 
 /**
  * 「同队」判定 —— **FTB Teams 的软依赖出口**（设定 §2.4：装了 FTB Teams 时同队视为同一人）。

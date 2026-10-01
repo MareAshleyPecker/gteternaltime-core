@@ -13,6 +13,7 @@ import net.minecraft.world.item.ItemStack
 import rain.gtetcore.gtet.Gtetcore
 import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeLogic
 import rain.gtetcore.gtet.common.machine.multiblock.thread.ThreadedRecipeStatus
+import rain.gtetcore.gtet.data.lang.GTETJadeLang
 import rain.gtetcore.gtet.integration.jade.provider.ThreadedRecipeLogicProvider.Companion.GROUP_LIMIT
 import snownee.jade.api.BlockAccessor
 import snownee.jade.api.IBlockComponentProvider

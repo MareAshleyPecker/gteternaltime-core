@@ -9,8 +9,11 @@ import com.gregtechceu.gtceu.common.data.GTRecipeTypes.MACERATOR_RECIPES
 import com.gregtechceu.gtceu.data.recipe.builder.GTRecipeBuilder
 import net.minecraft.data.recipes.FinishedRecipe
 import rain.gtetcore.gtet.Gtetcore
-import rain.gtetcore.gtet.api.capability.ETTimeFlowCapability
-import rain.gtetcore.gtet.api.capability.ETTimeFlowStack
+import rain.gtetcore.gtet.api.timeflow.ETTimeFlowCapability
+import rain.gtetcore.gtet.api.timeflow.ETTimeFlowStack
+import rain.gtetcore.gtet.data.recipes.TestTimeFlowRecipe.TF_PER_TICK
+import rain.gtetcore.gtet.data.recipes.TestTimeFlowRecipe.init
+import rain.gtetcore.gtet.data.recipes.TestTimeFlowRecipe.tickInput
 import java.util.function.Consumer
 
 /**

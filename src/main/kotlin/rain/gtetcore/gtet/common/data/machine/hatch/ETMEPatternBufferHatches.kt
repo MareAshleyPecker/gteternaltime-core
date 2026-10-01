@@ -14,8 +14,8 @@ import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.PRO
 import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.STAGES
 import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.register
 import rain.gtetcore.gtet.common.data.machine.hatch.ETMEPatternBufferHatches.registerProxy
-import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferPartMachine
-import rain.gtetcore.gtet.common.machine.multiblock.part.ETMEPatternBufferProxyPartMachine
+import rain.gtetcore.gtet.common.machine.multiblock.part.ae.ETMEPatternBufferPartMachine
+import rain.gtetcore.gtet.common.machine.multiblock.part.ae.ETMEPatternBufferProxyPartMachine
 import rain.gtetcore.gtet.integration.ae2.ETPatternBufferCapacities
 import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil

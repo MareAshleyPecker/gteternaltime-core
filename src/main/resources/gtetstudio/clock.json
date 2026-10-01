@@ -1,0 +1,117 @@
+// ════════════════════════════════════════════════════════════════════════════
+//  机器渲染工作室（studio）· M0 示例定义 —— 「镂空时钟」
+//
+//  这是**运行时可改的数据**，不是代码：
+//    文件位置  config/gtetstudio/clock.json
+//    首次运行时由 mod 自动释放到这里（之后一切以这个文件为准）
+//    改完在游戏里敲  /gtetstudio reload   立刻重读
+//      ★ M1a 起：JSON / OBJ / MTL **全部**在这一次重读里换掉（连磁盘贴图也重读）
+//        —— M0 那条"改了 MTL 得按 F3+T"的限制已经没有了，不必再按 F3+T
+//
+//  单位约定：OBJ 里 1 单位 = 1 格；表盘在 XY 平面，+Z = 正面，指针绕 Z 轴转。
+// ════════════════════════════════════════════════════════════════════════════
+{
+  // 格式版本。以后格式会变，迁移函数就挂在这个数字上（M0 只认 1）
+  "version": 1,
+
+  // 模型 id —— **机器那边引用的就是它**（机器模型 JSON 的 dynamic_renders[].model）。
+  // 注意是 id 不是文件名：文件名随便叫，只有这个字段决定"谁是谁"。
+  "id": "gtet:test_clock",
+
+  // ── 模型从哪来（★ M1a 起有两种来源，二选一）────────────────────────────
+  //  ① "file"  —— **磁盘路径（主推）**：相对**游戏目录**（开发环境就是 run/），也可以写绝对路径。
+  //              在 Blender 里导出一个新 OBJ，直接丢进 config/gtetstudio/models/ 就能用：
+  //              全程**不用重新编译、不用 F3+T**，改完敲一次 /gtetstudio reload 即可。
+  //              首次运行时 mod 已经把示例模型释放到 config/gtetstudio/models/clock.obj，
+  //              所以下面这行注释掉之后可以直接开。
+  //  ② "model" —— **资源包路径**：形如 gtetcore:models/obj/clock.obj
+  //              （对应 src/main/resources/assets/gtetcore/models/obj/clock.obj）。
+  //              适合"要随 mod 一起分发、且不进 config 给人改"的模型。
+  //
+  //  "format" 可以省略（按文件扩展名自动认领，现在只有 obj）；
+  //  "textures" 是给 MTL 里 `map_Kd #名字` 用的别名表，值可以是资源路径、也可以是相对本 OBJ 的 PNG。
+  "source": {
+    "format": "obj",
+
+    // ★ 磁盘来源（主推）。想试就删掉下面的 "model" 行、把这一行的注释打开：
+    // "file": "config/gtetstudio/models/clock.obj",
+
+    // 资源包来源（M0 的写法）。必须落在 assets/<命名空间>/<这个路径>
+    "model": "gtetcore:models/obj/clock.obj",
+
+    // OBJ/MTL 里可以写 `map_Kd #texture0` 来引用下面这张表（名字 → 贴图路径）。
+    // ⚠️ 本示例的 clock.mtl 走的是直连路径（`map_Kd gtetcore:block/...`），
+    //    所以这一项在此**只是演示 + 备用**：把 MTL 改成 `map_Kd #texture0` 就会走它。
+    "textures": {
+      "texture0": "gtetcore:block/coil/testcoil/machine_coil_cupronickel",
+      "texture1": "gtetcore:block/coil/testcoil/machine_coil_cupronickel_bloom"
+    },
+
+    // M0 传给 Forge `forge:obj` 的选项。M1a 换成自写的 OBJ 解析器之后，
+    // automatic_culling / shade_quads / emissive_ambient **不再生效**（写在文件里也不会报错，只是被忽略）；
+    // 只有 flip_v 仍然管用 —— 现在由我们自己实现（OBJ 的 vt 原点在左下，贴图在左上）。
+    "flip_v": true,
+    "automatic_culling": false,
+    "shade_quads": true,
+    "emissive_ambient": true
+  },
+
+  // ── 材质 → 渲染方式（键必须是 **MTL 里的材质名**，不是贴图名）──────────────
+  //   cutout      = alpha 剪裁、双面（默认；镂空结构就该用它）
+  //   eyes        = 自发光 / 全亮（不带光照图，夜里也亮）
+  //   translucent = 真半透明（要排序，能不用就不用）
+  "materials": {
+    "frame": { "render": "cutout" },
+    "glow":  { "render": "eyes" }
+  },
+
+  // ── 部件（= OBJ 里的 g/o 组名）─────────────────────────────────────────
+  // 这里列出的名字**必须真的在 OBJ 里存在**，否则加载会直接报错并列出可用组名。
+  // 省略整个 parts 段 = 不挑，OBJ 里有几个组就算几个。
+  "parts": [
+    { "name": "body" },
+    { "name": "hand_hour" },
+    { "name": "hand_minute" }
+  ],
+
+  // ── 挂到宿主上的哪一面、怎么摆 ──────────────────────────────────────────
+  // offset 是在**面坐标系**里施加的：+X 面内向右、+Y 面内向上、+Z 沿法线朝外，
+  // 所以 [0, 1, 0] 恒等于"沿机器正面往上抬一格"，与机器朝南朝北无关。
+  // scale 是统一缩放：OBJ 里表盘外径 10 格，缩到 0.5 就是 5 格，能完整压在测试机上。
+  "anchor": {
+    "mode": "machine",
+    "face": "front",
+    "offset": [0, 1, 0],
+    "scale": 0.5
+  },
+
+  // ── 动画 ────────────────────────────────────────────────────────────────
+  // driver: 时间来源。M0 **只实现 gameTime**；machine.progress / machine.timeFlow /
+  //         machine.formed 是**预留枚举**，写了不会动（日志里会提示）。
+  // speed : **度 / 秒**。
+  //         6.0  → 60 秒一圈（时针那种慢悠悠的）
+  //         72.0 → 5 秒一圈（肉眼一眼就能确认它在转）
+  // 符号 : 右手定则。绕 +Z 正角 = 从正面（+Z）看过去的**逆时针**；想顺时针就把 speed 写负。
+  "animation": {
+    "driver": "gameTime",
+    "tracks": [
+      {
+        "part": "hand_hour",
+        "channel": "rot",
+        "axis": "z",
+        "speed": 6.0
+        // M4 预留：关键帧写在这里（M0 不解析，只在日志里提示一句就按上面的 speed 匀速转）
+        // "keys": [ { "t": 0, "v": 0 }, { "t": 60, "v": 360 } ],
+        // "loop": "wrap",
+        // "easing": "linear"
+      },
+      {
+        "part": "hand_minute",
+        "channel": "rot",
+        "axis": "z",
+        "speed": 72.0
+        // "keys": [ { "t": 0, "v": 0 }, { "t": 5, "v": 360 } ]
+      }
+    ]
+  }
+}

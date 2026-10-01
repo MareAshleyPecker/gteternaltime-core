@@ -8,8 +8,8 @@ import com.gregtechceu.gtceu.api.machine.multiblock.PartAbility
 import com.gregtechceu.gtceu.api.registry.registrate.GTRegistrate
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
-import rain.gtetcore.gtet.common.machine.multiblock.part.ETTagFilterStockBusPartMachine
-import rain.gtetcore.gtet.common.machine.multiblock.part.ETTagFilterStockHatchPartMachine
+import rain.gtetcore.gtet.common.machine.multiblock.part.ae.ETTagFilterStockBusPartMachine
+import rain.gtetcore.gtet.common.machine.multiblock.part.ae.ETTagFilterStockHatchPartMachine
 import rain.gtetcore.gtet.integration.ae2.ETTagFilterConfigurator
 import rain.gtetcore.gtet.util.ETPartSharing
 import rain.gtetcore.gtet.util.lang.LangUtil
